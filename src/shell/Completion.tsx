@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Confetti } from './Confetti';
 
 /** Length of the celebration burst before the end state is offered (ms). */
 const CELEBRATION_MS = 600;
@@ -26,7 +27,8 @@ export function Completion({ onPlayAgain, onHome }: CompletionProps) {
   }, []);
 
   return (
-    <div>
+    <div style={{ position: 'relative' }}>
+      <Confetti />
       <h2>You did it!</h2>
       {showEndState && (
         <div>
