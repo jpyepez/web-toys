@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { CountingSheep } from './CountingSheep';
 
 describe('Counting Sheep', () => {
@@ -16,5 +17,17 @@ describe('Counting Sheep', () => {
       expect(sheep.querySelector('svg')).toBeInTheDocument();
     }
     expect(container.querySelectorAll('img')).toHaveLength(0);
+  });
+
+  it('marks a sheep as done when it is tapped', async () => {
+    const user = userEvent.setup();
+    render(<CountingSheep onComplete={vi.fn()} />);
+
+    const sheep = screen.getByRole('button', { name: 'Sheep 1' });
+    expect(sheep).toHaveAttribute('aria-pressed', 'false');
+
+    await user.click(sheep);
+
+    expect(sheep).toHaveAttribute('aria-pressed', 'true');
   });
 });
