@@ -1,7 +1,7 @@
 ---
 slice: 4
 title: Always-visible Home control — ungated, non-destructive mid-play exit
-status: in-progress
+status: done
 type: afk
 blocked_by: [1]
 parent_prd: shell-counting-sheep
