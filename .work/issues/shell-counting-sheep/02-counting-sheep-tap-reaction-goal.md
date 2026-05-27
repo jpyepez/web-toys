@@ -1,7 +1,7 @@
 ---
 slice: 2
 title: Counting Sheep — tappable SVG sheep, per-tap reaction, all-5 fires onComplete
-status: ready
+status: in-progress
 type: afk
 blocked_by: [1]
 parent_prd: shell-counting-sheep
