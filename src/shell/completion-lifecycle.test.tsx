@@ -93,4 +93,18 @@ describe('Shell Completion lifecycle', () => {
     }
     expect(await screen.findByText('You did it!')).toBeInTheDocument();
   });
+
+  it('never reaches the end state without onComplete — no timer or fail path', async () => {
+    renderAppAt([finishableToy], '/toy/finishable');
+
+    // The Toy is in play, and stays there well past the celebration-beat
+    // window without anyone firing onComplete: nothing but the Goal advances
+    // the lifecycle (ADR-0001 — no timer cutoff, no fail state).
+    expect(await screen.findByRole('button', { name: 'finish' })).toBeInTheDocument();
+    await new Promise((resolve) => setTimeout(resolve, 900));
+
+    expect(screen.queryByText('You did it!')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Play again' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'finish' })).toBeInTheDocument();
+  });
 });
