@@ -54,10 +54,7 @@ describe('home launcher', () => {
 describe('registered toys', () => {
   it('registers Counting Sheep as the one launchable Card', async () => {
     const user = userEvent.setup();
-    const router = createAppRouter(registry, {
-      history: createMemoryHistory({ initialEntries: ['/'] }),
-    });
-    render(<RouterProvider router={router} />);
+    renderApp(registry);
 
     const card = await screen.findByText('Counting Sheep');
     expect(screen.getAllByRole('link')).toHaveLength(1);

@@ -27,14 +27,14 @@ Tone.js, and vite-plugin-pwa arrive in the slices that use them.
 
 ## Acceptance criteria
 
-- [ ] `npm run dev` serves the app; `/` renders the home launcher.
-- [ ] Home renders exactly one Card (Counting Sheep) sourced from the registry — Card
+- [x] `npm run dev` serves the app; `/` renders the home launcher.
+- [x] Home renders exactly one Card (Counting Sheep) sourced from the registry — Card
       content is driven by registry metadata, not hardcoded in the home component.
-- [ ] Tapping the Card navigates to the Counting Sheep route and mounts its (placeholder)
+- [x] Tapping the Card navigates to the Counting Sheep route and mounts its (placeholder)
       component within the Shell frame.
-- [ ] Adding a second dummy registry entry makes a second Card appear with no edits to the
+- [x] Adding a second dummy registry entry makes a second Card appear with no edits to the
       home component (verify, then remove the dummy).
-- [ ] Public-interface tests pass: rendering home shows a Card per registered Toy; tapping
+- [x] Public-interface tests pass: rendering home shows a Card per registered Toy; tapping
       a Card lands on its Toy route. No internal mocks (no process boundaries here).
 
 ## Notes
