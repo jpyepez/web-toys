@@ -12,7 +12,7 @@ export function ToyHost({ toy }: { toy: ToyEntry }) {
   const Toy = toy.component;
 
   if (phase === 'complete') {
-    return <Completion />;
+    return <Completion onPlayAgain={() => {}} onHome={() => {}} />;
   }
 
   return <Toy onComplete={() => setPhase('complete')} />;
