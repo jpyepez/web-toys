@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/react-router';
 import type { ToyEntry } from './registry';
 
 /**
@@ -8,7 +9,9 @@ export function Home({ toys }: { toys: ToyEntry[] }) {
   return (
     <main>
       {toys.map((toy) => (
-        <div key={toy.id}>{toy.title}</div>
+        <Link key={toy.id} to="/toy/$toyId" params={{ toyId: toy.id }}>
+          {toy.title}
+        </Link>
       ))}
     </main>
   );

@@ -3,6 +3,7 @@ import {
   createRoute,
   createRouter,
   Outlet,
+  useParams,
   type RouterHistory,
 } from '@tanstack/react-router';
 import type { ToyEntry } from './registry';
@@ -15,7 +16,8 @@ type AppRouterOptions = {
 
 /**
  * Builds the app's router from the Toy registry: a root Shell frame, the home
- * launcher at `/`, and (later) one route per Toy. Hands back a ready router.
+ * launcher at `/`, and one route per Toy at `/toy/$toyId` that mounts the Toy's
+ * component inside the frame. Hands back a ready router.
  */
 export function createAppRouter(toys: ToyEntry[], options: AppRouterOptions = {}) {
   const rootRoute = createRootRoute({
@@ -28,7 +30,19 @@ export function createAppRouter(toys: ToyEntry[], options: AppRouterOptions = {}
     component: () => <Home toys={toys} />,
   });
 
-  const routeTree = rootRoute.addChildren([homeRoute]);
+  const toyRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/toy/$toyId',
+    component: function ToyMount() {
+      const { toyId } = useParams({ strict: false });
+      const toy = toys.find((t) => t.id === toyId);
+      if (!toy) return null;
+      const ToyComponent = toy.component;
+      return <ToyComponent />;
+    },
+  });
+
+  const routeTree = rootRoute.addChildren([homeRoute, toyRoute]);
 
   return createRouter({
     routeTree,
