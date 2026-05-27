@@ -55,4 +55,23 @@ describe('Counting Sheep', () => {
 
     expect(onComplete).not.toHaveBeenCalled();
   });
+
+  it('re-tapping a done sheep does not count it again or fire onComplete early', async () => {
+    const user = userEvent.setup();
+    const onComplete = vi.fn();
+    render(<CountingSheep onComplete={onComplete} />);
+
+    const sheep = screen.getAllByRole('button');
+    // Count four distinct sheep, then hammer the first one — re-taps must not
+    // advance the Goal nor un-mark the sheep.
+    for (const s of sheep.slice(0, 4)) {
+      await user.click(s);
+    }
+    await user.click(sheep[0]);
+    await user.click(sheep[0]);
+    await user.click(sheep[0]);
+
+    expect(onComplete).not.toHaveBeenCalled();
+    expect(sheep[0]).toHaveAttribute('aria-pressed', 'true');
+  });
 });
