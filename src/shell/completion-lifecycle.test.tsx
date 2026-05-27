@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { RouterProvider, createMemoryHistory } from '@tanstack/react-router';
 import { createAppRouter } from './createAppRouter';
 import type { ToyEntry } from './registry';
+import { registry } from '../toys/registry';
 
 /** A stand-in Toy: a real component whose only interaction fires onComplete. */
 const finishableToy: ToyEntry = {
@@ -64,5 +65,32 @@ describe('Shell Completion lifecycle', () => {
     // The launcher is back: the Toy's Card is shown and the Completion is gone.
     expect(await screen.findByRole('link', { name: 'Finishable' })).toBeInTheDocument();
     expect(screen.queryByText('You did it!')).toBeNull();
+  });
+
+  it('resets Counting Sheep on Play again — all sheep tappable, Goal re-reachable', async () => {
+    const user = userEvent.setup();
+    renderAppAt(registry, '/toy/counting-sheep');
+
+    // Reach the Goal: tap all five sheep.
+    for (const sheep of await screen.findAllByRole('button', { name: /Sheep \d/ })) {
+      await user.click(sheep);
+    }
+
+    await user.click(
+      await screen.findByRole('button', { name: 'Play again' }, { timeout: 2000 }),
+    );
+
+    // Fresh meadow: five sheep, every one un-done again.
+    const replayed = await screen.findAllByRole('button', { name: /Sheep \d/ });
+    expect(replayed).toHaveLength(5);
+    for (const sheep of replayed) {
+      expect(sheep).toHaveAttribute('aria-pressed', 'false');
+    }
+
+    // The Goal can be reached again, firing onComplete a second time.
+    for (const sheep of replayed) {
+      await user.click(sheep);
+    }
+    expect(await screen.findByText('You did it!')).toBeInTheDocument();
   });
 });
