@@ -38,7 +38,8 @@ export function createAppRouter(toys: ToyEntry[], options: AppRouterOptions = {}
       const toy = toys.find((t) => t.id === toyId);
       if (!toy) return null;
       const ToyComponent = toy.component;
-      return <ToyComponent />;
+      // Temporary handler — the Shell's Completion celebration lands in slice #3.
+      return <ToyComponent onComplete={() => console.log('toy complete')} />;
     },
   });
 

@@ -61,8 +61,8 @@ describe('registered toys', () => {
 
     await user.click(card);
 
-    // The launcher is gone and the toy is mounted in its place.
-    expect(await screen.findByRole('heading', { name: 'Counting Sheep' })).toBeInTheDocument();
+    // The launcher is gone and the toy's meadow is mounted in its place.
+    expect(await screen.findByRole('button', { name: 'Sheep 1' })).toBeInTheDocument();
     expect(screen.queryByRole('link')).toBeNull();
   });
 });
