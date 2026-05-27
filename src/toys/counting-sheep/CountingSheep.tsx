@@ -1,20 +1,23 @@
+import { useState } from 'react';
+import { motion } from 'motion/react';
 import type { ToyProps } from '../../shell/registry';
 
 /** How many Sheep make up the meadow. Sized for ~15–30s; easy to tune. */
 const SHEEP_COUNT = 5;
 
 /** A single Sheep, drawn from SVG primitives — no image assets (ADR-0002). */
-function SheepDrawing() {
+function SheepDrawing({ done }: { done: boolean }) {
+  const fleece = done ? '#ffe6a0' : '#f7f7fb';
   return (
     <svg viewBox="0 0 100 80" width="100" height="80" aria-hidden="true">
       {/* legs */}
       <rect x="34" y="52" width="6" height="20" rx="3" fill="#5b5b6b" />
       <rect x="58" y="52" width="6" height="20" rx="3" fill="#5b5b6b" />
       {/* fluffy body */}
-      <circle cx="40" cy="44" r="16" fill="#f7f7fb" />
-      <circle cx="58" cy="44" r="16" fill="#f7f7fb" />
-      <circle cx="49" cy="34" r="16" fill="#f7f7fb" />
-      <circle cx="49" cy="48" r="18" fill="#f7f7fb" />
+      <circle cx="40" cy="44" r="16" fill={fleece} />
+      <circle cx="58" cy="44" r="16" fill={fleece} />
+      <circle cx="49" cy="34" r="16" fill={fleece} />
+      <circle cx="49" cy="48" r="18" fill={fleece} />
       {/* head */}
       <ellipse cx="72" cy="40" rx="12" ry="13" fill="#3f3f4a" />
       <circle cx="68" cy="37" r="2.5" fill="#ffffff" />
@@ -26,19 +29,50 @@ function SheepDrawing() {
   );
 }
 
+/** One tappable Sheep. Tapping hops + squash/stretches it; done shifts its colour. */
+function Sheep({ index, done, onTap }: { index: number; done: boolean; onTap: () => void }) {
+  return (
+    <motion.button
+      type="button"
+      aria-label={`Sheep ${index + 1}`}
+      aria-pressed={done}
+      onClick={onTap}
+      whileTap={{ scale: 0.85 }}
+      animate={
+        done
+          ? { y: [0, -22, 0], scaleY: [1, 0.8, 1.12, 1], scaleX: [1, 1.15, 0.94, 1] }
+          : { y: 0 }
+      }
+      transition={{ duration: 0.45, ease: 'easeOut' }}
+      style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
+    >
+      <SheepDrawing done={done} />
+    </motion.button>
+  );
+}
+
 /**
  * Counting Sheep: a meadow of tappable Sheep. Tapping a Sheep counts it; once
  * every Sheep is counted the Goal is met and the Toy signals the Shell.
  */
 export function CountingSheep(_props: ToyProps) {
+  const [done, setDone] = useState<Set<number>>(new Set());
+
+  const handleTap = (index: number) => {
+    setDone((prev) => {
+      if (prev.has(index)) return prev;
+      const next = new Set(prev);
+      next.add(index);
+      return next;
+    });
+  };
+
   const sheep = Array.from({ length: SHEEP_COUNT }, (_, i) => i);
 
   return (
     <main>
       {sheep.map((i) => (
-        <button key={i} type="button" aria-label={`Sheep ${i + 1}`}>
-          <SheepDrawing />
-        </button>
+        <Sheep key={i} index={i} done={done.has(i)} onTap={() => handleTap(i)} />
       ))}
     </main>
   );
