@@ -35,4 +35,17 @@ describe('home launcher', () => {
 
     expect(await screen.findByText('the sheep meadow')).toBeInTheDocument();
   });
+
+  it('renders exactly one Card per registered toy', async () => {
+    const toys: ToyEntry[] = [
+      { id: 'counting-sheep', title: 'Counting Sheep', component: () => <p>sheep</p> },
+      { id: 'bubble-pop', title: 'Bubble Pop', component: () => <p>bubbles</p> },
+    ];
+
+    renderApp(toys);
+
+    expect(await screen.findByText('Counting Sheep')).toBeInTheDocument();
+    expect(screen.getByText('Bubble Pop')).toBeInTheDocument();
+    expect(screen.getAllByRole('link')).toHaveLength(2);
+  });
 });
