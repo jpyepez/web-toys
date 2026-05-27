@@ -42,4 +42,17 @@ describe('Counting Sheep', () => {
 
     expect(onComplete).toHaveBeenCalledTimes(1);
   });
+
+  it('does not fire onComplete before every sheep has been tapped', async () => {
+    const user = userEvent.setup();
+    const onComplete = vi.fn();
+    render(<CountingSheep onComplete={onComplete} />);
+
+    const sheep = screen.getAllByRole('button');
+    for (const s of sheep.slice(0, sheep.length - 1)) {
+      await user.click(s);
+    }
+
+    expect(onComplete).not.toHaveBeenCalled();
+  });
 });
