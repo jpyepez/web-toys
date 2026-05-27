@@ -27,7 +27,7 @@ put — no auto-advance (PRD Further Notes; ADR-0001 no-timers rule).
 
 ## Acceptance criteria
 
-- [ ] When the Toy fires `onComplete`, the Shell shows the celebration then the end state.
+- [x] When the Toy fires `onComplete`, the Shell shows the celebration then the end state.
 - [ ] The Toy cannot reach the end state without `onComplete` (no timer/fail path).
 - [ ] **Play again** resets the Toy to its start: all 5 Sheep are tappable again and the
       Goal can be re-reached, firing `onComplete` again.

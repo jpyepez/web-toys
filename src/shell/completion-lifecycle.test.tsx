@@ -51,4 +51,18 @@ describe('Shell Completion lifecycle', () => {
     ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Home' })).toBeInTheDocument();
   });
+
+  it('returns to the launcher when Home is tapped from the end state', async () => {
+    const user = userEvent.setup();
+    renderAppAt([finishableToy], '/toy/finishable');
+
+    await user.click(await screen.findByRole('button', { name: 'finish' }));
+    await user.click(
+      await screen.findByRole('button', { name: 'Home' }, { timeout: 2000 }),
+    );
+
+    // The launcher is back: the Toy's Card is shown and the Completion is gone.
+    expect(await screen.findByRole('link', { name: 'Finishable' })).toBeInTheDocument();
+    expect(screen.queryByText('You did it!')).toBeNull();
+  });
 });
