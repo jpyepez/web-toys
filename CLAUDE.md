@@ -9,7 +9,11 @@ Vite + React + TypeScript · TanStack Router · Motion (Framer Motion) ·
 Tone.js / Web Audio. Static SPA, no backend. Installable PWA (vite-plugin-pwa).
 
 ## Commands
-<!-- TODO: fill in once the Vite app is scaffolded (standard npm run dev / build) -->
+Package manager is **Bun** (use `bun install`, not npm/pnpm/yarn).
+- `bun run dev` — Vite dev server
+- `bun run build` — typecheck (`tsc -b`) + production build
+- `bun run test` — Vitest (one-shot); `bun run test:watch` to watch
+- `bun run typecheck` — `tsc -b` only
 
 ## Non-negotiable rules
 - **No binary assets.** Critters are code-drawn SVG; sound is synthesized.
