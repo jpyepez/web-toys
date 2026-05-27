@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion } from 'motion/react';
 import type { ToyProps } from '../../shell/registry';
 
@@ -55,8 +55,9 @@ function Sheep({ index, done, onTap }: { index: number; done: boolean; onTap: ()
  * Counting Sheep: a meadow of tappable Sheep. Tapping a Sheep counts it; once
  * every Sheep is counted the Goal is met and the Toy signals the Shell.
  */
-export function CountingSheep(_props: ToyProps) {
+export function CountingSheep({ onComplete }: ToyProps) {
   const [done, setDone] = useState<Set<number>>(new Set());
+  const completed = useRef(false);
 
   const handleTap = (index: number) => {
     setDone((prev) => {
@@ -66,6 +67,14 @@ export function CountingSheep(_props: ToyProps) {
       return next;
     });
   };
+
+  // Goal: every distinct Sheep counted. Signal the Shell once, never again.
+  useEffect(() => {
+    if (!completed.current && done.size >= SHEEP_COUNT) {
+      completed.current = true;
+      onComplete();
+    }
+  }, [done, onComplete]);
 
   const sheep = Array.from({ length: SHEEP_COUNT }, (_, i) => i);
 
