@@ -1,7 +1,7 @@
 ---
 slice: 3
 title: Shell Completion — celebration burst → end state (Play again / Home)
-status: ready
+status: in-progress
 type: afk
 blocked_by: [2]
 parent_prd: shell-counting-sheep
