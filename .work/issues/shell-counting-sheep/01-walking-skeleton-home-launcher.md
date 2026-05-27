@@ -1,7 +1,7 @@
 ---
 slice: 1
 title: Walking skeleton — home launcher renders a Card per registered Toy
-status: in-progress
+status: done
 type: afk
 blocked_by: []
 parent_prd: shell-counting-sheep
