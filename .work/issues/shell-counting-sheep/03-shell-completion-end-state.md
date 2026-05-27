@@ -28,11 +28,11 @@ put — no auto-advance (PRD Further Notes; ADR-0001 no-timers rule).
 ## Acceptance criteria
 
 - [x] When the Toy fires `onComplete`, the Shell shows the celebration then the end state.
-- [ ] The Toy cannot reach the end state without `onComplete` (no timer/fail path).
+- [x] The Toy cannot reach the end state without `onComplete` (no timer/fail path).
 - [x] **Play again** resets the Toy to its start: all 5 Sheep are tappable again and the
       Goal can be re-reached, firing `onComplete` again.
 - [x] **Home** from the end state returns to the launcher.
-- [ ] Tests exercise the lifecycle at the Shell's public surface: drive a Toy to fire
+- [x] Tests exercise the lifecycle at the Shell's public surface: drive a Toy to fire
       `onComplete`, assert celebration → end state; assert Play again resets; assert Home
       returns to the launcher. No internal mocks.
 

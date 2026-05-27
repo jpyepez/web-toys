@@ -94,6 +94,17 @@ describe('Shell Completion lifecycle', () => {
     expect(await screen.findByText('You did it!')).toBeInTheDocument();
   });
 
+  it('celebrates with a code-drawn confetti burst — no image assets (ADR-0002)', async () => {
+    const user = userEvent.setup();
+    renderAppAt([finishableToy], '/toy/finishable');
+
+    await user.click(await screen.findByRole('button', { name: 'finish' }));
+
+    const burst = await screen.findByTestId('confetti');
+    expect(burst).toBeInTheDocument();
+    expect(document.querySelectorAll('img')).toHaveLength(0);
+  });
+
   it('never reaches the end state without onComplete — no timer or fail path', async () => {
     renderAppAt([finishableToy], '/toy/finishable');
 
