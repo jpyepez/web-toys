@@ -8,6 +8,7 @@ import {
 } from '@tanstack/react-router';
 import type { ToyEntry } from './registry';
 import { Home } from './Home';
+import { ToyHost } from './ToyHost';
 
 type AppRouterOptions = {
   /** Injectable history — tests pass a memory history; the app uses the default. */
@@ -37,9 +38,7 @@ export function createAppRouter(toys: ToyEntry[], options: AppRouterOptions = {}
       const { toyId } = useParams({ strict: false });
       const toy = toys.find((t) => t.id === toyId);
       if (!toy) return null;
-      const ToyComponent = toy.component;
-      // Temporary handler — the Shell's Completion celebration lands in slice #3.
-      return <ToyComponent onComplete={() => console.log('toy complete')} />;
+      return <ToyHost toy={toy} />;
     },
   });
 
