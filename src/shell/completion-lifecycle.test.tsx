@@ -33,4 +33,22 @@ describe('Shell Completion lifecycle', () => {
 
     expect(await screen.findByText('You did it!')).toBeInTheDocument();
   });
+
+  it('reveals the end state (Play again / Home) only after the celebration beat', async () => {
+    const user = userEvent.setup();
+    renderAppAt([finishableToy], '/toy/finishable');
+
+    await user.click(await screen.findByRole('button', { name: 'finish' }));
+
+    // Celebration is up, but the end-state controls have not arrived yet.
+    await screen.findByText('You did it!');
+    expect(screen.queryByRole('button', { name: 'Play again' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Home' })).toBeNull();
+
+    // After the beat, the end state offers Play again and Home.
+    expect(
+      await screen.findByRole('button', { name: 'Play again' }, { timeout: 2000 }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Home' })).toBeInTheDocument();
+  });
 });
