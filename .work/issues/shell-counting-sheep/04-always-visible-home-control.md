@@ -23,7 +23,7 @@ is fresh.
 ## Acceptance criteria
 
 - [x] The Home control is visible while a Toy is mounted, before Completion.
-- [ ] Tapping it returns to the launcher with no intermediate confirmation/gate.
+- [x] Tapping it returns to the launcher with no intermediate confirmation/gate.
 - [ ] Re-entering the Toy after a mid-play exit starts from a clean state (no carried-over
       done Sheep).
 - [ ] Tests drive the public surface: launch a Toy, tap some Sheep, tap Home → assert

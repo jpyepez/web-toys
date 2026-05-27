@@ -37,4 +37,25 @@ describe('Always-visible Home control', () => {
     ).toBeInTheDocument();
     expect(screen.queryByRole('dialog')).toBeNull();
   });
+
+  it('re-entering the Toy after a mid-play exit starts fresh — no carried-over done Sheep', async () => {
+    const user = userEvent.setup();
+    renderAppAt(registry, '/toy/counting-sheep');
+
+    // Partway through play: count a couple of Sheep, then bail out mid-play.
+    const sheep = await screen.findAllByRole('button', { name: /Sheep \d/ });
+    await user.click(sheep[0]);
+    await user.click(sheep[1]);
+    expect(sheep[0]).toHaveAttribute('aria-pressed', 'true');
+
+    await user.click(screen.getByRole('button', { name: 'Home' }));
+    await user.click(await screen.findByRole('link', { name: 'Counting Sheep' }));
+
+    // Re-entry is free: a fresh meadow, every Sheep un-done again.
+    const replayed = await screen.findAllByRole('button', { name: /Sheep \d/ });
+    expect(replayed).toHaveLength(5);
+    for (const s of replayed) {
+      expect(s).toHaveAttribute('aria-pressed', 'false');
+    }
+  });
 });
