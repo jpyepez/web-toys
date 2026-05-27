@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { RouterProvider, createMemoryHistory } from '@tanstack/react-router';
 import { createAppRouter } from './createAppRouter';
 import type { ToyEntry } from './registry';
+import { registry } from '../toys/registry';
 
 function renderApp(toys: ToyEntry[], initialPath = '/') {
   const router = createAppRouter(toys, {
@@ -47,5 +48,24 @@ describe('home launcher', () => {
     expect(await screen.findByText('Counting Sheep')).toBeInTheDocument();
     expect(screen.getByText('Bubble Pop')).toBeInTheDocument();
     expect(screen.getAllByRole('link')).toHaveLength(2);
+  });
+});
+
+describe('registered toys', () => {
+  it('registers Counting Sheep as the one launchable Card', async () => {
+    const user = userEvent.setup();
+    const router = createAppRouter(registry, {
+      history: createMemoryHistory({ initialEntries: ['/'] }),
+    });
+    render(<RouterProvider router={router} />);
+
+    const card = await screen.findByText('Counting Sheep');
+    expect(screen.getAllByRole('link')).toHaveLength(1);
+
+    await user.click(card);
+
+    // The launcher is gone and the toy is mounted in its place.
+    expect(await screen.findByRole('heading', { name: 'Counting Sheep' })).toBeInTheDocument();
+    expect(screen.queryByRole('link')).toBeNull();
   });
 });
