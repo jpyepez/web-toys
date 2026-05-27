@@ -8,4 +8,13 @@ describe('Counting Sheep', () => {
 
     expect(screen.getAllByRole('button')).toHaveLength(5);
   });
+
+  it('draws each sheep as code SVG, with no image assets', () => {
+    const { container } = render(<CountingSheep onComplete={vi.fn()} />);
+
+    for (const sheep of screen.getAllByRole('button')) {
+      expect(sheep.querySelector('svg')).toBeInTheDocument();
+    }
+    expect(container.querySelectorAll('img')).toHaveLength(0);
+  });
 });
