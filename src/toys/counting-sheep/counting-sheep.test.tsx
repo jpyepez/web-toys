@@ -30,4 +30,16 @@ describe('Counting Sheep', () => {
 
     expect(sheep).toHaveAttribute('aria-pressed', 'true');
   });
+
+  it('fires onComplete exactly once when all five distinct sheep are tapped', async () => {
+    const user = userEvent.setup();
+    const onComplete = vi.fn();
+    render(<CountingSheep onComplete={onComplete} />);
+
+    for (const sheep of screen.getAllByRole('button')) {
+      await user.click(sheep);
+    }
+
+    expect(onComplete).toHaveBeenCalledTimes(1);
+  });
 });

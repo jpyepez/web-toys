@@ -28,7 +28,7 @@ this slice, observe `onComplete` via a temporary handler (e.g. console/log or a 
 ## Acceptance criteria
 
 - [x] Five distinct Sheep render as code-drawn SVG; no binary/image assets introduced.
-- [ ] Tapping a not-done Sheep marks it done and triggers its reaction animation.
+- [x] Tapping a not-done Sheep marks it done and triggers its reaction animation.
 - [ ] Tapping all 5 distinct Sheep fires `onComplete` exactly once.
 - [ ] Tapping fewer than 5 distinct Sheep does NOT fire `onComplete`.
 - [ ] Re-tapping a done Sheep does not double-count and does not fire `onComplete` early;
