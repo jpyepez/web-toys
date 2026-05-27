@@ -24,5 +24,8 @@ Package manager is **Bun** (use `bun install`, not npm/pnpm/yarn).
   owns home/cards, transitions, Completion, replay/back — toys never reimplement it.
 - **Home is a pure launcher.** No scores, stars, profiles, or progress meta-layer.
 
-> Domain glossary, ADRs, and rejected ideas live in `.work/` — the engineering
-> skills load them as needed.
+## Reference docs (`.work/`, load on demand)
+IMPORTANT: before writing or changing Shell or Toy code, read `.work/CONTEXT.md` for the
+domain vocabulary (use Toy / Goal / Completion / Card / Critter — not game / score / level)
+and skim `.work/adr/` for the reasoning behind the rules above. Rejected features:
+`.work/out-of-scope/`. PRDs and work items live elsewhere in `.work/`.
