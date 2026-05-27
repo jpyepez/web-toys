@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from '@tanstack/react-router';
 import type { ToyEntry } from './registry';
 import { Completion } from './Completion';
 
@@ -9,10 +10,11 @@ import { Completion } from './Completion';
  */
 export function ToyHost({ toy }: { toy: ToyEntry }) {
   const [phase, setPhase] = useState<'playing' | 'complete'>('playing');
+  const navigate = useNavigate();
   const Toy = toy.component;
 
   if (phase === 'complete') {
-    return <Completion onPlayAgain={() => {}} onHome={() => {}} />;
+    return <Completion onPlayAgain={() => {}} onHome={() => navigate({ to: '/' })} />;
   }
 
   return <Toy onComplete={() => setPhase('complete')} />;
