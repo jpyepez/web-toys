@@ -25,7 +25,9 @@ export function ToyHost({ toy }: { toy: ToyEntry }) {
   return (
     <>
       <Toy onComplete={() => setPhase('complete')} />
-      <button type="button">Home</button>
+      <button type="button" onClick={() => navigate({ to: '/' })}>
+        Home
+      </button>
     </>
   );
 }
