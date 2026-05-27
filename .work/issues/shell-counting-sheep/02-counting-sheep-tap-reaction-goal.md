@@ -1,7 +1,7 @@
 ---
 slice: 2
 title: Counting Sheep — tappable SVG sheep, per-tap reaction, all-5 fires onComplete
-status: in-progress
+status: done
 type: afk
 blocked_by: [1]
 parent_prd: shell-counting-sheep
@@ -31,9 +31,9 @@ this slice, observe `onComplete` via a temporary handler (e.g. console/log or a 
 - [x] Tapping a not-done Sheep marks it done and triggers its reaction animation.
 - [x] Tapping all 5 distinct Sheep fires `onComplete` exactly once.
 - [x] Tapping fewer than 5 distinct Sheep does NOT fire `onComplete`.
-- [ ] Re-tapping a done Sheep does not double-count and does not fire `onComplete` early;
+- [x] Re-tapping a done Sheep does not double-count and does not fire `onComplete` early;
       it still produces a playful reaction.
-- [ ] Goal-logic tests drive the component's public interaction surface (simulated taps),
+- [x] Goal-logic tests drive the component's public interaction surface (simulated taps),
       not internal state.
 
 ## Notes
