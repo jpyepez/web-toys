@@ -157,6 +157,19 @@ describe('sound utility', () => {
     expect(ctx.createOscillator).not.toHaveBeenCalled();
   });
 
+  it('persists the mute preference so a fresh createSound sees it', () => {
+    // Round-trip through the *same* storage: the contract is "what one Sound writes,
+    // the next Sound reads" — i.e. survives a reload — not "we wrote string X".
+    const storage = fakeStorage();
+    const ctx = fakeContext('running');
+
+    const first = createSound({ contextFactory: () => ctx as unknown as AudioContext, storage });
+    first.setMuted(true);
+
+    const second = createSound({ contextFactory: () => ctx as unknown as AudioContext, storage });
+    expect(second.isMuted()).toBe(true);
+  });
+
   it('restores sound when mute is toggled back off', () => {
     const ctx = fakeContext('running');
     const sound = createSound({ contextFactory: () => ctx as unknown as AudioContext });
