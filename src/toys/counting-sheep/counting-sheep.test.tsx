@@ -56,6 +56,18 @@ describe('Counting Sheep', () => {
     expect(onComplete).not.toHaveBeenCalled();
   });
 
+  it('plays a baa and a haptic tick when a sheep is tapped', async () => {
+    const user = userEvent.setup();
+    const sound = { unlock: vi.fn(), baa: vi.fn(), celebrate: vi.fn() };
+    const haptics = { tick: vi.fn() };
+    render(<CountingSheep onComplete={vi.fn()} sound={sound} haptics={haptics} />);
+
+    await user.click(screen.getByRole('button', { name: 'Sheep 1' }));
+
+    expect(sound.baa).toHaveBeenCalled();
+    expect(haptics.tick).toHaveBeenCalled();
+  });
+
   it('re-tapping a done sheep does not count it again or fire onComplete early', async () => {
     const user = userEvent.setup();
     const onComplete = vi.fn();

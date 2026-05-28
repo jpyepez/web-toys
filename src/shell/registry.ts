@@ -1,11 +1,20 @@
 import type { ComponentType } from 'react';
+import type { Sound } from './sound';
+import type { Haptics } from './haptics';
 
 /**
  * The entire Shell↔Toy contract: a Toy renders its own world and calls
  * `onComplete()` when its Goal is met. The Shell takes over from there.
+ *
+ * The Shell also provides shared `sound` and `haptics` utilities through this
+ * contract — a Toy uses them rather than importing audio/vibration itself.
+ * Both are optional: a Toy mounted bare (e.g. in a unit test) degrades to
+ * silence, matching the utilities' own no-op-where-unsupported behaviour.
  */
 export type ToyProps = {
   onComplete: () => void;
+  sound?: Sound;
+  haptics?: Haptics;
 };
 
 /**

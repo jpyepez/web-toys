@@ -55,11 +55,15 @@ function Sheep({ index, done, onTap }: { index: number; done: boolean; onTap: ()
  * Counting Sheep: a meadow of tappable Sheep. Tapping a Sheep counts it; once
  * every Sheep is counted the Goal is met and the Toy signals the Shell.
  */
-export function CountingSheep({ onComplete }: ToyProps) {
+export function CountingSheep({ onComplete, sound, haptics }: ToyProps) {
   const [done, setDone] = useState<Set<number>>(new Set());
   const completed = useRef(false);
 
   const handleTap = (index: number) => {
+    // Every tap gets playful feedback — a baa and a tactile tick — whether or
+    // not it counts a new Sheep (re-taps stay friendly, no penalty).
+    sound?.baa();
+    haptics?.tick();
     setDone((prev) => {
       if (prev.has(index)) return prev;
       const next = new Set(prev);
