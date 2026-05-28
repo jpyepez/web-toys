@@ -36,10 +36,11 @@ export function createAppRouter(toys: ToyEntry[], options: AppRouterOptions = {}
   const rootRoute = createRootRoute({
     // The mute toggle lives at the root so it's part of the Shell chrome on
     // both the launcher and a mounted Toy — a single always-visible control.
-    // The root frame insets content out of iOS standalone unsafe areas so chrome
-    // (mute, Home, Completion) is never clipped under the notch / home indicator.
+    // The `shell-frame` class carries the safe-area inset padding (see shell.css)
+    // so iOS standalone chrome is never clipped under the notch or behind the
+    // home indicator. Real-browser-only; on-device validation per slice #07.
     component: () => (
-      <div data-testid="shell-root" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+      <div className="shell-frame">
         <MuteToggle sound={sound} />
         <Outlet />
       </div>
