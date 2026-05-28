@@ -170,6 +170,19 @@ describe('sound utility', () => {
     expect(second.isMuted()).toBe(true);
   });
 
+  it('un-persists the preference when toggled back off (no stale stored mute)', () => {
+    // Start with a stored muted preference (a prior session). Toggling off in
+    // this session must clear it, so the *next* session starts unmuted.
+    const storage = fakeStorage(new Map([['web-toys:muted', '1']]));
+    const ctx = fakeContext('running');
+
+    const first = createSound({ contextFactory: () => ctx as unknown as AudioContext, storage });
+    first.setMuted(false);
+
+    const second = createSound({ contextFactory: () => ctx as unknown as AudioContext, storage });
+    expect(second.isMuted()).toBe(false);
+  });
+
   it('restores sound when mute is toggled back off', () => {
     const ctx = fakeContext('running');
     const sound = createSound({ contextFactory: () => ctx as unknown as AudioContext });
