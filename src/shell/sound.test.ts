@@ -21,6 +21,26 @@ function fakeOscillator() {
   };
 }
 
+/** A minimal Storage shim backed by a Map — the persistence boundary in tests. */
+function fakeStorage(backing: Map<string, string> = new Map()): Storage {
+  return {
+    get length() {
+      return backing.size;
+    },
+    key: (i: number) => Array.from(backing.keys())[i] ?? null,
+    getItem: (k: string) => backing.get(k) ?? null,
+    setItem: (k: string, v: string) => {
+      backing.set(k, v);
+    },
+    removeItem: (k: string) => {
+      backing.delete(k);
+    },
+    clear: () => {
+      backing.clear();
+    },
+  };
+}
+
 /** A light Web Audio harness shim: a fake context observable in tests. */
 function fakeContext(state: AudioContextState = 'suspended') {
   const oscillators: ReturnType<typeof fakeOscillator>[] = [];
@@ -106,6 +126,21 @@ describe('sound utility', () => {
     sound.celebrate();
 
     // Completion's celebratory sound must be muted just like a baa.
+    expect(ctx.createOscillator).not.toHaveBeenCalled();
+  });
+
+  it('restores a stored muted preference on creation (across reloads)', () => {
+    // Simulate a reload where the user previously muted: localStorage has the flag set.
+    const storage = new Map<string, string>([['web-toys:muted', '1']]);
+    const ctx = fakeContext('running');
+    const sound = createSound({
+      contextFactory: () => ctx as unknown as AudioContext,
+      storage: fakeStorage(storage),
+    });
+
+    // No setMuted call here — the preference came back from storage.
+    expect(sound.isMuted()).toBe(true);
+    sound.baa();
     expect(ctx.createOscillator).not.toHaveBeenCalled();
   });
 
