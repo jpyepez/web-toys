@@ -97,4 +97,15 @@ describe('sound utility', () => {
     // The observable proxy for "no sound": no oscillator was ever started.
     expect(ctx.createOscillator).not.toHaveBeenCalled();
   });
+
+  it('is silenced when muted — celebrate plays no flourish', () => {
+    const ctx = fakeContext('running');
+    const sound = createSound({ contextFactory: () => ctx as unknown as AudioContext });
+
+    sound.setMuted(true);
+    sound.celebrate();
+
+    // Completion's celebratory sound must be muted just like a baa.
+    expect(ctx.createOscillator).not.toHaveBeenCalled();
+  });
 });
