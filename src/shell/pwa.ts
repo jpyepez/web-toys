@@ -13,4 +13,14 @@ export const pwaManifest: Partial<ManifestOptions> = {
   // 'standalone' = the installed app launches without browser chrome
   // (address bar, tabs), as if it were a native app on the home screen.
   display: 'standalone',
+  icons: [
+    {
+      // The code-drawn SVG is emitted to /icon.svg by the build (see vite.config).
+      // sizes: 'any' tells Chrome the SVG is scalable to any size.
+      src: '/icon.svg',
+      type: 'image/svg+xml',
+      sizes: 'any',
+      purpose: 'any',
+    },
+  ],
 };
