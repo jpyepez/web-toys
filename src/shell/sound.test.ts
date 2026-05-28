@@ -86,4 +86,15 @@ describe('sound utility', () => {
       expect(osc.start).toHaveBeenCalled();
     }
   });
+
+  it('is silenced when muted — a baa starts no tone on the audio context', () => {
+    const ctx = fakeContext('running');
+    const sound = createSound({ contextFactory: () => ctx as unknown as AudioContext });
+
+    sound.setMuted(true);
+    sound.baa();
+
+    // The observable proxy for "no sound": no oscillator was ever started.
+    expect(ctx.createOscillator).not.toHaveBeenCalled();
+  });
 });

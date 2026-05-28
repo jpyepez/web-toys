@@ -1,7 +1,7 @@
 ---
 slice: 6
 title: Mute toggle persisted to localStorage
-status: ready
+status: in-progress
 type: afk
 blocked_by: [5]
 parent_prd: shell-counting-sheep
