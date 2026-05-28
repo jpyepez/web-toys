@@ -8,7 +8,13 @@ import type { Haptics } from './haptics';
 import { registry } from '../toys/registry';
 
 function fakeSound(): Sound {
-  return { unlock: vi.fn(), baa: vi.fn(), celebrate: vi.fn() };
+  return {
+    unlock: vi.fn(),
+    baa: vi.fn(),
+    celebrate: vi.fn(),
+    isMuted: vi.fn(() => false),
+    setMuted: vi.fn(),
+  };
 }
 
 function renderAppAt(

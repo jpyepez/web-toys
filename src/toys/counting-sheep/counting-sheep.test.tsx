@@ -58,7 +58,13 @@ describe('Counting Sheep', () => {
 
   it('plays a baa and a haptic tick when a sheep is tapped', async () => {
     const user = userEvent.setup();
-    const sound = { unlock: vi.fn(), baa: vi.fn(), celebrate: vi.fn() };
+    const sound = {
+      unlock: vi.fn(),
+      baa: vi.fn(),
+      celebrate: vi.fn(),
+      isMuted: vi.fn(() => false),
+      setMuted: vi.fn(),
+    };
     const haptics = { tick: vi.fn() };
     render(<CountingSheep onComplete={vi.fn()} sound={sound} haptics={haptics} />);
 
