@@ -6,6 +6,15 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no"
     />
+    <!-- iOS reads apple-touch-icon from <head>, not from the web app manifest.
+         This PNG is rasterised at build time from the same SVG source as the
+         manifest's /icon.svg entry (see vite.config codegenPwaIcons + slice #07). -->
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <!-- Lets iOS launch the site as a standalone PWA when added to the home screen. -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Toys" />
+    <meta name="theme-color" content="#a7d4ff" />
     <title>web-toys</title>
   </head>
   <body>
