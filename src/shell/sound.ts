@@ -101,6 +101,7 @@ export function createSound({ contextFactory = defaultContextFactory }: SoundOpt
       playVoice(c, { type: 'sawtooth', at: 0, freq: 380, bendTo: 300, bendOver: 0.18, peak: 0.3, decay: 0.25 });
     },
     celebrate() {
+      if (muted) return;
       const c = context();
       if (!c) return;
       // An ascending major arpeggio (C5–E5–G5–C6) — a quick "ta-da!" flourish.
