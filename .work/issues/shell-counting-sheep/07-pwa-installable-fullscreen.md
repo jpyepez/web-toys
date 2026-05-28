@@ -1,7 +1,7 @@
 ---
 slice: 7
 title: PWA — installable, full-screen standalone
-status: ready
+status: in-progress
 type: hitl
 blocked_by: [1]
 parent_prd: shell-counting-sheep
@@ -44,3 +44,14 @@ End-to-end: build config → manifest + service worker → installable, standalo
 - On-device validation (not unit-asserted, per PRD Further Notes): iOS PWA standalone
   safe-area insets, and the hardware silent switch's effect on Web Audio.
 - Only depends structurally on the scaffold (#1).
+
+### HITL decisions (recorded during /test-drive)
+
+- **Icon strategy:** SVG manifest icon + a build-emitted PNG `apple-touch-icon` rasterised
+  from the same SVG at build time. The PNG is a build artifact of code, not an authored
+  binary asset — consistent with ADR-0002's spirit. Amend ADR-0002 with a one-line
+  carve-out: "build-emitted rasters of code-drawn SVG are permitted for PWA install icons".
+- **iOS validation:** manual on-device checklist, not blocking on `done`. Implement
+  manifest + service worker + safe-area CSS in this slice; record the device check
+  (install on iOS → standalone launch → safe-area inset visual → silent-switch behaviour)
+  as a follow-up. The PRD's Further Notes already places these outside unit-asserted scope.
