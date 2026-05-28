@@ -1,7 +1,7 @@
 ---
 slice: 6
 title: Mute toggle persisted to localStorage
-status: in-progress
+status: done
 type: afk
 blocked_by: [5]
 parent_prd: shell-counting-sheep
@@ -22,11 +22,11 @@ restored on load.
 
 ## Acceptance criteria
 
-- [ ] Toggling mute on silences all synthesized sound (baa + completion); toggling off
+- [x] Toggling mute on silences all synthesized sound (baa + completion); toggling off
       restores it.
-- [ ] The mute state persists across a reload (written to and read from localStorage).
-- [ ] On first load with no stored preference, the app starts unmuted (sound on).
-- [ ] Tests drive the public surface: toggle mute → assert the sound utility is silenced;
+- [x] The mute state persists across a reload (written to and read from localStorage).
+- [x] On first load with no stored preference, the app starts unmuted (sound on).
+- [x] Tests drive the public surface: toggle mute → assert the sound utility is silenced;
       simulate reload with a stored preference → assert it's honored. localStorage is the
       one boundary that may be stubbed.
 
