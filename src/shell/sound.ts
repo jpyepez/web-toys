@@ -136,6 +136,10 @@ export function createSound({
     },
     setMuted(next: boolean) {
       muted = next;
+      // Persist so a reload picks up where we left off. The PRD calls this out
+      // as the *only* persisted client-side state — keep the shape minimal.
+      if (next) storage?.setItem(MUTED_KEY, '1');
+      else storage?.removeItem(MUTED_KEY);
     },
   };
 }
