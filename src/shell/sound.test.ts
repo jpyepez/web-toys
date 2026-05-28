@@ -129,6 +129,19 @@ describe('sound utility', () => {
     expect(ctx.createOscillator).not.toHaveBeenCalled();
   });
 
+  it('starts unmuted on first load with no stored preference', () => {
+    // Empty storage = first launch on this device. Sound must be on.
+    const ctx = fakeContext('running');
+    const sound = createSound({
+      contextFactory: () => ctx as unknown as AudioContext,
+      storage: fakeStorage(),
+    });
+
+    expect(sound.isMuted()).toBe(false);
+    sound.baa();
+    expect(ctx.createOscillator).toHaveBeenCalled();
+  });
+
   it('restores a stored muted preference on creation (across reloads)', () => {
     // Simulate a reload where the user previously muted: localStorage has the flag set.
     const storage = new Map<string, string>([['web-toys:muted', '1']]);
