@@ -11,6 +11,7 @@ import { Home } from './Home';
 import { ToyHost } from './ToyHost';
 import { createSound, type Sound } from './sound';
 import { createHaptics, type Haptics } from './haptics';
+import { MuteToggle } from './MuteToggle';
 
 type AppRouterOptions = {
   /** Injectable history — tests pass a memory history; the app uses the default. */
@@ -33,7 +34,14 @@ export function createAppRouter(toys: ToyEntry[], options: AppRouterOptions = {}
   const haptics = options.haptics ?? createHaptics();
 
   const rootRoute = createRootRoute({
-    component: () => <Outlet />,
+    // The mute toggle lives at the root so it's part of the Shell chrome on
+    // both the launcher and a mounted Toy — a single always-visible control.
+    component: () => (
+      <>
+        <MuteToggle sound={sound} />
+        <Outlet />
+      </>
+    ),
   });
 
   const homeRoute = createRoute({
