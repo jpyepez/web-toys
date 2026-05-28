@@ -43,6 +43,14 @@ contract between Shell and Toy.
 A tappable character in a Toy (fish, sheep, etc.), drawn from code SVG primitives — never
 an image. Tapping a Critter is the core interaction.
 
+**Outro**:
+A Toy's choreographed end-beat after its Goal is met — the Toy keeps rendering its
+world during the Shell's celebration overlay (confetti, sound) and plays a brief
+Toy-specific animation (e.g. Sheep lining up and jumping). Optional — a Toy that
+doesn't react to goal-met just renders its final frame underneath the overlay.
+See the ADR-0001 amendment for the layered-concurrent rule.
+_Avoid_: end animation, finale, outro animation (redundant)
+
 **Code-generated assets**:
 Project-wide stance that all visuals are code-drawn SVG and all sound is synthesized at
 runtime (Web Audio / Tone.js) — there are no binary assets. See
@@ -52,7 +60,8 @@ runtime (Web Audio / Tone.js) — there are no binary assets. See
 
 - The **home screen** shows one **Card** per **Toy**
 - A **Toy** contains exactly one **Goal**
-- Achieving a **Goal** triggers **Completion**
+- Achieving a **Goal** triggers the Toy's **Outro** and the Shell's **Completion**
+  overlay simultaneously; the Toy stays mounted through both
 - **Completion** is always a success state — there is no failure path
 - The **Shell** wraps every **Toy**; a Toy signals the Shell only via **onComplete**
 - A **Toy** is always exitable mid-play via an always-visible Home control — no gate, no
