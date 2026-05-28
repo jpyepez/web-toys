@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createSound } from './sound';
+import { fakeStorage } from '../test/fakes';
 
 /** A fake audio param supporting the envelope-scheduling methods we use. */
 function fakeParam() {
@@ -18,26 +19,6 @@ function fakeOscillator() {
     connect: vi.fn(),
     start: vi.fn(),
     stop: vi.fn(),
-  };
-}
-
-/** A minimal Storage shim backed by a Map — the persistence boundary in tests. */
-function fakeStorage(backing: Map<string, string> = new Map()): Storage {
-  return {
-    get length() {
-      return backing.size;
-    },
-    key: (i: number) => Array.from(backing.keys())[i] ?? null,
-    getItem: (k: string) => backing.get(k) ?? null,
-    setItem: (k: string, v: string) => {
-      backing.set(k, v);
-    },
-    removeItem: (k: string) => {
-      backing.delete(k);
-    },
-    clear: () => {
-      backing.clear();
-    },
   };
 }
 

@@ -5,26 +5,7 @@ import { RouterProvider, createMemoryHistory } from '@tanstack/react-router';
 import { createAppRouter } from './createAppRouter';
 import { createSound, type Sound } from './sound';
 import { registry } from '../toys/registry';
-
-/** Minimal Storage shim — the persistence boundary in tests. */
-function fakeStorage(backing: Map<string, string> = new Map()): Storage {
-  return {
-    get length() {
-      return backing.size;
-    },
-    key: (i: number) => Array.from(backing.keys())[i] ?? null,
-    getItem: (k: string) => backing.get(k) ?? null,
-    setItem: (k: string, v: string) => {
-      backing.set(k, v);
-    },
-    removeItem: (k: string) => {
-      backing.delete(k);
-    },
-    clear: () => {
-      backing.clear();
-    },
-  };
-}
+import { fakeStorage } from '../test/fakes';
 
 function fakeSound(): Sound {
   // The mute toggle reads isMuted() to render its label, and writes through
