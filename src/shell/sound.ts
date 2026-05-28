@@ -11,6 +11,10 @@ export type Sound = {
   baa(): void;
   /** A celebratory flourish for Completion. */
   celebrate(): void;
+  /** Whether sound is currently silenced. */
+  isMuted(): boolean;
+  /** Silence (or restore) all sound. Persisted across sessions. */
+  setMuted(muted: boolean): void;
 };
 
 /** Produces the audio context, or `undefined` where Web Audio is unavailable. */
@@ -74,6 +78,7 @@ export function createSound({ contextFactory = defaultContextFactory }: SoundOpt
   // a pre-gesture context starts suspended anyway).
   let ctx: AudioContext | undefined;
   let created = false;
+  let muted = false;
 
   const context = (): AudioContext | undefined => {
     if (!created) {
@@ -89,6 +94,7 @@ export function createSound({ contextFactory = defaultContextFactory }: SoundOpt
       if (c && c.state === 'suspended') c.resume();
     },
     baa() {
+      if (muted) return;
       const c = context();
       if (!c) return;
       // A short bleat: a downward pitch bend over a quick attack/decay.
@@ -103,6 +109,12 @@ export function createSound({ contextFactory = defaultContextFactory }: SoundOpt
       notes.forEach((freq, i) => {
         playVoice(c, { type: 'triangle', at: i * step, freq, peak: 0.25, decay: 0.3 });
       });
+    },
+    isMuted() {
+      return muted;
+    },
+    setMuted(next: boolean) {
+      muted = next;
     },
   };
 }
