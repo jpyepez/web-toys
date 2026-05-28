@@ -108,4 +108,16 @@ describe('sound utility', () => {
     // Completion's celebratory sound must be muted just like a baa.
     expect(ctx.createOscillator).not.toHaveBeenCalled();
   });
+
+  it('restores sound when mute is toggled back off', () => {
+    const ctx = fakeContext('running');
+    const sound = createSound({ contextFactory: () => ctx as unknown as AudioContext });
+
+    sound.setMuted(true);
+    sound.setMuted(false);
+    sound.baa();
+
+    // After un-muting, the next baa plays normally — a tone is started.
+    expect(ctx.createOscillator).toHaveBeenCalled();
+  });
 });
