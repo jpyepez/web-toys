@@ -27,5 +27,5 @@ Package manager is **Bun** (use `bun install`, not npm/pnpm/yarn).
 ## Reference docs (`.work/`, load on demand)
 IMPORTANT: before writing or changing Shell or Toy code, read `.work/CONTEXT.md` for the
 domain vocabulary (use Toy / Goal / Completion / Card / Critter — not game / score / level)
-and skim `.work/adr/` for the reasoning behind the rules above. Rejected features:
-`.work/out-of-scope/`. PRDs and work items live elsewhere in `.work/`.
+and skim `.work/adr/` for the architectural decisions and gotchas behind the rules above
+(e.g. the audio + test-harness constraints in ADR-0003). Rejected features: `.work/out-of-scope/`.
