@@ -23,7 +23,22 @@ type AudioContextFactory = () => AudioContext | undefined;
 type SoundOptions = {
   /** The Web Audio boundary — injected as a light shim in tests. */
   contextFactory?: AudioContextFactory;
+  /** The persistence boundary for the mute preference — defaults to `localStorage`. */
+  storage?: Storage;
 };
+
+/** localStorage key holding the mute preference. Value `'1'` = muted; absent = unmuted. */
+const MUTED_KEY = 'web-toys:muted';
+
+/** The platform localStorage when present (defended for jsdom/SSR), else `undefined`. */
+function defaultStorage(): Storage | undefined {
+  if (typeof window === 'undefined') return undefined;
+  try {
+    return window.localStorage;
+  } catch {
+    return undefined;
+  }
+}
 
 /** One synthesized note: an oscillator shaped by a quick attack/decay envelope. */
 type Voice = {
@@ -73,12 +88,17 @@ function defaultContextFactory(): AudioContext | undefined {
   return Ctor ? new Ctor() : undefined;
 }
 
-export function createSound({ contextFactory = defaultContextFactory }: SoundOptions = {}): Sound {
+export function createSound({
+  contextFactory = defaultContextFactory,
+  storage = defaultStorage(),
+}: SoundOptions = {}): Sound {
   // Created lazily on the unlocking gesture — never before (browsers warn, and
   // a pre-gesture context starts suspended anyway).
   let ctx: AudioContext | undefined;
   let created = false;
-  let muted = false;
+  // Restore the mute preference at construction so a reload picks up where we
+  // left off — the slice's "persists across reloads" criterion.
+  let muted = storage?.getItem(MUTED_KEY) === '1';
 
   const context = (): AudioContext | undefined => {
     if (!created) {
