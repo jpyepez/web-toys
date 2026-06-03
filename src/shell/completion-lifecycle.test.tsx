@@ -1,10 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { RouterProvider, createMemoryHistory } from '@tanstack/react-router';
 import { createAppRouter } from './createAppRouter';
 import type { ToyEntry } from './registry';
-import { registry } from '../toys/registry';
 
 /** A stand-in Toy: a real component whose only interaction fires onComplete. */
 const finishableToy: ToyEntry = {
@@ -35,22 +34,25 @@ describe('Shell Completion lifecycle', () => {
     expect(await screen.findByText('You did it!')).toBeInTheDocument();
   });
 
-  it('reveals the end state (Play again / Home) only after the celebration beat', async () => {
+  it('shows the end state (Play again / Home) from the moment the celebration mounts', async () => {
+    // The polish PRD slice #06 delay (`CELEBRATION_MS = 2200`) retired during
+    // the mobile-rethink PRD's on-device kid-handoff DoD — its load-bearing
+    // justification was "cover the slice #05 Toy-side group-Outro
+    // choreography", and the mobile-rethink PRD explicitly retired that
+    // group-Outro in favour of the per-Sheep exit. The end-state controls
+    // now render from Completion's mount; the Confetti burst plays alongside
+    // them. Scoped to `end-state` so we don't collide with the chrome Home
+    // pill that stays visible during the celebration (layered-concurrent
+    // contract — ADR-0001 amendment).
     const user = userEvent.setup();
     renderAppAt([finishableToy], '/toy/finishable');
 
     await user.click(await screen.findByRole('button', { name: 'finish' }));
 
-    // Celebration is up, but the end-state controls have not arrived yet.
     await screen.findByText('You did it!');
-    expect(screen.queryByRole('button', { name: 'Play again' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Home' })).toBeNull();
-
-    // After the beat, the end state offers Play again and Home.
-    expect(
-      await screen.findByRole('button', { name: 'Play again' }, { timeout: 2000 }),
-    ).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Home' })).toBeInTheDocument();
+    const endState = await screen.findByTestId('end-state');
+    expect(within(endState).getByRole('button', { name: 'Play again' })).toBeInTheDocument();
+    expect(within(endState).getByRole('button', { name: 'Home' })).toBeInTheDocument();
   });
 
   it('returns to the launcher when Home is tapped from the end state', async () => {
@@ -58,39 +60,37 @@ describe('Shell Completion lifecycle', () => {
     renderAppAt([finishableToy], '/toy/finishable');
 
     await user.click(await screen.findByRole('button', { name: 'finish' }));
-    await user.click(
-      await screen.findByRole('button', { name: 'Home' }, { timeout: 2000 }),
-    );
+    const endState = await screen.findByTestId('end-state', undefined, { timeout: 3000 });
+    await user.click(within(endState).getByRole('button', { name: 'Home' }));
 
     // The launcher is back: the Toy's Card is shown and the Completion is gone.
     expect(await screen.findByRole('link', { name: 'Finishable' })).toBeInTheDocument();
     expect(screen.queryByText('You did it!')).toBeNull();
   });
 
-  it('resets Counting Sheep on Play again — all sheep tappable, Goal re-reachable', async () => {
+  it('resets the Toy on Play again — Goal re-reachable from a fresh start', async () => {
+    // Shell behaviour: tapping Play again bumps the `playId` key in
+    // ToyHost, which forces a fresh Toy mount (any mid-Goal state thrown
+    // away). The mobile-rethink Counting Sheep mechanic makes driving 5
+    // taps to Completion a multi-second fake-timer walk; the Shell's
+    // reset responsibility is Counting-Sheep-agnostic, so this test uses
+    // `finishableToy` to assert the contract directly. Counting Sheep's
+    // own reset (loop back to the first arriving Sheep) is covered by
+    // the home-control re-entry test, which exercises the equivalent
+    // route-driven remount.
     const user = userEvent.setup();
-    renderAppAt(registry, '/toy/counting-sheep');
+    renderAppAt([finishableToy], '/toy/finishable');
 
-    // Reach the Goal: tap all five sheep.
-    for (const sheep of await screen.findAllByRole('button', { name: /Sheep \d/ })) {
-      await user.click(sheep);
-    }
+    // Reach the Goal.
+    await user.click(await screen.findByRole('button', { name: 'finish' }));
+    const endState = await screen.findByTestId('end-state', undefined, { timeout: 3000 });
+    await user.click(within(endState).getByRole('button', { name: 'Play again' }));
 
-    await user.click(
-      await screen.findByRole('button', { name: 'Play again' }, { timeout: 2000 }),
-    );
-
-    // Fresh meadow: five sheep, every one un-done again.
-    const replayed = await screen.findAllByRole('button', { name: /Sheep \d/ });
-    expect(replayed).toHaveLength(5);
-    for (const sheep of replayed) {
-      expect(sheep).toHaveAttribute('aria-pressed', 'false');
-    }
-
-    // The Goal can be reached again, firing onComplete a second time.
-    for (const sheep of replayed) {
-      await user.click(sheep);
-    }
+    // After Play again, the Toy is mounted fresh and the Goal can be reached
+    // again — `onComplete` fires a second time, summoning a second
+    // celebration overlay.
+    expect(screen.queryByText('You did it!')).toBeNull();
+    await user.click(await screen.findByRole('button', { name: 'finish' }));
     expect(await screen.findByText('You did it!')).toBeInTheDocument();
   });
 
@@ -104,6 +104,13 @@ describe('Shell Completion lifecycle', () => {
     expect(burst).toBeInTheDocument();
     expect(document.querySelectorAll('img')).toHaveLength(0);
   });
+
+  // The polish PRD slice #06 "celebration beat covers ~2200ms" test retires
+  // with the delay itself. Its load-bearing rule ("end state hidden until
+  // the Toy-side Outro plays") binds to a feature (the slice #05 group-Outro)
+  // that the mobile-rethink PRD explicitly retired. The end-state-from-mount
+  // contract is asserted by the rewritten test above; pinning a specific
+  // delay-shape any further would re-couple to a retired feature.
 
   it('never reaches the end state without onComplete — no timer or fail path', async () => {
     renderAppAt([finishableToy], '/toy/finishable');

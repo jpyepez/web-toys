@@ -88,6 +88,31 @@ describe('sound utility', () => {
     }
   });
 
+  it('layers a sustained low pad note under the celebratory arpeggio (warm bloom)', () => {
+    // Slice #06 — restyled celebrate. The arpeggio (4 notes) keeps its register,
+    // and a single low sustained pad note is added underneath for warmth. The
+    // pad's audible quality is on-device; here we pin the *structural* change:
+    // one additional voice, distinguishable as the pad because its frequency
+    // sits well below the arpeggio (whose lowest note is C5, 523.25Hz). The
+    // discriminator is the frequency the engine asks the oscillator to hold,
+    // observed at the Web Audio boundary the engine already commits through.
+    const ctx = fakeContext('running');
+    const sound = createSound({ contextFactory: () => ctx as unknown as AudioContext });
+
+    sound.celebrate();
+
+    // Five voices: 4 arpeggio + 1 pad. The arpeggio's voice count is the
+    // shape of "ta-da" the original test pinned; the +1 is the new bloom.
+    expect(ctx.oscillators).toHaveLength(5);
+
+    // At least one of those voices sits in the pad register — under 250Hz,
+    // a comfortable gap below the lowest arpeggio note (C5 = 523Hz).
+    const padFrequencies = ctx.oscillators
+      .flatMap((o) => o.frequency.setValueAtTime.mock.calls.map((c) => c[0] as number))
+      .filter((f) => f < 250);
+    expect(padFrequencies.length).toBeGreaterThan(0);
+  });
+
   it('is silenced when muted — a baa starts no tone on the audio context', () => {
     const ctx = fakeContext('running');
     const sound = createSound({ contextFactory: () => ctx as unknown as AudioContext });

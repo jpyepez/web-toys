@@ -18,8 +18,9 @@ describe('Always-visible Home control', () => {
   it('shows a Home control while a Toy is mounted and playing', async () => {
     renderAppAt(registry, '/toy/counting-sheep');
 
-    // The Toy is in play (its Sheep are on screen)...
-    expect(await screen.findAllByRole('button', { name: /Sheep \d/ })).toHaveLength(5);
+    // The Toy is in play (its current Sheep is on stage — one at a time
+    // under the mobile-rethink mechanic, PRD slice #01)...
+    expect(await screen.findByRole('button', { name: 'Sheep' })).toBeInTheDocument();
     // ...and the Shell offers an always-visible way out, mid-play.
     expect(screen.getByRole('button', { name: 'Home' })).toBeInTheDocument();
   });
@@ -38,24 +39,25 @@ describe('Always-visible Home control', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
-  it('re-entering the Toy after a mid-play exit starts fresh — no carried-over done Sheep', async () => {
+  it('re-entering the Toy after a mid-play exit starts fresh — no carried-over loop state', async () => {
+    // The Shell behaviour under test: navigating Home then back to the Toy
+    // remounts it. Under the mobile-rethink mechanic that "fresh" looks like
+    // a fresh single Sheep arriving (no carried-over dismiss counter, no
+    // mid-dismiss state), and the Shell's celebration overlay isn't present
+    // either (re-entry isn't a Completion).
     const user = userEvent.setup();
     renderAppAt(registry, '/toy/counting-sheep');
 
-    // Partway through play: count a couple of Sheep, then bail out mid-play.
-    const sheep = await screen.findAllByRole('button', { name: /Sheep \d/ });
-    await user.click(sheep[0]);
-    await user.click(sheep[1]);
-    expect(sheep[0]).toHaveAttribute('aria-pressed', 'true');
+    // Mid-play: tap the current Sheep (drives it into dismissing).
+    await user.click(await screen.findByRole('button', { name: 'Sheep' }));
 
+    // Bail to launcher and back to the Toy.
     await user.click(screen.getByRole('button', { name: 'Home' }));
     await user.click(await screen.findByRole('link', { name: 'Counting Sheep' }));
 
-    // Re-entry is free: a fresh meadow, every Sheep un-done again.
-    const replayed = await screen.findAllByRole('button', { name: /Sheep \d/ });
-    expect(replayed).toHaveLength(5);
-    for (const s of replayed) {
-      expect(s).toHaveAttribute('aria-pressed', 'false');
-    }
+    // Re-entry is free: a fresh Sheep is on stage and there's no leftover
+    // Completion overlay from before.
+    expect(await screen.findByRole('button', { name: 'Sheep' })).toBeInTheDocument();
+    expect(screen.queryByText('You did it!')).toBeNull();
   });
 });

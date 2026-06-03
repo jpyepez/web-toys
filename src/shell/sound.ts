@@ -124,12 +124,18 @@ export function createSound({
       if (muted) return;
       const c = context();
       if (!c) return;
-      // An ascending major arpeggio (C5–E5–G5–C6) — a quick "ta-da!" flourish.
+      // Ascending major arpeggio (C5–E5–G5–C6) — the "ta-da" the original
+      // celebrate shipped. Per-note decay grows to ~0.6s so each note blooms
+      // and overlaps the next instead of clipping (slice #06 — restyle).
       const notes = [523.25, 659.25, 783.99, 1046.5];
       const step = 0.12;
       notes.forEach((freq, i) => {
-        playVoice(c, { type: 'triangle', at: i * step, freq, peak: 0.25, decay: 0.3 });
+        playVoice(c, { type: 'triangle', at: i * step, freq, peak: 0.22, decay: 0.6 });
       });
+      // One low sustained pad note (C3 = 130.81Hz) underneath — gives the
+      // arpeggio a warm harmonic bed rather than landing dry. Sine voice,
+      // low peak, long decay covers the full arpeggio window.
+      playVoice(c, { type: 'sine', at: 0, freq: 130.81, peak: 0.12, decay: 1.4 });
     },
     isMuted() {
       return muted;

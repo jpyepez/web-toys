@@ -1,3 +1,16 @@
+/* Page reset — the browser default `body { margin: 8px }` makes the Shell
+ * frame sit 8px short of the viewport on each side, which is invisible on
+ * the Toy (the meadow backdrop uses `position: fixed; width: 100vw` and
+ * paints under the body margin anyway) but pushes the Home Card off-centre
+ * (the Card is normal-flow, so it's only as wide as `.shell-frame`). Zero
+ * the body margin so every Shell surface lines up with the viewport edge,
+ * and only `.shell-frame`'s own `env(safe-area-inset-*)` padding governs
+ * how far chrome inset from the device chrome.
+ */
+body {
+  margin: 0;
+}
+
 /* The Shell frame.
  *
  * Insets all four sides by the device's safe-area inset values so iOS standalone
@@ -13,4 +26,32 @@
   padding-left: env(safe-area-inset-left);
   box-sizing: border-box;
   min-height: 100dvh;
+  /* Provides the positioning origin for chrome-pill corner controls — they
+   * sit at the *inside* of the safe-area inset rather than at the viewport
+   * edge, so the notch / home indicator never overlap them. */
+  position: relative;
+}
+
+/* Chrome pill positioning.
+ *
+ * The pill *surface* (background, radius, transition) is set inline from the
+ * ChromePill component sourcing the design tokens module; positioning is the
+ * stylesheet's job so the corner inset can use env() (jsdom can't compute
+ * env(), so this is on-device-validated per the slice DoD).
+ *
+ * `position: absolute` against `.shell-frame` parks the pills in the inset
+ * area itself; the 8px breathing room above the inset keeps the pill from
+ * crowding the iOS notch / status bar. */
+.chrome-pill {
+  position: absolute;
+  top: calc(env(safe-area-inset-top) + 8px);
+  z-index: 10;
+}
+
+.chrome-pill--top-right {
+  right: calc(env(safe-area-inset-right) + 8px);
+}
+
+.chrome-pill--top-left {
+  left: calc(env(safe-area-inset-left) + 8px);
 }
