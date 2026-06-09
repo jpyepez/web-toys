@@ -37,7 +37,7 @@ export const pwaIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 
  * authored binary assets in the repo (ADR-0002 spirit).
  */
 export const pwaManifest: Partial<ManifestOptions> = {
-  name: 'web-toys',
+  name: 'Web Toys',
   short_name: 'Toys',
   description: 'Tiny, finite interactive toys for small humans.',
   start_url: '/',
