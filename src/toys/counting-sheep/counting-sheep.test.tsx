@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render } from '@testing-library/react';
 import { CountingSheep } from './CountingSheep';
-import { palette } from '../../shell/tokens';
+import { palette } from './palette';
 
 /**
  * Counting Sheep — backdrop + Sheep-palette tests that survive the

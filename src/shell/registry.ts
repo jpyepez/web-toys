@@ -1,7 +1,6 @@
 import type { ComponentType } from 'react';
 import type { Sound } from './sound';
 import type { Haptics } from './haptics';
-import type { palette } from './tokens';
 
 /**
  * The entire Shell↔Toy contract: a Toy renders its own world and calls
@@ -31,15 +30,17 @@ export type ToyEntry = {
   /** The Toy's self-contained component, mounted inside the Shell frame. */
   component: ComponentType<ToyProps>;
   /**
-   * Optional solid tint painted as the Home Card surface — a key into
-   * the design-tokens palette (e.g. `'sheepWool'`). The per-Toy palette
-   * is registry-driven so future Toys declare their tint here rather
-   * than in the Card or Home code. On-device review in slice #07 moved
-   * this from a gradient mechanism to a solid tint so the small
-   * preview-scene + serif title carry the visual load. Omitted on
-   * synthetic test fixtures; the Card renders without a surface tint.
+   * Optional solid tint painted as the Home Card surface — a concrete CSS
+   * color string (e.g. `'hsl(38 35% 90%)'`). Each Toy supplies its own tint
+   * from its own world rather than a key into a shared palette grab-bag, so
+   * the Card carries no dependency on any one Toy's scene palette (ADR-0004).
+   * The per-Toy tint is registry-driven so future Toys declare it here rather
+   * than in the Card or Home code. On-device review in slice #07 moved this
+   * from a gradient mechanism to a solid tint so the small preview-scene +
+   * title carry the visual load. Omitted on synthetic test fixtures; the Card
+   * renders without a surface tint.
    */
-  tint?: keyof typeof palette;
+  tint?: string;
   /**
    * Optional tiny inline SVG preview-scene the Home Card carries — a small
    * window onto the Toy this Card launches. Drawn from inside each Toy

@@ -1,78 +1,4 @@
 /**
- * Design tokens — the project's single source of truth for the meadow
- * palette. Each entry is a concrete HSL value named for what it paints in
- * the scene (not for its hue), so consumers reference `palette.sheepWool`
- * rather than `'hsl(38 35% 90%)'`.
- *
- * Atmospheric register: **daytime, bright** (pivoted from the polish PRD's
- * original dusk palette + the mobile-rethink PRD's reinforcement of it).
- * On-device review during the kid-handoff DoD surfaced "palette is kinda
- * lame" with a reference image showing a bright sunny meadow — luminous
- * cyan-blue sky, vibrant lime hills, fluffy white clouds, one stylised
- * tree. Both PRDs' dusk intent (skyUpper at 22% lightness, stars + moon,
- * scenery cottage + treeline) reversed under explicit sign-off; reversal
- * recorded in polish PRD slice #03/#07 Notes + mobile-rethink PRD slice
- * #02 Notes. Names are load-bearing; values shifted to a daytime register.
- *
- * Token-name semantics that hold across the reversal:
- *   - `skyUpper` — the sky band, regardless of time-of-day
- *   - `hillNear` / `hillDistant` — the two hill planes, regardless of hue
- *   - `scenery` — warm-brown mid-distance accent (now: tree trunk)
- *   - `sheepWool` / `sheepSilhouette` — sheep + Card-surface family
- *   - `clouds` (new) — cool bright white for the daytime cloud cluster
- *   - `doneGlow` — warm-gold bloom during dismiss (sun-friendly already)
- *
- * Exact tuples remain on-device-tunable per the slice-level DoD.
- */
-export const palette = {
-  /**
-   * Bright cyan-blue daytime sky (pivoted from the dusk 220°/22% value).
-   * Reads as "sunny meadow" against the now-luminous hills + white clouds.
-   * The Sheep + Card surfaces stay in the warm-cream family
-   * (`sheepWool`) — separate register, surface-token not scene-token.
-   */
-  skyUpper: 'hsl(200 65% 70%)',
-  horizonGlow: 'hsl(28 55% 78%)',
-  grassSilhouette: 'hsl(160 18% 22%)',
-  sheepWool: 'hsl(38 35% 90%)',
-  sheepSilhouette: 'hsl(20 25% 22%)',
-  doneGlow: 'hsl(42 95% 72%)',
-  /**
-   * Hill-near is a vibrant lime green (pivoted from the dusk 115°/38%/38%
-   * muted meadow tone). Doubles as the tree-canopy fill — tree canopy
-   * silhouettes against the cooler distant hill behind it, so reusing
-   * `hillNear` for the canopy keeps the tree visually anchored to the
-   * foreground-plane palette family without minting a separate token.
-   *
-   * Hill-distant is a teal-green mid-plane (pivoted from the cool
-   * blue-grey 215°/18%/32%) — still cooler than the foreground hill so
-   * depth holds, but in-family with the new daytime green register
-   * rather than the old dusk blue-grey.
-   *
-   * Scenery is a warm tree-trunk brown — the scenery LAYER concept
-   * (treeline / cottage mid-distance silhouette) retires with this
-   * pivot, but the token itself stays available as the warm-brown
-   * accent (tree trunks here; usable for fences / rooftops in future
-   * Toys). Same retire-but-keep pattern as `grassSilhouette`.
-   *
-   * `grassSilhouette` stays on the palette — kept available for any
-   * future Toy that wants a single-tone grass register.
-   */
-  hillNear: 'hsl(85 70% 55%)',
-  hillDistant: 'hsl(150 45% 50%)',
-  scenery: 'hsl(25 50% 35%)',
-  /**
-   * Cool bright white for the daytime cloud cluster. Separate from
-   * `sheepWool` (which is warm cream, 38°/35%/90%) because the Card +
-   * Completion surfaces consume `sheepWool` and want to stay warm-cream
-   * — only the scene's clouds want the cool-blue-tinted bright white
-   * the reference image shows. Reads as luminous against the cyan sky
-   * without competing with the warm sheep + card register.
-   */
-  clouds: 'hsl(200 40% 97%)',
-} as const;
-
-/**
  * Type stack — rounded sans-serif. Replaces the editorial serif the polish
  * PRD's slice #07 originally pinned ("system serif only"). Reversal recorded
  * in that slice's Notes: the mobile-rethink PRD's on-device kid-handoff DoD
@@ -97,6 +23,53 @@ export const font = {
   rounded:
     "ui-rounded, 'SF Pro Rounded', 'Hiragino Maru Gothic ProN', " +
     "'Arial Rounded MT Bold', 'Arial Rounded MT', system-ui, sans-serif",
+} as const;
+
+/**
+ * Ink — the Shell-owned neutral dark for editorial type on Card surfaces.
+ * The Home Card frames every Toy identically (rounded slab, preview, title),
+ * so the title's type colour is a Shell chrome primitive, not a scene colour
+ * any one Toy owns. Per ADR-0004 it lives here alongside `chrome` / `card`
+ * rather than being borrowed from the meadow palette's `sheepSilhouette`,
+ * which kept the Card coupled to a single Toy's scene. The value sits in the
+ * same warm dark register the Card title used before the move, but pulled
+ * toward neutral (lower saturation than the meadow's warm-brown
+ * `sheepSilhouette`) so it reads as editorial ink rather than a scene tint;
+ * the *name* is load-bearing, the tuple is on-device-tunable per the slice DoD.
+ */
+export const ink = 'hsl(20 14% 20%)';
+
+/**
+ * Completion — the Shell-owned colours for the celebratory end moment (the
+ * "You did it!" card surface, its type/controls, and the Confetti burst).
+ * Completion is owned entirely by the Shell (ADR-0001) and framed identically
+ * for every Toy, so these are cross-Toy Shell primitives — not meadow palette
+ * keys the Completion borrows. Before slice #04 the Completion + Confetti
+ * tinted themselves from the meadow `palette` (`sheepWool` / `sheepSilhouette`
+ * / `horizonGlow` / `doneGlow`); when that palette moved into the Counting
+ * Sheep folder (ADR-0004), the Shell-owned Completion couldn't reach into a
+ * Toy's assets, so the values relocated here under Shell-primitive names. The
+ * move is behaviour-preserving — same HSL tuples, new home + names (same
+ * pattern as `ink` peeling the Card off the meadow palette in slice #02).
+ *
+ *   - `surface` — the cream slab the message + end-state ride (was `sheepWool`),
+ *     also the cream text on the dark primary button.
+ *   - `ink` — the dark editorial type + button fill/border (was
+ *     `sheepSilhouette`). Distinct from the top-level `ink` (a more neutral
+ *     dark for Card titles): this preserves the Completion's exact pre-move
+ *     value; a future slice could unify the two darks if desired.
+ *   - `spark` — the Confetti particle fills, a warm-light family (peachy
+ *     horizon, golden bloom, cream — was `horizonGlow` / `doneGlow` /
+ *     `sheepWool`). Cycled through the burst so it reads as a coherent
+ *     warm wash rather than a single-colour shower.
+ *
+ * Exact tuples are on-device-tunable per the slice DoD; the names are
+ * load-bearing.
+ */
+export const completion = {
+  surface: 'hsl(38 35% 90%)',
+  ink: 'hsl(20 25% 22%)',
+  spark: ['hsl(28 55% 78%)', 'hsl(42 95% 72%)', 'hsl(38 35% 90%)'],
 } as const;
 
 /**
@@ -131,10 +104,10 @@ export const timing = {
 } as const;
 
 /**
- * Chrome surface — the mute toggle and in-Toy Home control. Kept separate
- * from `palette` so the dawn six stay pure to the meadow scene; the chrome
+ * Chrome surface — the mute toggle and in-Toy Home control. A Shell chrome
+ * primitive, independent of any Toy's scene palette (ADR-0004); the chrome
  * pill needs a translucent neutral that reads as low-contrast over any
- * backdrop (today's white meadow, slice #03's dawn wash) without competing
+ * backdrop (today's bright meadow, future Toys' scenes) without competing
  * with the Toy. The radius is generous enough to read as "pill, not button".
  */
 export const chrome = {
@@ -157,4 +130,16 @@ export const card = {
   radius: '24px',
   shadow: '0 12px 28px hsla(220, 30%, 18%, 0.18)',
   tapScale: 0.97,
+  /**
+   * The consistent paper surface every Card's chrome shares — the slab the
+   * title footer rides and the fallback fill behind a Card with no preview.
+   * A Shell chrome primitive (ADR-0004): the Card frames every Toy identically,
+   * so its base surface is Shell-owned, NOT a per-Toy colour. Per-Toy identity
+   * comes from the Toy's `tint` (the preview cover's stage backing) and the
+   * preview scene itself — never from this surface, which stays the same across
+   * the whole collection so the Cards read as one coherent set. A soft warm
+   * near-white so the ink title reads as editorial type and the colourful
+   * preview covers pop against it; on-device-tunable per the slice DoD.
+   */
+  surface: 'hsl(40 30% 97%)',
 } as const;

@@ -1,14 +1,14 @@
 import { motion } from 'motion/react';
-import { palette } from './tokens';
+import { completion } from './tokens';
 
 /**
- * The three warm-light tokens the dawn palette holds — peachy horizon, golden
- * bloom, cream wool. Cycled through the particles so the burst reads as a
- * coherent warm-family wash rather than a single-colour shower. Names are
- * load-bearing; values come from the tokens module per the slice's "no
- * hardcoded colours" rule.
+ * The Shell-owned celebration spark family — peachy horizon, golden bloom,
+ * cream. Cycled through the particles so the burst reads as a coherent
+ * warm-family wash rather than a single-colour shower. Sourced from the
+ * Shell's `completion` tokens (a cross-Toy Completion primitive, ADR-0004) per
+ * the slice's "no hardcoded colours" rule — not from any one Toy's palette.
  */
-const PARTICLE_FILLS = [palette.horizonGlow, palette.doneGlow, palette.sheepWool] as const;
+const PARTICLE_FILLS = completion.spark;
 
 /** Particle count — tuned for "soft warm bloom" rather than "party-popper burst". */
 const PIECES = 8;
@@ -16,7 +16,7 @@ const PIECES = 8;
 /**
  * The Shell's celebratory burst — code-drawn SVG, no image assets (ADR-0002).
  * Slice #06 restyle: ~8 soft warm-light particles drifting upward over a
- * generous beat, fills sourced from the dawn palette tokens, soft blur glow
+ * generous beat, fills sourced from the Shell `completion.spark` tokens, soft blur glow
  * via an SVG filter. Decorative (`aria-hidden`); shared across every Toy's
  * Completion so every future Toy inherits the same aesthetic family.
  *

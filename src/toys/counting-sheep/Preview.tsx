@@ -1,4 +1,4 @@
-import { palette } from '../../shell/tokens';
+import { palette } from './palette';
 
 /**
  * Counting Sheep's tiny SVG preview-scene — the miniature meadow a Home Card

@@ -13,7 +13,7 @@ function fakeSound(): Sound {
   let muted = false;
   return {
     unlock: vi.fn(),
-    baa: vi.fn(),
+    play: vi.fn(),
     celebrate: vi.fn(),
     isMuted: vi.fn(() => muted),
     setMuted: vi.fn((next: boolean) => {
@@ -42,7 +42,7 @@ describe('Shell mute toggle', () => {
     await user.click(screen.getByRole('button', { name: /mute/i }));
 
     // The Shell wrote through to the sound utility — that's the contract the
-    // baa()/celebrate() silencing already covered in the unit tests rides on.
+    // play()/celebrate() silencing already covered in the unit tests rides on.
     expect(sound.setMuted).toHaveBeenCalledWith(true);
   });
 

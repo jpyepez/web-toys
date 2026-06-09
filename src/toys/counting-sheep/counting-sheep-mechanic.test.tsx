@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { CountingSheep } from './CountingSheep';
-import { palette } from '../../shell/tokens';
+import { baa } from './sounds';
+import { palette } from './palette';
 
 /**
  * Counting Sheep — sequential mechanic (mobile-rethink PRD, slice #01).
@@ -258,7 +259,7 @@ describe('Counting Sheep — sequential mechanic', () => {
     assertAtMostOneSheep();
   });
 
-  it('plays a baa and a haptic tick on every tap, even no-op re-taps mid-animation', async () => {
+  it('plays the bleat and a haptic tick on every tap, even no-op re-taps mid-animation', async () => {
     // Regression coverage for the polish PRD's slice-#03 promise — "every
     // tap gets playful feedback, whether or not it counts a new Sheep
     // (re-taps stay friendly, no penalty)." The mobile-rethink PRD doesn't
@@ -267,9 +268,14 @@ describe('Counting Sheep — sequential mechanic', () => {
     // re-tap exercise asserts the friendly-mash guarantee survives the
     // new state-machine guard (the guard prevents the state advance, not
     // the audio feedback).
+    //
+    // The bleat now rides the shared `play(voice)` primitive (ADR-0004): the
+    // Sheep hands the engine its own local `baa` recipe rather than calling a
+    // sheep-specific engine method. The boundary the Toy commits through is
+    // `sound.play`, invoked with the Sheep-local recipe.
     const sound = {
       unlock: vi.fn(),
-      baa: vi.fn(),
+      play: vi.fn(),
       celebrate: vi.fn(),
       isMuted: vi.fn(() => false),
       setMuted: vi.fn(),
@@ -279,13 +285,14 @@ describe('Counting Sheep — sequential mechanic', () => {
 
     // Mid-arriving — re-tap should still play the playful feedback.
     fireEvent.click(screen.getByRole('button', { name: 'Sheep' }));
-    expect(sound.baa).toHaveBeenCalledTimes(1);
+    expect(sound.play).toHaveBeenCalledTimes(1);
+    expect(sound.play).toHaveBeenLastCalledWith(baa);
     expect(haptics.tick).toHaveBeenCalledTimes(1);
 
     // After the entrance beat, the waiting-tap also plays it.
     await vi.runOnlyPendingTimersAsync();
     fireEvent.click(screen.getByRole('button', { name: 'Sheep' }));
-    expect(sound.baa).toHaveBeenCalledTimes(2);
+    expect(sound.play).toHaveBeenCalledTimes(2);
     expect(haptics.tick).toHaveBeenCalledTimes(2);
   });
 

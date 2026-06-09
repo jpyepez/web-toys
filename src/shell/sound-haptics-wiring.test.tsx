@@ -32,7 +32,7 @@ const finishableToy: ToyEntry = {
 function fakeSound(): Sound {
   return {
     unlock: vi.fn(),
-    baa: vi.fn(),
+    play: vi.fn(),
     celebrate: vi.fn(),
     isMuted: vi.fn(() => false),
     setMuted: vi.fn(),
@@ -64,9 +64,10 @@ describe('Shell sound + haptics wiring', () => {
     // disambiguate by index.
     await user.click(await screen.findByRole('button', { name: 'Sheep' }));
 
-    // The Toy never imports audio itself — the baa/tick it produced came from
-    // the utilities the Shell threaded in.
-    expect(sound.baa).toHaveBeenCalled();
+    // The Toy never imports audio itself — the bleat/tick it produced came from
+    // the utilities the Shell threaded in (the Sheep's tap calls sound.play
+    // with its local recipe).
+    expect(sound.play).toHaveBeenCalled();
     expect(haptics.tick).toHaveBeenCalled();
   });
 

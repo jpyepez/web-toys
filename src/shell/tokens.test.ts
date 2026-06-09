@@ -1,55 +1,41 @@
 import { describe, it, expect } from 'vitest';
-import { chrome, font, palette, timing } from './tokens';
+import { chrome, completion, font, ink, timing } from './tokens';
 
-describe('design tokens — palette', () => {
-  it('exposes the meadow palette colours as HSL strings, named for what they paint', () => {
-    // The polish PRD pinned six concrete dusk colours (sky upper, horizon
-    // glow, grass silhouette, sheep wool, sheep silhouette, done-state glow);
-    // mobile-rethink PRD's slice #02 added three more for the layered
-    // backdrop (hill near, hill distant, scenery silhouette). The on-device
-    // kid-handoff DoD then pivoted the atmospheric register from dusk to
-    // daytime, adding `clouds` (cool bright white for the cloud cluster
-    // that replaced the dusk's star scatter + half-moon). Names are
-    // load-bearing through the pivot — the *values* shifted from dusk hues
-    // to daytime hues, but every consumer (`MeadowBackdrop`, sheep recolour,
-    // outro glow, hill silhouettes) still reaches by name. Tuples are
-    // on-device-tuned per the slice DoD. `grassSilhouette` stays on the
-    // list per slice #02 notes — no live consumer, kept for future
-    // single-tone-grass Toys; same retire-but-keep pattern now applies to
-    // `scenery` after the pivot (no live scenery LAYER, but the warm-brown
-    // token still paints tree trunks and is available for future fences /
-    // rooftops).
-    expect(Object.keys(palette).sort()).toEqual(
-      [
-        'clouds',
-        'doneGlow',
-        'grassSilhouette',
-        'hillDistant',
-        'hillNear',
-        'horizonGlow',
-        'scenery',
-        'sheepSilhouette',
-        'sheepWool',
-        'skyUpper',
-      ].sort(),
-    );
-    for (const value of Object.values(palette)) {
-      expect(value).toMatch(/^hsl\(/);
-    }
+describe('design tokens — ink', () => {
+  it('exposes a Shell-owned neutral ink for editorial type', () => {
+    // ADR-0004: shared Shell modules expose cross-Toy primitives; per-Toy
+    // scene colours live with the Toy. The Card title is Shell chrome (it
+    // frames every Toy's Card the same way), so its type colour is a Shell
+    // primitive — `ink` — not a meadow palette key the Card has to borrow.
+    // This peeled the Card off the meadow palette ahead of the palette move
+    // (slice #04), which relocated the meadow palette into the Counting Sheep
+    // folder entirely — so the shared module no longer carries a meadow
+    // palette to assert against here (AC #5). Shape rule: an HSL string; the
+    // exact tuple is on-device-tuned per the slice DoD, so we pin the shape.
+    expect(ink).toMatch(/^hsl\(/);
   });
+});
 
-  it('exposes hillNear, hillDistant, and scenery as HSL strings — the layered-backdrop tokens', () => {
-    // The mobile-rethink PRD's slice #02 introduces a layered flat-colour
-    // meadow: two grass hills (foreground warmer green, distant deeper
-    // blue-grey) and a mid-distance silhouette (treeline or cottage) in a
-    // third token. These three new palette entries are the load-bearing
-    // names every consumer (the rewritten `MeadowBackdrop`, plus any later
-    // Toy that wants the same layered look) reaches for. Exact tuples are
-    // tuned on-device per the slice DoD — the shape rule is just "HSL string",
-    // mirroring the existing six dawn entries.
-    expect(palette.hillNear).toMatch(/^hsl\(/);
-    expect(palette.hillDistant).toMatch(/^hsl\(/);
-    expect(palette.scenery).toMatch(/^hsl\(/);
+describe('design tokens — completion', () => {
+  it('exposes a Shell-owned celebration token group, separate from any Toy palette', () => {
+    // ADR-0004: the Completion flourish (the celebratory end-beat + its
+    // Confetti burst) is owned by the Shell (ADR-0001), so its surface, type,
+    // and particle colours are cross-Toy Shell primitives — not meadow palette
+    // keys the Completion has to borrow. Slice #04 moved the meadow palette
+    // into the Counting Sheep folder; the Shell-owned Completion can't reach
+    // into a Toy's assets, so it sources from this group instead. Same spirit
+    // as `ink` (slice #02) peeling the Card off the meadow palette. Values are
+    // HSL strings, on-device-tunable per the slice DoD — we pin the shape:
+    // a cream `surface`, a dark `ink`, and a non-empty `spark` list of warm
+    // particle fills. `completion` being its own export (not a key on the
+    // meadow `palette`) is the load-bearing "Shell-owned" assertion.
+    expect(completion.surface).toMatch(/^hsl\(/);
+    expect(completion.ink).toMatch(/^hsl\(/);
+    expect(Array.isArray(completion.spark)).toBe(true);
+    expect(completion.spark.length).toBeGreaterThan(0);
+    for (const fill of completion.spark) {
+      expect(fill).toMatch(/^hsl\(/);
+    }
   });
 });
 

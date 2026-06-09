@@ -1,6 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
-import { createSound } from './sound';
+import { createSound, type Voice } from './sound';
 import { fakeStorage } from '../test/fakes';
+
+/** A plain audible tone for tests that only need "some sound started/silenced"
+ *  — the mute and persistence probes don't care about the recipe, just that a
+ *  voice reaches (or doesn't reach) the Web Audio boundary. */
+const PROBE_TONE: Voice = { type: 'sawtooth', freq: 380, peak: 0.3, decay: 0.25 };
 
 /** A fake audio param supporting the envelope-scheduling methods we use. */
 function fakeParam() {
@@ -48,7 +53,6 @@ describe('sound utility', () => {
 
     expect(() => {
       sound.unlock();
-      sound.baa();
       sound.celebrate();
     }).not.toThrow();
   });
@@ -62,16 +66,53 @@ describe('sound utility', () => {
     expect(ctx.resume).toHaveBeenCalled();
   });
 
-  it('plays a baa by starting a tone on the audio context', () => {
+  it('plays a supplied voice by starting a tone on the audio context', () => {
     const ctx = fakeContext('running');
     const sound = createSound({ contextFactory: () => ctx as unknown as AudioContext });
 
-    sound.baa();
+    // The generic synthesis primitive (ADR-0004): a Toy hands the engine a
+    // Voice recipe and the engine starts an enveloped tone at the boundary —
+    // the same observable the old baa() test pinned, now for any recipe.
+    sound.play({ type: 'sawtooth', freq: 380, bendTo: 300, bendOver: 0.18, peak: 0.3, decay: 0.25 });
 
-    // Sound quality is validated by ear (manual); here we pin that a tone was
-    // actually triggered on the Web Audio boundary.
     expect(ctx.createOscillator).toHaveBeenCalled();
     expect(ctx.oscillators[0].start).toHaveBeenCalled();
+  });
+
+  it('no-ops play where Web Audio is unavailable (e.g. jsdom) — no throw', () => {
+    // No window.AudioContext in jsdom: the default factory yields no context,
+    // so play must degrade to silence rather than throw — same inert contract
+    // unlock()/celebrate() honour.
+    const sound = createSound();
+
+    expect(() => {
+      sound.play(PROBE_TONE);
+    }).not.toThrow();
+  });
+
+  it('is silenced when muted — play starts no tone on the audio context', () => {
+    const ctx = fakeContext('running');
+    // Inject fake storage so this test's setMuted doesn't write the mute flag
+    // into jsdom's shared localStorage and silence later default-storage tests.
+    const sound = createSound({
+      contextFactory: () => ctx as unknown as AudioContext,
+      storage: fakeStorage(),
+    });
+
+    sound.setMuted(true);
+    sound.play(PROBE_TONE);
+
+    // Same silencing contract baa() honoured: muted means no oscillator starts.
+    expect(ctx.createOscillator).not.toHaveBeenCalled();
+  });
+
+  it('no longer exposes the sheep-specific baa() — the Sheep owns it now (ADR-0004)', () => {
+    // ADR-0004 narrows the shared engine to cross-Toy primitives only. The
+    // bleat moved into the Counting Sheep folder and rides play(voice); the
+    // shared surface must not carry the Toy-specific method anymore.
+    const sound = createSound();
+
+    expect((sound as Record<string, unknown>).baa).toBeUndefined();
   });
 
   it('plays a celebratory flourish of several tones on the audio context', () => {
@@ -113,17 +154,6 @@ describe('sound utility', () => {
     expect(padFrequencies.length).toBeGreaterThan(0);
   });
 
-  it('is silenced when muted — a baa starts no tone on the audio context', () => {
-    const ctx = fakeContext('running');
-    const sound = createSound({ contextFactory: () => ctx as unknown as AudioContext });
-
-    sound.setMuted(true);
-    sound.baa();
-
-    // The observable proxy for "no sound": no oscillator was ever started.
-    expect(ctx.createOscillator).not.toHaveBeenCalled();
-  });
-
   it('is silenced when muted — celebrate plays no flourish', () => {
     const ctx = fakeContext('running');
     const sound = createSound({ contextFactory: () => ctx as unknown as AudioContext });
@@ -144,7 +174,7 @@ describe('sound utility', () => {
     });
 
     expect(sound.isMuted()).toBe(false);
-    sound.baa();
+    sound.play(PROBE_TONE);
     expect(ctx.createOscillator).toHaveBeenCalled();
   });
 
@@ -159,7 +189,7 @@ describe('sound utility', () => {
 
     // No setMuted call here — the preference came back from storage.
     expect(sound.isMuted()).toBe(true);
-    sound.baa();
+    sound.play(PROBE_TONE);
     expect(ctx.createOscillator).not.toHaveBeenCalled();
   });
 
@@ -195,9 +225,9 @@ describe('sound utility', () => {
 
     sound.setMuted(true);
     sound.setMuted(false);
-    sound.baa();
+    sound.play(PROBE_TONE);
 
-    // After un-muting, the next baa plays normally — a tone is started.
+    // After un-muting, the next sound plays normally — a tone is started.
     expect(ctx.createOscillator).toHaveBeenCalled();
   });
 });

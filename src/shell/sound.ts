@@ -7,8 +7,8 @@
 export type Sound = {
   /** Resume the audio context. Must be called from a user gesture (the Card tap). */
   unlock(): void;
-  /** A short synthesized sheep "baa". */
-  baa(): void;
+  /** Play a Toy-supplied synthesized voice — the generic synthesis primitive. */
+  play(voice: Voice): void;
   /** A celebratory flourish for Completion. */
   celebrate(): void;
   /** Whether sound is currently silenced. */
@@ -40,11 +40,14 @@ function defaultStorage(): Storage | undefined {
   }
 }
 
-/** One synthesized note: an oscillator shaped by a quick attack/decay envelope. */
-type Voice = {
+/** One synthesized note: an oscillator shaped by a quick attack/decay envelope.
+ *  The public synthesis primitive (ADR-0004) — Toys build recipes of this shape
+ *  and hand them to `play(voice)`; they never touch Web Audio directly (ADR-0003). */
+export type Voice = {
   type: OscillatorType;
-  /** Seconds from `context.currentTime` that the note begins. */
-  at: number;
+  /** Seconds from `context.currentTime` that the note begins. Defaults to 0 —
+   *  single-shot Toy recipes omit it; `celebrate()` uses it to stagger notes. */
+  at?: number;
   freq: number;
   /** Optional pitch glide to `bendTo`, reached `bendOver` seconds after the start. */
   bendTo?: number;
@@ -60,7 +63,7 @@ const ATTACK = 0.02;
 
 /** Play a single enveloped tone on the context. The shared shape behind every sound. */
 function playVoice(ctx: AudioContext, v: Voice): void {
-  const t = ctx.currentTime + v.at;
+  const t = ctx.currentTime + (v.at ?? 0);
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
   osc.connect(gain);
@@ -113,12 +116,11 @@ export function createSound({
       const c = context();
       if (c && c.state === 'suspended') c.resume();
     },
-    baa() {
+    play(voice: Voice) {
       if (muted) return;
       const c = context();
       if (!c) return;
-      // A short bleat: a downward pitch bend over a quick attack/decay.
-      playVoice(c, { type: 'sawtooth', at: 0, freq: 380, bendTo: 300, bendOver: 0.18, peak: 0.3, decay: 0.25 });
+      playVoice(c, voice);
     },
     celebrate() {
       if (muted) return;

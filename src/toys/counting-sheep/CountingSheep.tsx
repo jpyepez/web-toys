@@ -1,8 +1,10 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { motion, type Variants } from 'motion/react';
 import type { ToyProps } from '../../shell/registry';
-import { palette, timing } from '../../shell/tokens';
+import { timing } from '../../shell/tokens';
+import { palette } from './palette';
 import { MeadowBackdrop } from './MeadowBackdrop';
+import { baa } from './sounds';
 
 /** How many Sheep make up the Goal. Sized for ~15–30s of kid-paced loops. */
 const SHEEP_COUNT = 5;
@@ -268,7 +270,7 @@ export function CountingSheep({ onComplete, sound, haptics }: ToyProps) {
               // Every tap gets the playful feedback whether or not it
               // counts — re-taps mid-animation stay friendly, no penalty
               // (polish PRD slice #03's principle).
-              sound?.baa();
+              sound?.play(baa);
               haptics?.tick();
               // Only `waiting` accepts the state advance — AC #3. Re-taps
               // during `arriving` and `dismissing` are non-destructive

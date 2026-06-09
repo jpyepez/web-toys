@@ -4,7 +4,9 @@ import userEvent from '@testing-library/user-event';
 import { RouterProvider, createMemoryHistory } from '@tanstack/react-router';
 import { createAppRouter } from './createAppRouter';
 import type { ToyEntry } from './registry';
-import { palette } from './tokens';
+import { ink } from './tokens';
+import { palette } from '../toys/counting-sheep/palette';
+import { palette as oceanPalette } from '../toys/puffer-fish/palette';
 import { registry } from '../toys/registry';
 
 function renderApp(toys: ToyEntry[], initialPath = '/') {
@@ -38,36 +40,79 @@ describe('home launcher', () => {
     expect(await screen.findByText('the sheep meadow')).toBeInTheDocument();
   });
 
-  it("paints a Toy's Card with the solid tint declared in its registry entry", async () => {
-    // Acceptance criterion #2 — the per-Toy palette is registry-driven: each
-    // entry's declared `tint` (a key into the design-tokens palette) resolves
-    // to the Card's solid surface colour. Post on-device review of the
-    // original gradient mechanism, the Card moved to a minimal solid-tint
-    // surface so the small preview-scene + serif title carry the visual
-    // load. The literal HSL values live in tokens, so we compare against
-    // `palette.sheepWool` rather than a hardcoded CSS string — that keeps
-    // the test decoupled from the colour values and pinned to the *mapping*.
+  it("backs a Toy's preview cover with the concrete CSS color in its `tint`", async () => {
+    // `tint` is a concrete CSS color string, not a key into the shared palette
+    // (ADR-0004). The redesigned Card paints it directly as the backing of the
+    // preview cover (`data-card-cover`) — a real per-Toy surface — with no
+    // `palette[...]` indirection, so a Toy's tint comes from its own world
+    // rather than the meadow grab-bag. We use an arbitrary colour unrelated to
+    // any palette token to prove the Card paints the literal string it's given,
+    // not a looked-up value.
+    const tint = 'hsl(200 50% 60%)';
+    const Dot = () => <svg data-testid="dot" viewBox="0 0 10 10" />;
     const toys: ToyEntry[] = [
       {
         id: 'counting-sheep',
         title: 'Counting Sheep',
         component: () => <p>sheep</p>,
-        tint: 'sheepWool',
+        tint,
+        preview: Dot,
       },
     ];
 
     renderApp(toys);
 
     const card = await screen.findByRole('link', { name: /Counting Sheep/ });
+    const cover = card.querySelector('[data-card-cover]') as HTMLElement;
+    expect(cover).not.toBeNull();
     // jsdom's CSS parser normalises hsl() to rgb() when serialising
-    // background colours back out — so we round-trip the expected value
-    // through the same parser. The assertion is "the Card paints the exact
-    // palette token the registry name resolves to in tokens"; the probe
-    // makes that semantic comparison survive jsdom's colour-notation
-    // normalisation.
+    // background colours back out — so round-trip the expected value through
+    // the same parser before comparing.
     const probe = document.createElement('div');
-    probe.style.backgroundColor = palette.sheepWool;
-    expect(card.style.backgroundColor).toBe(probe.style.backgroundColor);
+    probe.style.backgroundColor = tint;
+    expect(cover.style.backgroundColor).toBe(probe.style.backgroundColor);
+  });
+
+  it('leaves the preview cover untinted when the entry declares no `tint`', async () => {
+    // `tint` stays optional. A Toy that hasn't picked a tint renders a preview
+    // cover with no backing colour — it falls through to the Card's shared
+    // paper surface rather than being forced to declare one. We assert the
+    // cover's painted background is empty, the same un-set state a bare `<div>`
+    // reports through jsdom.
+    const Dot = () => <svg data-testid="dot" viewBox="0 0 10 10" />;
+    const toys: ToyEntry[] = [
+      { id: 'no-tint', title: 'No Tint', component: () => <p>plain</p>, preview: Dot },
+    ];
+
+    renderApp(toys);
+
+    const card = await screen.findByRole('link', { name: /No Tint/ });
+    const cover = card.querySelector('[data-card-cover]') as HTMLElement;
+    expect(cover).not.toBeNull();
+    expect(cover.style.backgroundColor).toBe('');
+  });
+
+  it("inks the Card title from the Shell-owned `ink` token, not a Toy palette colour", async () => {
+    // Acceptance criterion #2 — the Card title's type colour is a Shell
+    // chrome primitive (it frames every Toy's Card identically), so it
+    // sources `tokens.ink` rather than borrowing the meadow palette's
+    // `sheepSilhouette`. Per ADR-0004 this peels one of the Card's two
+    // couplings to the meadow palette ahead of the palette move (slice #04).
+    // We assert the *mapping* (title colour resolves to the `ink` token),
+    // not a literal HSL string — the tuple is on-device-tuned per the slice
+    // DoD. jsdom normalises hsl() to rgb() on the way back out, so we
+    // round-trip `ink` through the same parser via a probe element, exactly
+    // as the tint test does for `sheepWool`.
+    const toys: ToyEntry[] = [
+      { id: 'counting-sheep', title: 'Counting Sheep', component: () => <p>sheep</p> },
+    ];
+
+    renderApp(toys);
+
+    const title = await screen.findByText('Counting Sheep');
+    const probe = document.createElement('div');
+    probe.style.color = ink;
+    expect(title.style.color).toBe(probe.style.color);
   });
 
   it("renders the Toy's declared preview-scene inside its Card", async () => {
@@ -114,20 +159,74 @@ describe('home launcher', () => {
 });
 
 describe('registered toys', () => {
-  it('registers Counting Sheep as the one launchable Card', async () => {
+  it('registers Counting Sheep and Puffer Fish as the two launchable Cards', async () => {
+    // Slice #09 (AC #1/#2): the registry now declares a second real Toy, so the
+    // Home reads as a small *collection* — two Cards, not one. This test
+    // supersedes the earlier "one launchable Card" assertion: adding the fish
+    // entry is the behaviour change the slice ships, so the launcher's expected
+    // Card count moves from 1 → 2 here. Both Cards carry their title and both
+    // route to their own Toy; the per-Card tint + preview wiring is asserted in
+    // the focused tests below.
+    renderApp(registry);
+
+    expect(await screen.findByText('Counting Sheep')).toBeInTheDocument();
+    expect(screen.getByText('Puffer Fish')).toBeInTheDocument();
+    expect(screen.getAllByRole('link')).toHaveLength(2);
+
+    // The Counting Sheep Card still backs its preview cover with the cream tint,
+    // sourced from the Sheep-local palette (`palette.sheepWool`, ADR-0004 —
+    // slice #04). Pinned to the same palette the registry entry reads from so it
+    // stays a single source of truth; round-tripped through jsdom's parser as
+    // the generic tint test does.
+    const sheepCard = screen.getByRole('link', { name: /Counting Sheep/ });
+    const sheepCover = sheepCard.querySelector('[data-card-cover]') as HTMLElement;
+    const sheepProbe = document.createElement('div');
+    sheepProbe.style.backgroundColor = palette.sheepWool;
+    expect(sheepCover.style.backgroundColor).toBe(sheepProbe.style.backgroundColor);
+  });
+
+  it("backs the Puffer Fish preview cover from its own ocean-palette tint", async () => {
+    // AC #4: the fish Card's tint is a concrete CSS color string the Toy
+    // supplies from its OWN world — `oceanPalette.water` — not a key into a
+    // shared palette grab-bag (ADR-0004 / slice #03's tint→color-string
+    // contract, now exercised end-to-end against a real second Toy). It backs
+    // the fish's preview cover. Pinned to the same ocean-palette token the
+    // registry entry reads from so it stays a single source of truth;
+    // round-tripped through jsdom's parser (which normalises hsl() → rgb())
+    // exactly as the sheep tint check does.
+    renderApp(registry);
+
+    const fishCard = await screen.findByRole('link', { name: /Puffer Fish/ });
+    const fishCover = fishCard.querySelector('[data-card-cover]') as HTMLElement;
+    const probe = document.createElement('div');
+    probe.style.backgroundColor = oceanPalette.water;
+    expect(fishCover.style.backgroundColor).toBe(probe.style.backgroundColor);
+  });
+
+  it("hosts the Puffer Fish's own preview-scene inside its Card", async () => {
+    // AC #1: the fish entry declares a `preview`, and the Card mounts it. We
+    // assert the real fish preview is wired (not just any sentinel) by finding
+    // the round-fish body it draws — the same `data-fish-part="body"` hook the
+    // miniature scene carries — inside the Puffer Fish Card. The live Toy isn't
+    // mounted on Home, so this hook can only come from the Card's preview,
+    // proving the registry entry's `preview` resolves to the fish's own scene.
+    renderApp(registry);
+
+    const fishCard = await screen.findByRole('link', { name: /Puffer Fish/ });
+    expect(fishCard.querySelector('[data-fish-part="body"]')).not.toBeNull();
+  });
+
+  it('routes to the Puffer Fish Toy when its Card is tapped', async () => {
+    // AC #2: tapping the Puffer Fish Card launches its Toy. The fish loop
+    // bootstraps with one fish swimming in, queryable as the accessible button
+    // labelled "Fish" (mirrors the Sheep's role-named marker). After the tap the
+    // launcher is gone — the Toy is mounted in its place, not alongside it.
     const user = userEvent.setup();
     renderApp(registry);
 
-    const card = await screen.findByText('Counting Sheep');
-    expect(screen.getAllByRole('link')).toHaveLength(1);
+    await user.click(await screen.findByText('Puffer Fish'));
 
-    await user.click(card);
-
-    // The launcher is gone and the toy's meadow is mounted in its place.
-    // Under the mobile-rethink mechanic only one Sheep is on stage at a time
-    // (mobile-rethink PRD, slice #01) so the marker is the single role-named
-    // `Sheep` button rather than the old indexed `Sheep 1`.
-    expect(await screen.findByRole('button', { name: 'Sheep' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Fish' })).toBeInTheDocument();
     expect(screen.queryByRole('link')).toBeNull();
   });
 });

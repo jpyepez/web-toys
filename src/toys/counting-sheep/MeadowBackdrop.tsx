@@ -1,4 +1,4 @@
-import { palette } from '../../shell/tokens';
+import { palette } from './palette';
 
 /**
  * Deterministic per-index cloud cluster — four cloud clusters scattered

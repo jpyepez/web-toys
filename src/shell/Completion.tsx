@@ -1,6 +1,6 @@
 import { type CSSProperties } from 'react';
 import { Confetti } from './Confetti';
-import { card, font, palette } from './tokens';
+import { card, completion, font } from './tokens';
 
 // The celebration-beat delay (`CELEBRATION_MS = 2200`) introduced in polish
 // PRD slice #06 retired during the mobile-rethink PRD's on-device kid-handoff
@@ -39,7 +39,7 @@ type CompletionProps = {
  *   Toy's 100dvh `<main>`", which previously landed Completion below the
  *   visible viewport on phones).
  * - The message + end-state ride a Card-style surface (tinted from
- *   `palette.sheepWool`, sourced from the same `card.radius` + `card.shadow`
+ *   `completion.surface`, sourced from the same `card.radius` + `card.shadow`
  *   the Home Cards use) so the celebration moment reads as one coherent
  *   editorial slab — same surface family across Home and Completion. Pulls
  *   on the "use cards to display stuff like that" direction the on-device
@@ -94,12 +94,12 @@ const overlayStyle: CSSProperties = {
 
 // Card-style surface for the celebration message + end-state. Same
 // `card.radius` / `card.shadow` tokens the Home Cards use so the surface
-// family is consistent across Home and Completion. Tinted `palette.sheepWool`
-// cream (same as the Counting Sheep Card's tint) so the cream stays the
+// family is consistent across Home and Completion. Tinted `completion.surface`
+// cream (the Shell-owned celebration surface) so the cream stays the
 // editorial-slab surface family. Sized at a comfortable phone width with a
 // cap so on wider viewports it doesn't stretch into a banner.
 const cardSurfaceStyle: CSSProperties = {
-  backgroundColor: palette.sheepWool,
+  backgroundColor: completion.surface,
   borderRadius: card.radius,
   boxShadow: card.shadow,
   padding: '40px 32px',
@@ -112,12 +112,12 @@ const cardSurfaceStyle: CSSProperties = {
 };
 
 // Title typography — `font.rounded` for the kid-app warmth (Card title uses
-// the same), inked in the dark sheep-silhouette token so it reads with high
+// the same), inked in the dark `completion.ink` token so it reads with high
 // contrast against the cream surface. Generous size + weight so the
 // celebration moment lands as the focal beat.
 const titleStyle: CSSProperties = {
   fontFamily: font.rounded,
-  color: palette.sheepSilhouette,
+  color: completion.ink,
   fontSize: '36px',
   fontWeight: 600,
   margin: 0,
@@ -134,17 +134,17 @@ const endStateStyle: CSSProperties = {
   width: '100%',
 };
 
-// Primary action — Play again. Filled-pill: dark sheep-silhouette surface
-// with cream wool text reads as "do this one" against the cream card.
-// Pill radius (`999px`) joins the chrome-pill visual family. `minHeight`
-// ≥ 44px keeps the touch target above iOS's accessibility floor with
-// margin for kids who'll mis-tap.
+// Primary action — Play again. Filled-pill: dark `completion.ink` surface
+// with cream `completion.surface` text reads as "do this one" against the
+// cream card. Pill radius (`999px`) joins the chrome-pill visual family.
+// `minHeight` ≥ 44px keeps the touch target above iOS's accessibility floor
+// with margin for kids who'll mis-tap.
 const primaryButtonStyle: CSSProperties = {
   fontFamily: font.rounded,
   fontSize: '20px',
   fontWeight: 600,
-  color: palette.sheepWool,
-  backgroundColor: palette.sheepSilhouette,
+  color: completion.surface,
+  backgroundColor: completion.ink,
   border: 'none',
   borderRadius: '999px',
   padding: '16px 24px',
@@ -152,17 +152,17 @@ const primaryButtonStyle: CSSProperties = {
   minHeight: '52px',
 };
 
-// Secondary action — Home. Outline-pill: transparent surface with a
-// silhouette-coloured border reads as "the other option" against the
-// cream card without competing with the primary fill. Same pill radius
-// + minHeight as Play again so they read as a pair.
+// Secondary action — Home. Outline-pill: transparent surface with an
+// ink-coloured border reads as "the other option" against the cream card
+// without competing with the primary fill. Same pill radius + minHeight as
+// Play again so they read as a pair.
 const secondaryButtonStyle: CSSProperties = {
   fontFamily: font.rounded,
   fontSize: '20px',
   fontWeight: 500,
-  color: palette.sheepSilhouette,
+  color: completion.ink,
   backgroundColor: 'transparent',
-  border: `2px solid ${palette.sheepSilhouette}`,
+  border: `2px solid ${completion.ink}`,
   borderRadius: '999px',
   padding: '14px 24px',
   cursor: 'pointer',
