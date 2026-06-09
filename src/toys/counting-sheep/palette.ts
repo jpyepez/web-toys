@@ -40,6 +40,27 @@ export const palette = {
   sheepSilhouette: 'hsl(20 25% 22%)',
   doneGlow: 'hsl(42 95% 72%)',
   /**
+   * The Sheep's face family — the slice that lifts the face from "two pale dots
+   * on a dark head" to a cute, friendly lamb. The dark head (`sheepSilhouette`)
+   * stays; these paint the features that read against it:
+   *   - `muzzle`     — a soft cream snout patch low on the face, so the dark
+   *                    eyes + smile read against the dark head (and drops the
+   *                    features into the lower face per the baby-schema)
+   *   - `eyeWhite`   — a bright cream eye base, lighter than the wool so the
+   *                    eye pops as its own shape
+   *   - `eyePupil`   — warm near-black for the big pupils + the smile stroke
+   *                    (warm, not pure black, keeps it soft not harsh)
+   *   - `eyeShine`   — the white catchlight glint; the single biggest
+   *                    "alive & friendly" lever (vs. flat doll eyes)
+   *   - `noseTip`    — a small dusty-rose nose
+   * Exact tuples stay on-device-tunable per the slice DoD.
+   */
+  muzzle: 'hsl(36 40% 88%)',
+  eyeWhite: 'hsl(40 45% 96%)',
+  eyePupil: 'hsl(20 30% 14%)',
+  eyeShine: 'hsl(0 0% 100%)',
+  noseTip: 'hsl(345 45% 55%)',
+  /**
    * Hill-near is a vibrant lime green (pivoted from the dusk muted meadow
    * tone). Doubles as the tree-canopy fill — the canopy silhouettes against
    * the cooler distant hill behind it, so reusing `hillNear` keeps the tree

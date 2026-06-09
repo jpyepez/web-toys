@@ -33,6 +33,7 @@ describe('Puffer Fish — ocean palette', () => {
         'fishFin',
         'fishCheek',
         'fishEye',
+        'fishEyeShine',
       ].sort(),
     );
     for (const value of Object.values(palette)) {

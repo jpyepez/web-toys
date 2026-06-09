@@ -81,12 +81,16 @@ function MiniFish({ cx, cy }: { cx: number; cy: number }) {
       {/* blushy cheeks */}
       <circle cx={cx - 4} cy={cy + 3} r={2.2} fill={palette.fishCheek} />
       <circle cx={cx + 5} cy={cy + 3} r={2.2} fill={palette.fishCheek} />
-      {/* large round eyes */}
+      {/* large round eyes, each with a white catchlight — same friendly spark
+       * the live `FishDrawing` rest eyes now carry */}
       <circle cx={cx - 3} cy={cy - 2} r={1.8} fill={palette.fishEye} />
       <circle cx={cx + 4} cy={cy - 2} r={1.8} fill={palette.fishEye} />
-      {/* small smile */}
+      <circle cx={cx - 2.4} cy={cy - 2.7} r={0.6} fill={palette.fishEyeShine} />
+      <circle cx={cx + 4.6} cy={cy - 2.7} r={0.6} fill={palette.fishEyeShine} />
+      {/* small smile — centred on the same face axis (cx + 0.5) as the eyes and
+       * cheeks so it sits squarely under the eyes, not pushed to one side */}
       <path
-        d={`M ${cx - 1} ${cy + 4} Q ${cx + 2} ${cy + 7} ${cx + 5} ${cy + 4}`}
+        d={`M ${cx - 2.5} ${cy + 4} Q ${cx + 0.5} ${cy + 6} ${cx + 3.5} ${cy + 4}`}
         fill="none"
         stroke={palette.fishEye}
         strokeWidth={1}

@@ -57,7 +57,7 @@ export function Preview() {
       <circle cx="80.5" cy="37" r="3.5" fill={palette.hillNear} />
       {/* One centred miniature Sheep on the foreground hill line — the
        * mobile-rethink mechanic's one-Sheep-at-a-time grammar, previewed. */}
-      <MiniSheep cx={50} cy={42} />
+      <MiniSheep cx={46} cy={41} />
     </svg>
   );
 }
@@ -79,25 +79,52 @@ function MiniCloud({ cx, cy }: { cx: number; cy: number }) {
 }
 
 /**
- * One miniature Sheep — a wool body (three small wool circles), a
- * silhouette head, a tiny ear, two stub legs. Sized for a Card-sized
- * vignette rather than the full meadow illustration; structural
- * recognition (it's a Sheep) wins over anatomical detail at this scale.
+ * One miniature Sheep — a fluffy wool body and a silhouette head wearing the
+ * same cute face the live Critter now carries (big bright eyes with a catchlight,
+ * a cream muzzle, rosy cheeks, a gentle smile), scaled down for a Card-sized
+ * vignette. Structural recognition (it's a friendly Sheep) wins over anatomical
+ * detail at this scale, but the face is the recognisable hook — a faceless dark
+ * blob no longer matches the live meadow. Every fill sources a palette token.
  */
 function MiniSheep({ cx, cy }: { cx: number; cy: number }) {
+  // Head centre, off to the right of the wool body — same facing as the live
+  // Sheep (head right, fleece left).
+  const hx = cx + 8;
+  const hy = cy - 1.5;
   return (
     <g>
-      {/* fluffy body — three small wool circles */}
-      <circle cx={cx - 3} cy={cy} r="3.2" fill={palette.sheepWool} />
-      <circle cx={cx + 3} cy={cy} r="3.2" fill={palette.sheepWool} />
-      <circle cx={cx} cy={cy - 2} r="3.5" fill={palette.sheepWool} />
-      {/* head — silhouette ellipse to the right of the body */}
-      <ellipse cx={cx + 6} cy={cy - 1} rx="2.4" ry="2.6" fill={palette.sheepSilhouette} />
-      {/* ear */}
-      <ellipse cx={cx + 5} cy={cy - 3} rx="1" ry="0.7" fill={palette.sheepSilhouette} />
-      {/* tiny legs */}
-      <rect x={cx - 4} y={cy + 2} width="1.2" height="3" fill={palette.sheepSilhouette} />
-      <rect x={cx + 2} y={cy + 2} width="1.2" height="3" fill={palette.sheepSilhouette} />
+      {/* tiny legs — drawn behind the fleece and extended low enough that the
+       * stub feet poke out below the wool (the bottom wool circle reaches
+       * cy + 6.6, so the legs must run past that to be seen) */}
+      <rect x={cx - 4} y={cy + 4} width="1.6" height="5.5" rx="0.6" fill={palette.sheepSilhouette} />
+      <rect x={cx + 1.5} y={cy + 4} width="1.6" height="5.5" rx="0.6" fill={palette.sheepSilhouette} />
+      {/* ears flanking the top of the head */}
+      <ellipse cx={hx - 2.8} cy={hy - 3.2} rx="1.5" ry="0.95" fill={palette.sheepSilhouette} />
+      <ellipse cx={hx + 2.8} cy={hy - 3.2} rx="1.5" ry="0.95" fill={palette.sheepSilhouette} />
+      {/* fluffy wool body — four overlapping circles */}
+      <circle cx={cx - 5} cy={cy} r="5" fill={palette.sheepWool} />
+      <circle cx={cx + 3} cy={cy} r="5" fill={palette.sheepWool} />
+      <circle cx={cx - 1} cy={cy - 4} r="5.4" fill={palette.sheepWool} />
+      <circle cx={cx - 1} cy={cy + 1} r="5.6" fill={palette.sheepWool} />
+      {/* head */}
+      <ellipse cx={hx} cy={hy} rx="4" ry="4.2" fill={palette.sheepSilhouette} />
+      {/* cream muzzle snout */}
+      <ellipse cx={hx} cy={hy + 1.8} rx="2.3" ry="1.8" fill={palette.muzzle} />
+      {/* big bright eyes, pupils converged inward, both catchlights same side */}
+      <ellipse cx={hx - 1.5} cy={hy - 0.5} rx="1.05" ry="1.25" fill={palette.eyeWhite} />
+      <ellipse cx={hx + 1.5} cy={hy - 0.5} rx="1.05" ry="1.25" fill={palette.eyeWhite} />
+      <circle cx={hx - 1.2} cy={hy - 0.2} r="0.7" fill={palette.eyePupil} />
+      <circle cx={hx + 1.2} cy={hy - 0.2} r="0.7" fill={palette.eyePupil} />
+      <circle cx={hx - 0.95} cy={hy - 0.55} r="0.28" fill={palette.eyeShine} />
+      <circle cx={hx + 1.45} cy={hy - 0.55} r="0.28" fill={palette.eyeShine} />
+      {/* gentle smile under the muzzle */}
+      <path
+        d={`M ${hx - 1.2} ${hy + 1.6} Q ${hx} ${hy + 2.7} ${hx + 1.2} ${hy + 1.6}`}
+        fill="none"
+        stroke={palette.eyePupil}
+        strokeWidth="0.5"
+        strokeLinecap="round"
+      />
     </g>
   );
 }

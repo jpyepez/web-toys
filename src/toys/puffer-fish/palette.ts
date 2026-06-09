@@ -22,6 +22,8 @@
  *   - `fishFin`   — fins + tail (pink) — the tail shares the fin token
  *   - `fishCheek` — the puffer's blushy cheeks (pink, warmer than the fins)
  *   - `fishEye`   — dark ink for the large eyes + the small smile stroke
+ *   - `fishEyeShine` — the white catchlight glint on the rest eyes (the cute
+ *                      "alive & friendly" spark; matches the Sheep's `eyeShine`)
  */
 export const palette = {
   water: 'hsl(200 70% 42%)',
@@ -39,4 +41,5 @@ export const palette = {
   fishFin: 'hsl(340 75% 80%)',
   fishCheek: 'hsl(350 85% 78%)',
   fishEye: 'hsl(210 35% 22%)',
+  fishEyeShine: 'hsl(0 0% 100%)',
 } as const;

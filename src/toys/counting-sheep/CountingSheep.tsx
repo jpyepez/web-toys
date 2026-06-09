@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import { motion, type Variants } from 'motion/react';
+import { motion, useReducedMotion, type Variants } from 'motion/react';
 import type { ToyProps } from '../../shell/registry';
 import { timing } from '../../shell/tokens';
 import { palette } from './palette';
@@ -16,7 +16,11 @@ const SHEEP_COUNT = 5;
  * per the slice DoD — the structural rule is "three named beats."
  */
 const TIMING_ARRIVAL_MS = 400;
-const TIMING_DISMISS_MS = 700;
+// Lengthened from 700 → 1100 to give the dismiss beat a savour-the-glow linger
+// before the Sheep slides off (mirrors the Puffer Fish's puff-then-float exit,
+// which the kid handoff liked). The extra ~400ms is the hold in the middle of
+// the choreography, not a slower hop — see the `dismissing` variant.
+const TIMING_DISMISS_MS = 1100;
 const TIMING_INTERMISSION_MS = 200;
 
 /**
@@ -45,15 +49,35 @@ function SheepDrawing({ done }: { done: boolean }) {
   // A stable per-instance id for the glow gradient — React's `useId` is
   // the idiomatic primitive here, and avoids a leaky module-level counter.
   const glowId = `sheep-glow-${useId()}`;
+
+  // Ambient life makes the still, waiting Sheep read as a friendly creature
+  // rather than a sticker (research: blink is the highest "alive"-per-byte
+  // animation; a slow breathe sells "calm and alive"). Both are driven by
+  // Motion's own frameloop — not React `setTimeout`s — deliberately: the
+  // Toy's mechanic tests drain the state-machine's fake timers one transition
+  // at a time, and a self-rescheduling blink timer pollutes that queue. Keeping
+  // the idle motion on Motion's rAF loop keeps it out of the timer queue the
+  // tests own. Both gate on reduced-motion — non-essential looping motion stops
+  // for those who opt out; the state-machine choreography is untouched.
+  const reducedMotion = useReducedMotion();
+
   return (
     // The sequential mechanic puts one Sheep centred on stage as a generous
     // touch target. Sizing on-device-tuned per the slice DoD; ~min(220px,
     // 55vw) is the cushioned-ease-out placeholder until the kid handoff
-    // confirms it.
-    <svg
+    // confirms it. A slow breathing swell (scale from the feet) rides on top —
+    // disabled under reduced-motion.
+    <motion.svg
       viewBox="0 0 100 80"
       aria-hidden="true"
-      style={{ width: 'min(220px, 55vw)', height: 'auto', display: 'block' }}
+      style={{
+        width: 'min(220px, 55vw)',
+        height: 'auto',
+        display: 'block',
+        transformOrigin: 'center bottom',
+      }}
+      animate={reducedMotion ? undefined : { scale: [1, 1.025, 1] }}
+      transition={{ duration: 3.4, ease: 'easeInOut', repeat: Infinity }}
     >
       <defs>
         <radialGradient id={glowId} cx="0.5" cy="0.5" r="0.5">
@@ -86,14 +110,57 @@ function SheepDrawing({ done }: { done: boolean }) {
             fill={`url(#${glowId})`}
           />
         ))}
-      {/* head */}
-      <ellipse data-sheep-part="head" cx="72" cy="40" rx="12" ry="13" fill={palette.sheepSilhouette} />
-      <circle data-sheep-part="eye" cx="68" cy="37" r="2.5" fill={palette.sheepWool} />
-      <circle data-sheep-part="eye" cx="76" cy="37" r="2.5" fill={palette.sheepWool} />
-      {/* ears */}
+      {/* head + ears (drawn first so the face features paint on top) */}
       <ellipse data-sheep-part="ear" cx="62" cy="34" rx="5" ry="3" fill={palette.sheepSilhouette} />
       <ellipse data-sheep-part="ear" cx="82" cy="34" rx="5" ry="3" fill={palette.sheepSilhouette} />
-    </svg>
+      <ellipse data-sheep-part="head" cx="72" cy="40" rx="12" ry="13" fill={palette.sheepSilhouette} />
+      {/*
+       * The cute-lamb face. Built from the baby-schema research: features sit
+       * low on the face, eyes are large with a bright base + a white catchlight
+       * (the "alive, friendly" lever vs. flat dots), a soft cream muzzle lets
+       * the dark eyes + smile read against the dark head, and rosy cheeks warm
+       * it. Geometry is on-device-tunable per the slice DoD; the load-bearing
+       * pieces are the part hooks and that every fill sources a palette token.
+       */}
+      {/* cream snout patch — drops the features into the lower face */}
+      <ellipse data-sheep-part="muzzle" cx="72" cy="46" rx="6.5" ry="5" fill={palette.muzzle} />
+      {/*
+       * Eyes blink on a slow loop: the group holds open most of the cycle, then
+       * squashes to a sliver (scaleY → 0.1) and back — one ~450ms blink every
+       * ~4.5s. `transformBox: fill-box` pivots on the group's own bounding box
+       * so the lids meet at the eye centreline rather than the SVG origin.
+       */}
+      <motion.g
+        style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
+        animate={reducedMotion ? undefined : { scaleY: [1, 1, 0.1, 1] }}
+        transition={{
+          duration: 4.5,
+          times: [0, 0.9, 0.945, 1],
+          ease: 'easeOut',
+          repeat: Infinity,
+        }}
+      >
+        {/* bright eye base */}
+        <ellipse data-sheep-part="eye" cx="67.5" cy="39" rx="3" ry="3.4" fill={palette.eyeWhite} />
+        <ellipse data-sheep-part="eye" cx="76.5" cy="39" rx="3" ry="3.4" fill={palette.eyeWhite} />
+        {/* big pupils, converged slightly inward + down (warm, not blank) */}
+        <circle cx="68.3" cy="39.7" r="2" fill={palette.eyePupil} />
+        <circle cx="75.7" cy="39.7" r="2" fill={palette.eyePupil} />
+        {/* catchlights — both offset the same way (consistent light) */}
+        <circle cx="69" cy="38.6" r="0.8" fill={palette.eyeShine} />
+        <circle cx="76.4" cy="38.6" r="0.8" fill={palette.eyeShine} />
+      </motion.g>
+      {/* tiny nose + a gentle, shallow smile */}
+      <ellipse data-sheep-part="nose" cx="72" cy="43.4" rx="1.5" ry="1.1" fill={palette.noseTip} />
+      <path
+        data-sheep-part="smile"
+        d="M 69.5 46 Q 72 48.6 74.5 46"
+        fill="none"
+        stroke={palette.eyePupil}
+        strokeWidth="1.1"
+        strokeLinecap="round"
+      />
+    </motion.svg>
   );
 }
 
@@ -139,13 +206,37 @@ const sheepVariants: Variants = {
     transition: { duration: 0 },
   },
   dismissing: {
-    x: [0, 0, 280],
-    y: [0, -22, 0],
-    opacity: [1, 1, 0],
+    // Four sub-beats, in order, so the done-glow is savoured before the exit
+    // (mirrors the Puffer Fish's puff → linger → float):
+    //   1. hop    — a brief rise-fall while the glow blooms in the fleece.
+    //   2. linger — the Sheep holds centred, glow lit, fully opaque (the kid
+    //               registers the warm light before it leaves).
+    //   3. slide  — the Sheep bounds off-stage to the right…
+    //   4. fade   — …and only THEN dissolves.
+    //
+    // The fade is a SEPARATE, delayed `opacity` tween — deliberately decoupled
+    // from the x/y keyframe track. Sharing one `times` array with the steep
+    // `timing.entrance` ease let the eased opacity bleed early, so the Sheep
+    // dissolved on the spot before it had moved (the "fades as it stands" bug).
+    // Giving opacity its own `delay` pins the fade to *after* the slide starts.
+    x: [0, 0, 0, 0, 240, 460],
+    y: [0, -22, 0, 0, 0, 0],
+    opacity: [1, 0],
     transition: {
       duration: TIMING_DISMISS_MS / 1000,
       ease: timing.entrance,
-      times: [0, 0.4, 1],
+      // Top-level `times` drives x/y through hop (0–0.32) → linger (0.32–0.5)
+      // → slide (0.5–1). `times` is only honoured at the top level — nesting it
+      // per-property makes Motion drop it and the Sheep jumps off instantly.
+      times: [0, 0.16, 0.32, 0.5, 0.74, 1],
+      // Opacity overrides with its own delayed tween so the fade starts at 0.64
+      // — well after the slide begins at 0.5 — instead of bleeding early off the
+      // shared eased track (the "fades as it stands" bug).
+      opacity: {
+        delay: (TIMING_DISMISS_MS / 1000) * 0.64,
+        duration: (TIMING_DISMISS_MS / 1000) * 0.36,
+        ease: 'easeIn',
+      },
     },
   },
 };

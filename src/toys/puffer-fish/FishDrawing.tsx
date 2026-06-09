@@ -64,9 +64,12 @@ export function FishDrawing({ puffed = false }: { puffed?: boolean }) {
         </>
       ) : (
         <>
-          {/* large round eyes */}
+          {/* large round eyes, each with a white catchlight for a friendly,
+           * alive spark (both glints offset the same way — consistent light) */}
           <circle data-fish-part="eye" cx="48" cy="44" r="5" fill={palette.fishEye} />
           <circle data-fish-part="eye" cx="68" cy="44" r="5" fill={palette.fishEye} />
+          <circle data-fish-part="eye-shine" cx="49.8" cy="42.2" r="1.5" fill={palette.fishEyeShine} />
+          <circle data-fish-part="eye-shine" cx="69.8" cy="42.2" r="1.5" fill={palette.fishEyeShine} />
         </>
       )}
       {/* small smile */}
