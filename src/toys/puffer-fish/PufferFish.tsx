@@ -144,7 +144,21 @@ export function PufferFish({ onComplete, sound, haptics }: ToyProps) {
   const fishOnStage = state === 'arriving' || state === 'waiting' || state === 'dismissing';
 
   return (
-    <main data-toy-state={state} style={{ position: 'relative', minHeight: '100dvh' }}>
+    <main
+      data-toy-state={state}
+      style={{
+        position: 'relative',
+        minHeight: '100dvh',
+        // The seabed band's height — shared with UnderwaterBackdrop's
+        // bottom-anchored sand layer (which reads `var(--ocean-floor)`) and its
+        // coral. Defining it on the common ancestor keeps the sand line at a
+        // fixed fraction of the viewport across aspect ratios (ADR-0005); a
+        // shorter band than the meadow's ground since it's just a seabed strip.
+        // The Fish floats in open water above it, so it keeps its own
+        // viewport-relative resting position (`top: 42%`).
+        ['--ocean-floor' as string]: 'clamp(150px, 26dvh, 360px)',
+      }}
+    >
       <UnderwaterBackdrop />
       {fishOnStage && (
         // Static centring wrapper. The `motion.button` inside drives `x`/`y`/
@@ -186,6 +200,13 @@ export function PufferFish({ onComplete, sound, haptics }: ToyProps) {
             // centre — `x: 0` lands centred.
             initial={{ x: -280, opacity: 0, scale: 1 }}
             animate={state}
+            // A small press-scale on tap: the fish squashes in slightly under
+            // the finger, then releases into the balloon beat — a natural
+            // anticipation before the puff. `whileTap` composes with the
+            // variant transform and is auto-disabled under reduced motion by
+            // the app-root MotionConfig. Kept gentle (0.96) so it reads as a
+            // squash, not a competing shrink against the balloon's scale-up.
+            whileTap={{ scale: 0.96 }}
             onClick={() => {
               // Every tap gets the playful feedback — the puff voice + a haptic
               // tick — whether or not it counts (slice #08). A kid mashing the

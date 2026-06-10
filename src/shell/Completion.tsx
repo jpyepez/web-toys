@@ -1,6 +1,7 @@
 import { type CSSProperties } from 'react';
+import { motion } from 'motion/react';
 import { Confetti } from './Confetti';
-import { card, completion, font } from './tokens';
+import { card, completion, font, timing } from './tokens';
 
 // The celebration-beat delay (`CELEBRATION_MS = 2200`) introduced in polish
 // PRD slice #06 retired during the mobile-rethink PRD's on-device kid-handoff
@@ -57,7 +58,20 @@ export function Completion({ onPlayAgain, onHome }: CompletionProps) {
   return (
     <div style={overlayStyle}>
       <Confetti />
-      <div style={cardSurfaceStyle}>
+      {/*
+       * The celebration slab lands with a gentle ease-out entrance (a soft
+       * fade + scale-up from 0.95, never from 0 — so it settles in rather than
+       * popping from nowhere) the moment Completion mounts, riding alongside
+       * the Confetti burst. `timing.tapCurve` keeps it in the same cushioned
+       * register as the Card / chrome presses. Under `prefers-reduced-motion`
+       * the app-root MotionConfig drops the scale and keeps only the fade.
+       */}
+      <motion.div
+        style={cardSurfaceStyle}
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.25, ease: timing.tapCurve }}
+      >
         <h2 style={titleStyle}>You did it!</h2>
         {/* Scoped container so tests can disambiguate the end-state Home
          * button from the Shell's chrome Home pill (which stays visible
@@ -66,14 +80,30 @@ export function Completion({ onPlayAgain, onHome }: CompletionProps) {
          * delay-retirement note above the component); the Confetti burst
          * plays alongside the buttons rather than ahead of them. */}
         <div data-testid="end-state" style={endStateStyle}>
-          <button type="button" onClick={onPlayAgain} style={primaryButtonStyle}>
+          {/* Press feedback: a gentle scale-down on tap so the big kid-facing
+           * buttons feel tactile under a thumb. Same cushioned `tapCurve` the
+           * Card uses; auto-disabled under reduced motion via the app-root
+           * MotionConfig. */}
+          <motion.button
+            type="button"
+            onClick={onPlayAgain}
+            style={primaryButtonStyle}
+            whileTap={{ scale: 0.97 }}
+            transition={{ duration: 0.12, ease: timing.tapCurve }}
+          >
             Play again
-          </button>
-          <button type="button" onClick={onHome} style={secondaryButtonStyle}>
+          </motion.button>
+          <motion.button
+            type="button"
+            onClick={onHome}
+            style={secondaryButtonStyle}
+            whileTap={{ scale: 0.97 }}
+            transition={{ duration: 0.12, ease: timing.tapCurve }}
+          >
             Home
-          </button>
+          </motion.button>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }

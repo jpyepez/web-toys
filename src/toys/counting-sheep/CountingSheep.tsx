@@ -313,7 +313,21 @@ export function CountingSheep({ onComplete, sound, haptics }: ToyProps) {
   return (
     <main
       data-toy-state={state}
-      style={{ position: 'relative', minHeight: '100dvh' }}
+      style={{
+        position: 'relative',
+        minHeight: '100dvh',
+        // The ground band's height — shared with MeadowBackdrop's bottom-
+        // anchored hills layer (which reads `var(--meadow-ground)`) and with
+        // the Sheep's `bottom` below. Defining it here, on the common ancestor
+        // of both the backdrop and the Sheep, is what keeps the horizon and the
+        // Sheep's feet locked together across aspect ratios: the hills fill this
+        // band from the viewport bottom up, so the surface the Sheep stands on
+        // is always the same fraction of the viewport tall — never the
+        // slice-cropped, aspect-dependent line that floated the Sheep on
+        // desktop. `dvh` + clamp keeps the band sane from short landscape to
+        // tall phone.
+        ['--meadow-ground' as string]: 'clamp(240px, 42dvh, 520px)',
+      }}
     >
       <MeadowBackdrop />
       {sheepOnStage && (
@@ -335,7 +349,15 @@ export function CountingSheep({ onComplete, sound, haptics }: ToyProps) {
           style={{
             position: 'absolute',
             left: '50%',
-            bottom: '30%',
+            // Anchor the Sheep's feet to the shared ground band rather than a
+            // raw viewport fraction. The foreground hill's surface at centre
+            // sits ~0.7 up the band; the 0.62 multiplier lands the feet on that
+            // surface (the Sheep sprite's legs end a little above its box
+            // bottom, so the resting point is slightly below the bare surface
+            // fraction). Because both this and MeadowBackdrop's hills derive
+            // from `--meadow-ground`, they track together at every aspect ratio
+            // — fixing the desktop "Sheep floating above the hill" bug.
+            bottom: 'calc(var(--meadow-ground) * 0.62)',
             transform: 'translateX(-50%)',
           }}
         >
@@ -357,6 +379,12 @@ export function CountingSheep({ onComplete, sound, haptics }: ToyProps) {
             // left-edge-at-centre.
             initial={{ x: -260, opacity: 0 }}
             animate={state}
+            // A small press-scale gives the tap a tactile beat the instant the
+            // kid's finger lands — before the dismiss choreography takes over.
+            // `whileTap` composes with the variant-driven `x`/`y` (Motion still
+            // owns the transform; the gesture just multiplies in a scale) and
+            // is auto-disabled under reduced motion by the app-root MotionConfig.
+            whileTap={{ scale: 0.94 }}
             onClick={() => {
               // Every tap gets the playful feedback whether or not it
               // counts — re-taps mid-animation stay friendly, no penalty
