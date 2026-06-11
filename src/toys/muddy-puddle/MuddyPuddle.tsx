@@ -28,6 +28,7 @@ type LoopState = 'arriving' | 'wiping' | 'dismissing' | 'idle' | 'completed';
  * Own copies, duplicated from the Fish's machine rather than shared.
  */
 const TIMING_ARRIVAL_MS = 500;
+const TIMING_DISMISS_MS = 1100;
 
 /**
  * Muddy Puddle — a barnyard scene that sends one muddy piglet at a time onto
@@ -43,14 +44,24 @@ export function MuddyPuddle(_props: ToyProps) {
       const timer = setTimeout(() => setState('wiping'), TIMING_ARRIVAL_MS);
       return () => clearTimeout(timer);
     }
+    if (state === 'dismissing') {
+      const timer = setTimeout(() => setState('idle'), TIMING_DISMISS_MS);
+      return () => clearTimeout(timer);
+    }
   }, [state]);
+
+  // `idle` is the intermission gap — no piglet on stage, matching AC #1's
+  // "zero Critters during idle".
+  const critterOnStage = state === 'arriving' || state === 'wiping' || state === 'dismissing';
 
   return (
     <main data-toy-state={state} style={{ position: 'relative', minHeight: '100dvh' }}>
       <BarnyardBackdrop />
-      <div role="img" aria-label="Piglet">
-        <WipeableCritter onClean={() => setState('dismissing')} />
-      </div>
+      {critterOnStage && (
+        <div role="img" aria-label="Piglet">
+          <WipeableCritter onClean={() => setState('dismissing')} />
+        </div>
+      )}
     </main>
   );
 }
