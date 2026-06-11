@@ -1,6 +1,15 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { fireEvent, render } from '@testing-library/react';
 import { WipeableCritter } from './WipeableCritter';
+
+/** Wipe every blob the surface still shows, in turn, until the mud is gone. */
+function wipeUntilClean(container: HTMLElement) {
+  let blob = container.querySelector('[data-mud-blob]');
+  while (blob) {
+    fireEvent.pointerOver(blob);
+    blob = container.querySelector('[data-mud-blob]');
+  }
+}
 
 /**
  * Muddy Puddle — the Wipe (muddy-puddle PRD, slice #03). `WipeableCritter` is
@@ -58,5 +67,27 @@ describe('Muddy Puddle — WipeableCritter wipe-coverage mechanic', () => {
     expect(container.querySelectorAll('[data-mud-blob]')).toHaveLength(0);
     expect(container.querySelectorAll('[data-piglet-tease]')).toHaveLength(0);
     expect(container.querySelectorAll('[data-piglet-part="body"]').length).toBeGreaterThan(0);
+  });
+
+  it('signals "clean reached" exactly once via onClean at the snap — ref-guarded against re-render', () => {
+    // The slice exposes "clean reached" as an observable the loop (slice #04)
+    // consumes to drive `wiping → dismissing`. We chose an `onClean` callback;
+    // it fires once, at the snap, never before. The single-call guard mirrors
+    // the Fish's `completedRef`: when the Shell hands the Toy a fresh `onClean`
+    // reference on re-render at Completion, the signal must not re-fire.
+    const onClean = vi.fn();
+    const { container, rerender } = render(<WipeableCritter onClean={onClean} />);
+
+    // A sub-threshold wipe does not signal — the loop must not advance early.
+    fireEvent.pointerOver(container.querySelector('[data-mud-blob]')!);
+    expect(onClean).not.toHaveBeenCalled();
+
+    // Wiping past the threshold fires the signal exactly once.
+    wipeUntilClean(container);
+    expect(onClean).toHaveBeenCalledTimes(1);
+
+    // A re-render with a brand-new `onClean` reference must not re-fire it.
+    rerender(<WipeableCritter onClean={vi.fn()} />);
+    expect(onClean).toHaveBeenCalledTimes(1);
   });
 });

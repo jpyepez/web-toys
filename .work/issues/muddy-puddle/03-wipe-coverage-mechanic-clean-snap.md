@@ -37,7 +37,7 @@ single Critter; no loop yet (slice #4).
 
 - [x] A pointer/touch crossing a blob removes **that** blob; the remaining-blob
       count (via the `data-*` hook) decrements.
-- [ ] Crossing the clean **threshold** triggers the clean-snap: leftover blobs
+- [x] Crossing the clean **threshold** triggers the clean-snap: leftover blobs
       are removed at once and the Critter flips to the revealed-clean art.
 - [ ] Multiple simultaneous touch points each clear blobs they cross (accept-all-
       touch-points); no crash, no special-casing — just cleans faster.
