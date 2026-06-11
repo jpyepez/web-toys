@@ -1,7 +1,7 @@
 ---
 slice: 5
 title: Variety cast — five animals, shuffled, no repeats
-status: ready
+status: in-progress
 type: afk
 blocked_by: [4]
 parent_prd: muddy-puddle
