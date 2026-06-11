@@ -43,6 +43,15 @@ const TIMING_DISMISS_MS = 1100;
 const TIMING_INTERMISSION_MS = 250;
 
 /**
+ * Idle delay before the wordless ghost-finger demo arms (ms). Armed once a
+ * Critter is settled in `wiping` with no contributing Wipe yet; on fire the demo
+ * goes active and SHOWS the kid how to Wipe (slice #06). ~2–3s, on-device-tuned
+ * per the kid-handoff DoD — the structural contract tested is THAT a stall flips
+ * the demo on and a Wipe flips it off, never the exact ms.
+ */
+const IDLE_DEMO_DELAY_MS = 2500;
+
+/**
  * Motion variants for the on-stage Critter's per-state choreography (slice spec
  * body), shared by every cast member (slice #05): the Critter trots in muddy
  * from the side, holds centred for the Wipe, then on the clean-snap either trots
@@ -138,6 +147,11 @@ export function MuddyPuddle({ onComplete }: ToyProps) {
   // re-render with a new `onComplete` reference (which the Shell does the moment
   // Completion starts) re-firing the effect. Mirrors the Fish's `completedRef`.
   const completedRef = useRef(false);
+  // The wordless ghost-finger demo's active flag (slice #06). Arms while a
+  // Critter sits un-wiped in `wiping`; flips true on the idle stall, false the
+  // instant the kid Wipes. Toy-LOCAL on purpose — NOT pre-abstracted into a
+  // shared primitive (the `shared-toy-loop-abstraction` cautionary precedent).
+  const [demoActive, setDemoActive] = useState(false);
 
   const goalMet = cleaned >= GOAL_COUNT;
   // The on-stage Critter (clamped so the last Critter's dismissing/splash beat,
@@ -180,6 +194,23 @@ export function MuddyPuddle({ onComplete }: ToyProps) {
     onComplete();
   }, [goalMet, onComplete]);
 
+  // Arm the wordless demo's idle timer (slice #06). It runs ONLY while a Critter
+  // is settled in `wiping`: re-entering `wiping` for each fresh Critter re-arms
+  // it (so the demo re-prompts on any later Critter where the kid stalls), and
+  // the cleanup — on leaving `wiping` (the clean-snap → `dismissing`) or
+  // unmount — both clears the pending timer and drops `demoActive`, so the demo
+  // never bleeds past the Critter it was teaching. The on-stage ghost-finger
+  // sweep + blob lift/reform driven by `demoActive` is on-device-tuned and not
+  // unit-asserted.
+  useEffect(() => {
+    if (state !== 'wiping') return;
+    const timer = setTimeout(() => setDemoActive(true), IDLE_DEMO_DELAY_MS);
+    return () => {
+      clearTimeout(timer);
+      setDemoActive(false);
+    };
+  }, [state, round]);
+
   // `idle` is the intermission gap — no Critter on stage, matching AC #1's
   // "zero Critters during idle".
   const critterOnStage = state === 'arriving' || state === 'wiping' || state === 'dismissing';
@@ -187,6 +218,7 @@ export function MuddyPuddle({ onComplete }: ToyProps) {
   return (
     <main
       data-toy-state={state}
+      data-demo-active={demoActive}
       style={{
         position: 'relative',
         minHeight: '100dvh',
