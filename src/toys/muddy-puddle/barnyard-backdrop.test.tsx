@@ -78,4 +78,24 @@ describe('Muddy Puddle — BarnyardBackdrop', () => {
       }
     }
   });
+
+  it('renders the fence silhouette, each post addressable via its data-barnyard-layer hook and painted from the barnyard palette', () => {
+    // AC #2: the distant fence flanking the barn — the other half of the
+    // barn/fence silhouette. Addressed structurally via
+    // `data-barnyard-layer="fence"`; each post's colour traces to the barnyard
+    // palette. Count/positions are on-device per the slice DoD, so we assert
+    // presence (at least one) + the palette trace, not an exact post count.
+    const paletteValues = new Set<string>(Object.values(palette));
+    const { container } = render(<BarnyardBackdrop />);
+
+    const fence = container.querySelectorAll('[data-barnyard-layer="fence"]');
+    expect(fence.length).toBeGreaterThan(0);
+    for (const layer of fence) {
+      const colours = paletteColoursOf(layer);
+      expect(colours.length).toBeGreaterThan(0);
+      for (const colour of colours) {
+        expect(paletteValues).toContain(colour);
+      }
+    }
+  });
 });
