@@ -77,6 +77,7 @@ export function WipeableCritter({ onClean }: { onClean?: () => void }) {
 
   return (
     <div
+      data-wipe-surface=""
       // `touch-action: none` so the browser does not hijack the drag for
       // scroll/zoom — the wipe gets every touch move (slice spec).
       style={{ touchAction: 'none' }}
