@@ -71,4 +71,27 @@ describe('Muddy Puddle — PigletDrawing', () => {
     expect(clean.querySelectorAll('[data-piglet-part="body"]').length).toBeGreaterThan(0);
     expect(clean.querySelectorAll('[data-piglet-part="snout"]').length).toBeGreaterThan(0);
   });
+
+  it('sources every colour from the barnyard palette — no hardcoded HSL', () => {
+    // Non-negotiable (ADR-0002, mirrors the Fish): every fill/stroke in
+    // `PigletDrawing` routes through the local barnyard palette, no raw colour
+    // strings. We sweep BOTH states and check every colour-bearing attribute on
+    // every node — piglet parts, mud blobs, and the tease — excluding the
+    // structural `none` sentinel used on stroked outlines, tracing each back to
+    // a `palette` value.
+    const values = new Set<string>(Object.values(palette));
+
+    for (const cleanedState of [false, true]) {
+      const { container } = render(<PigletDrawing cleaned={cleanedState} />);
+      const painted = container.querySelectorAll('[fill], [stroke]');
+      expect(painted.length).toBeGreaterThan(0);
+      for (const node of painted) {
+        for (const attr of ['fill', 'stroke'] as const) {
+          const colour = node.getAttribute(attr);
+          if (colour === null || colour === 'none') continue;
+          expect(values).toContain(colour);
+        }
+      }
+    }
+  });
 });
