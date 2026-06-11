@@ -4,6 +4,7 @@ import type { ToyProps } from '../../shell/registry';
 import { timing } from '../../shell/tokens';
 import { BarnyardBackdrop } from './BarnyardBackdrop';
 import { WipeableCritter } from './WipeableCritter';
+import { GhostFinger } from './GhostFinger';
 import { CAST, shuffle } from './cast';
 
 /**
@@ -305,6 +306,11 @@ export function MuddyPuddle({ onComplete }: ToyProps) {
               }}
             />
           </motion.div>
+          {/* The wordless demo's ghost finger, overlaid on the mud while the kid
+           * stalls (slice #06). Rendered only when `demoActive` (which is true
+           * only during `wiping`), sits ON TOP of the Critter, and is
+           * `pointer-events: none` so the real Wipe underneath is untouched. */}
+          {demoActive && <GhostFinger />}
         </div>
       )}
     </main>
