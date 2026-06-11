@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { ToyProps } from '../../shell/registry';
 import { BarnyardBackdrop } from './BarnyardBackdrop';
 import { WipeableCritter } from './WipeableCritter';
@@ -21,13 +21,29 @@ import { WipeableCritter } from './WipeableCritter';
 type LoopState = 'arriving' | 'wiping' | 'dismissing' | 'idle' | 'completed';
 
 /**
+ * Per-piglet beat durations (ms). The state machine drains its current timer
+ * when each beat completes; transitions are time-driven except `wiping →
+ * dismissing` (the kid's Wipe crossing the clean threshold). Exact ms is
+ * on-device-tuned per the slice DoD — the structural rule is the named beats.
+ * Own copies, duplicated from the Fish's machine rather than shared.
+ */
+const TIMING_ARRIVAL_MS = 500;
+
+/**
  * Muddy Puddle — a barnyard scene that sends one muddy piglet at a time onto
  * the stage for the kid to Wipe clean. The state machine bootstraps to
  * `arriving`: one piglet trots in immediately, reachable as the accessible
  * element labelled "Piglet".
  */
 export function MuddyPuddle(_props: ToyProps) {
-  const [state] = useState<LoopState>('arriving');
+  const [state, setState] = useState<LoopState>('arriving');
+
+  useEffect(() => {
+    if (state === 'arriving') {
+      const timer = setTimeout(() => setState('wiping'), TIMING_ARRIVAL_MS);
+      return () => clearTimeout(timer);
+    }
+  }, [state]);
 
   return (
     <main data-toy-state={state} style={{ position: 'relative', minHeight: '100dvh' }}>
