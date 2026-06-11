@@ -1,0 +1,55 @@
+import { palette } from './palette';
+
+/**
+ * The Muddy Puddle piglet Critter, drawn from SVG primitives only — no image
+ * assets (ADR-0002). Every fill sources the local barnyard palette. Structural
+ * pieces are tagged `data-piglet-part` so tests address them without coupling
+ * to which primitive draws each one (mirrors `data-fish-part` on the Fish).
+ *
+ * A warm, round, kawaii pink piglet: round body, upright triangular ears, a big
+ * snout with two nostrils, large dark eyes with catchlights, blushy cheeks, and
+ * a small smile.
+ */
+export function PigletDrawing() {
+  return (
+    <svg
+      viewBox="0 0 100 100"
+      aria-hidden="true"
+      style={{ width: 'min(220px, 55vw)', height: 'auto', display: 'block' }}
+    >
+      {/* ears — upright soft triangles behind the body, deeper-pink inners */}
+      <path data-piglet-part="ear" d="M34 30 L30 12 L46 24 Z" fill={palette.pigletBody} />
+      <path data-piglet-part="ear" d="M66 30 L70 12 L54 24 Z" fill={palette.pigletBody} />
+      <path data-piglet-part="ear" d="M35 27 L33 17 L43 24 Z" fill={palette.pigletSnout} />
+      <path data-piglet-part="ear" d="M65 27 L67 17 L57 24 Z" fill={palette.pigletSnout} />
+
+      {/* smooth round body */}
+      <circle data-piglet-part="body" cx="50" cy="54" r="32" fill={palette.pigletBody} />
+
+      {/* blushy cheeks */}
+      <circle data-piglet-part="cheek" cx="33" cy="58" r="7" fill={palette.pigletCheek} />
+      <circle data-piglet-part="cheek" cx="67" cy="58" r="7" fill={palette.pigletCheek} />
+
+      {/* large round eyes, each with a white catchlight for a friendly spark */}
+      <circle data-piglet-part="eye" cx="40" cy="46" r="5" fill={palette.pigletEye} />
+      <circle data-piglet-part="eye" cx="60" cy="46" r="5" fill={palette.pigletEye} />
+      <circle data-piglet-part="eye-shine" cx="41.8" cy="44.2" r="1.6" fill={palette.pigletEyeShine} />
+      <circle data-piglet-part="eye-shine" cx="61.8" cy="44.2" r="1.6" fill={palette.pigletEyeShine} />
+
+      {/* snout — the signature feature: a deeper-pink oval with two nostrils */}
+      <ellipse data-piglet-part="snout" cx="50" cy="62" rx="14" ry="10" fill={palette.pigletSnout} />
+      <ellipse data-piglet-part="snout" cx="45" cy="62" rx="2.2" ry="3.2" fill={palette.pigletEye} />
+      <ellipse data-piglet-part="snout" cx="55" cy="62" rx="2.2" ry="3.2" fill={palette.pigletEye} />
+
+      {/* small smile under the snout */}
+      <path
+        data-piglet-part="smile"
+        d="M43 74 Q50 80 57 74"
+        fill="none"
+        stroke={palette.pigletEye}
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
