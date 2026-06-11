@@ -141,4 +141,21 @@ describe('Muddy Puddle — BarnyardBackdrop', () => {
       }
     }
   });
+
+  it('is decorative — aria-hidden and pointer-events: none, so the Critter above stays reachable', () => {
+    // The backdrop is the world behind the critters, not an interactive element.
+    // It must be hidden from screen readers (so they skim straight to the
+    // wipeable Critter) and transparent to taps/wipes (so touches fall through
+    // to the Critter above). Same posture as `UnderwaterBackdrop` / the meadow.
+    // We assert every root SVG carries `aria-hidden` and `pointer-events: none`;
+    // the full-bleed `dvh`/`env()` layout itself is on-device per the slice DoD.
+    const { container } = render(<BarnyardBackdrop />);
+
+    const svgs = container.querySelectorAll('svg');
+    expect(svgs.length).toBeGreaterThan(0);
+    for (const svg of svgs) {
+      expect(svg.getAttribute('aria-hidden')).toBe('true');
+      expect(svg.style.pointerEvents).toBe('none');
+    }
+  });
 });
