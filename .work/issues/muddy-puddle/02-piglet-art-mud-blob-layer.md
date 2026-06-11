@@ -1,7 +1,7 @@
 ---
 slice: 2
 title: First Critter art (piglet) + mud blob layer
-status: ready
+status: in-progress
 type: afk
 blocked_by: [1]
 parent_prd: muddy-puddle
