@@ -101,6 +101,16 @@ export function PigletDrawing() {
           />
         ))}
       </g>
+
+      {/* tease — one extremity (the left ear) re-drawn ON TOP of the mud so it
+       * pokes out of the smudges: the only legible bit of the Critter while
+       * muddy, sparking "who's that?". The full reveal lands at the clean-snap
+       * (slice #3). Tagged `data-piglet-tease` so the "obscured except one bit"
+       * contract is assertable without reading pixels. */}
+      <g data-piglet-tease="ear">
+        <path d="M34 30 L30 12 L46 24 Z" fill={palette.pigletBody} />
+        <path d="M35 27 L33 17 L43 24 Z" fill={palette.pigletSnout} />
+      </g>
     </svg>
   );
 }
