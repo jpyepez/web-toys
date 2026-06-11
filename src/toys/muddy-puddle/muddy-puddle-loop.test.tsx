@@ -142,4 +142,22 @@ describe('Muddy Puddle — sequential loop mechanic', () => {
     expect(screen.getByRole('img', { name: /Piglet/ })).toBeInTheDocument();
     expect(container.querySelectorAll('[data-mud-blob]')).toHaveLength(fullMud);
   });
+
+  it('ignores a Wipe during arriving — the trot-in is not interruptible into an early advance', async () => {
+    // AC #3 — Wipe safety during the trot-in. The piglet is mid-`arriving`
+    // (trotting in muddy) and an eager kid wiping at it must not punch through
+    // the choreography: no count advance, no early arrival of the next piglet,
+    // no `onComplete`. The only state that accepts the clean-snap is `wiping`.
+    // We wipe the piglet right through the threshold while still `arriving`; the
+    // machine must stay put on `arriving` (NOT jump to `dismissing`).
+    const onComplete = vi.fn();
+    const { container } = render(<MuddyPuddle onComplete={onComplete} />);
+
+    expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'arriving');
+
+    wipeCurrentPigletClean(container);
+
+    expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'arriving');
+    expect(onComplete).not.toHaveBeenCalled();
+  });
 });
