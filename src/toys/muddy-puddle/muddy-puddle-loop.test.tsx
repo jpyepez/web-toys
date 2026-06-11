@@ -96,4 +96,25 @@ describe('Muddy Puddle — sequential loop mechanic', () => {
     expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'dismissing');
     expect(container.querySelectorAll('[data-mud-blob]')).toHaveLength(0);
   });
+
+  it('transitions dismissing → idle after the trot-off beat, removing the piglet from the stage', async () => {
+    // The dismiss beat is the piglet's choreographed exit — revealed clean, it
+    // trots off happy. At its end the piglet leaves the DOM and the loop is
+    // `idle` — the intermission gap before the next piglet trots in (AC #1's
+    // "zero Critters during idle"). Both facets of "the trot-off finished" are
+    // observable through the public surface: `data-toy-state` and the absence of
+    // the accessible Piglet element.
+    const { container } = render(<MuddyPuddle onComplete={vi.fn()} />);
+
+    // Drive to `dismissing`.
+    await vi.runOnlyPendingTimersAsync(); // arriving → wiping (trot-in)
+    wipeCurrentPigletClean(container); // wiping → dismissing (clean-snap)
+    expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'dismissing');
+
+    // Drain the trot-off timer.
+    await vi.runOnlyPendingTimersAsync();
+
+    expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'idle');
+    expect(screen.queryByRole('img', { name: /Piglet/ })).toBeNull();
+  });
 });
