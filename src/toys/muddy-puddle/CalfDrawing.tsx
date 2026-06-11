@@ -1,4 +1,5 @@
 import { palette } from './palette';
+import { MudBlobs, type MudBlob } from './MudBlobs';
 
 /**
  * The left ear's geometry, named once so the structural ear (under the mud) and
@@ -7,6 +8,34 @@ import { palette } from './palette';
  * that the two references coincide.
  */
 const LEFT_EAR = { cx: 23, cy: 38, rx: 9, ry: 7 } as const;
+
+/**
+ * The calf's mud blanket — discrete deterministic smudges, each its own
+ * `data-mud-blob` node so coverage is countable (ADR-0006). Blankets the body +
+ * muzzle, leaving only the ear tease legible. Count/positions on-device-tuned;
+ * the contract is discreteness.
+ */
+export const CALF_BLOBS: readonly MudBlob[] = [
+  { cx: 40, cy: 24, r: 10 },
+  { cx: 52, cy: 22, r: 11 },
+  { cx: 62, cy: 24, r: 10 },
+  { cx: 70, cy: 30, r: 8 },
+  { cx: 30, cy: 36, r: 11 },
+  { cx: 44, cy: 34, r: 12 },
+  { cx: 58, cy: 34, r: 12 },
+  { cx: 72, cy: 40, r: 10 },
+  { cx: 28, cy: 48, r: 11 },
+  { cx: 42, cy: 48, r: 12 },
+  { cx: 58, cy: 48, r: 12 },
+  { cx: 72, cy: 50, r: 10 },
+  { cx: 32, cy: 60, r: 11 },
+  { cx: 50, cy: 60, r: 13 },
+  { cx: 68, cy: 60, r: 11 },
+  { cx: 40, cy: 72, r: 11 },
+  { cx: 56, cy: 72, r: 11 },
+  { cx: 50, cy: 80, r: 9 },
+  { cx: 30, cy: 28, r: 8 },
+];
 
 /**
  * The calf Critter, SVG primitives only (ADR-0002) — a warm tan round body with
@@ -20,6 +49,7 @@ const LEFT_EAR = { cx: 23, cy: 38, rx: 9, ry: 7 } as const;
  */
 export function CalfDrawing({
   cleaned = false,
+  remainingBlobIndices,
 }: {
   cleaned?: boolean;
   remainingBlobIndices?: readonly number[];
@@ -56,7 +86,16 @@ export function CalfDrawing({
       <ellipse data-critter-part="muzzle" cx="44" cy="65" rx="2.2" ry="3.2" fill={palette.calfEye} />
       <ellipse data-critter-part="muzzle" cx="56" cy="65" rx="2.2" ry="3.2" fill={palette.calfEye} />
 
-      {!cleaned && null}
+      {!cleaned && (
+        <>
+          {/* mud layer caked on top of the clean calf */}
+          <MudBlobs blobs={CALF_BLOBS} remaining={remainingBlobIndices} />
+          {/* tease — the left ear re-drawn ON TOP of the mud, the one bit poking out */}
+          <g data-critter-tease="ear">
+            <ellipse {...LEFT_EAR} fill={palette.calfBody} />
+          </g>
+        </>
+      )}
     </svg>
   );
 }

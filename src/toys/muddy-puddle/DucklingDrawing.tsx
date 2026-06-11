@@ -1,4 +1,5 @@
 import { palette } from './palette';
+import { MudBlobs, type MudBlob } from './MudBlobs';
 
 /**
  * The duckling's bill geometry, named once so the structural bill (drawn under
@@ -8,6 +9,34 @@ import { palette } from './palette';
  * on-device-tuned; the invariant is that the two references coincide.
  */
 const BILL = { cx: 50, cy: 64, rx: 13, ry: 8 } as const;
+const BILL_SPLIT = 'M40 64 Q50 68 60 64';
+
+/**
+ * The duckling's mud blanket — discrete smudges (in the `0 0 100 100` viewBox)
+ * caked over the clean duckling. Deterministic by construction (no randomness),
+ * each becoming its own `data-mud-blob` node so coverage is countable (ADR-0006).
+ * Count/positions/radii are on-device-tuned; the contract is discrete countable
+ * nodes blanketing the Critter, leaving only the bill tease legible.
+ */
+export const DUCKLING_BLOBS: readonly MudBlob[] = [
+  { cx: 40, cy: 24, r: 10 },
+  { cx: 52, cy: 22, r: 11 },
+  { cx: 62, cy: 24, r: 10 },
+  { cx: 30, cy: 36, r: 11 },
+  { cx: 44, cy: 34, r: 12 },
+  { cx: 58, cy: 34, r: 12 },
+  { cx: 70, cy: 38, r: 10 },
+  { cx: 28, cy: 48, r: 11 },
+  { cx: 42, cy: 48, r: 12 },
+  { cx: 58, cy: 48, r: 12 },
+  { cx: 72, cy: 50, r: 10 },
+  { cx: 32, cy: 60, r: 11 },
+  { cx: 50, cy: 60, r: 13 },
+  { cx: 68, cy: 60, r: 11 },
+  { cx: 40, cy: 72, r: 10 },
+  { cx: 56, cy: 72, r: 10 },
+  { cx: 50, cy: 80, r: 9 },
+];
 
 /**
  * The duckling Critter, drawn from SVG primitives only (ADR-0002) — a pale-lemon
@@ -23,6 +52,7 @@ const BILL = { cx: 50, cy: 64, rx: 13, ry: 8 } as const;
  */
 export function DucklingDrawing({
   cleaned = false,
+  remainingBlobIndices,
 }: {
   cleaned?: boolean;
   remainingBlobIndices?: readonly number[];
@@ -53,14 +83,30 @@ export function DucklingDrawing({
       <ellipse data-critter-part="beak" {...BILL} fill={palette.ducklingBeak} />
       <path
         data-critter-part="beak"
-        d="M40 64 Q50 68 60 64"
+        d={BILL_SPLIT}
         fill="none"
         stroke={palette.ducklingEye}
         strokeWidth="1.5"
         strokeLinecap="round"
       />
 
-      {!cleaned && null}
+      {!cleaned && (
+        <>
+          {/* mud layer caked on top of the clean duckling */}
+          <MudBlobs blobs={DUCKLING_BLOBS} remaining={remainingBlobIndices} />
+          {/* tease — the bill re-drawn ON TOP of the mud, the one bit poking out */}
+          <g data-critter-tease="beak">
+            <ellipse {...BILL} fill={palette.ducklingBeak} />
+            <path
+              d={BILL_SPLIT}
+              fill="none"
+              stroke={palette.ducklingEye}
+              strokeWidth="1.5"
+              strokeLinecap="round"
+            />
+          </g>
+        </>
+      )}
     </svg>
   );
 }

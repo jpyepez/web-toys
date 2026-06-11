@@ -1,4 +1,5 @@
 import { palette } from './palette';
+import { MudBlobs, type MudBlob } from './MudBlobs';
 
 /**
  * The left ear's geometry, named once so the structural ear (under the mud) and
@@ -7,6 +8,33 @@ import { palette } from './palette';
  * the two references coincide.
  */
 const LEFT_EAR = { cx: 24, cy: 46, rx: 8, ry: 13 } as const;
+
+/**
+ * The lamb's mud blanket — discrete deterministic smudges, each its own
+ * `data-mud-blob` node so coverage is countable (ADR-0006). Reaches the wool's
+ * cloud bumps (up to cy≈24) so the body is fully obscured, leaving only the ear
+ * tease legible. Count/positions on-device-tuned; the contract is discreteness.
+ */
+export const LAMB_BLOBS: readonly MudBlob[] = [
+  { cx: 38, cy: 24, r: 11 },
+  { cx: 50, cy: 22, r: 12 },
+  { cx: 62, cy: 24, r: 11 },
+  { cx: 28, cy: 36, r: 11 },
+  { cx: 44, cy: 34, r: 12 },
+  { cx: 58, cy: 34, r: 12 },
+  { cx: 72, cy: 38, r: 11 },
+  { cx: 26, cy: 48, r: 11 },
+  { cx: 42, cy: 48, r: 13 },
+  { cx: 58, cy: 48, r: 13 },
+  { cx: 74, cy: 50, r: 11 },
+  { cx: 32, cy: 60, r: 12 },
+  { cx: 50, cy: 60, r: 13 },
+  { cx: 68, cy: 60, r: 12 },
+  { cx: 38, cy: 72, r: 11 },
+  { cx: 56, cy: 72, r: 11 },
+  { cx: 72, cy: 70, r: 9 },
+  { cx: 50, cy: 80, r: 9 },
+];
 
 /**
  * The lamb Critter, SVG primitives only (ADR-0002) — a cloud of cream wool
@@ -20,6 +48,7 @@ const LEFT_EAR = { cx: 24, cy: 46, rx: 8, ry: 13 } as const;
  */
 export function LambDrawing({
   cleaned = false,
+  remainingBlobIndices,
 }: {
   cleaned?: boolean;
   remainingBlobIndices?: readonly number[];
@@ -65,7 +94,16 @@ export function LambDrawing({
         strokeLinecap="round"
       />
 
-      {!cleaned && null}
+      {!cleaned && (
+        <>
+          {/* mud layer caked on top of the clean lamb */}
+          <MudBlobs blobs={LAMB_BLOBS} remaining={remainingBlobIndices} />
+          {/* tease — the left ear re-drawn ON TOP of the mud, the one bit poking out */}
+          <g data-critter-tease="ear">
+            <ellipse {...LEFT_EAR} fill={palette.lambEar} />
+          </g>
+        </>
+      )}
     </svg>
   );
 }

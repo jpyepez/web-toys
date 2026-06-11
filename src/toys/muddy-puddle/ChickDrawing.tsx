@@ -1,4 +1,5 @@
 import { palette } from './palette';
+import { MudBlobs, type MudBlob } from './MudBlobs';
 
 /**
  * The wing geometry, named once so the structural wing (under the mud) and the
@@ -7,6 +8,33 @@ import { palette } from './palette';
  * two references coincide.
  */
 const WING = { cx: 71, cy: 57, rx: 12, ry: 16 } as const;
+
+/**
+ * The chick's mud blanket — discrete deterministic smudges, each its own
+ * `data-mud-blob` node so coverage is countable (ADR-0006). Blankets the body +
+ * tuft, leaving only the wing tease legible. Count/positions on-device-tuned;
+ * the contract is discreteness. A touch smaller a set than the bigger animals,
+ * matching the chick's smaller body — per-Critter blob count is a slice-#3
+ * duration lever, not a fixed number.
+ */
+export const CHICK_BLOBS: readonly MudBlob[] = [
+  { cx: 47, cy: 22, r: 9 },
+  { cx: 57, cy: 24, r: 9 },
+  { cx: 34, cy: 38, r: 11 },
+  { cx: 48, cy: 36, r: 12 },
+  { cx: 62, cy: 38, r: 11 },
+  { cx: 30, cy: 50, r: 11 },
+  { cx: 44, cy: 50, r: 12 },
+  { cx: 58, cy: 50, r: 12 },
+  { cx: 70, cy: 52, r: 10 },
+  { cx: 36, cy: 62, r: 11 },
+  { cx: 52, cy: 62, r: 12 },
+  { cx: 66, cy: 62, r: 11 },
+  { cx: 44, cy: 72, r: 10 },
+  { cx: 58, cy: 72, r: 10 },
+  { cx: 50, cy: 80, r: 9 },
+  { cx: 30, cy: 60, r: 8 },
+];
 
 /**
  * The chick Critter, SVG primitives only (ADR-0002) — a warm golden round body
@@ -21,6 +49,7 @@ const WING = { cx: 71, cy: 57, rx: 12, ry: 16 } as const;
  */
 export function ChickDrawing({
   cleaned = false,
+  remainingBlobIndices,
 }: {
   cleaned?: boolean;
   remainingBlobIndices?: readonly number[];
@@ -55,7 +84,16 @@ export function ChickDrawing({
       {/* tiny triangular beak — the signature feature */}
       <path data-critter-part="beak" d="M45 58 L55 58 L50 66 Z" fill={palette.chickBeak} />
 
-      {!cleaned && null}
+      {!cleaned && (
+        <>
+          {/* mud layer caked on top of the clean chick */}
+          <MudBlobs blobs={CHICK_BLOBS} remaining={remainingBlobIndices} />
+          {/* tease — the wing re-drawn ON TOP of the mud, the one bit poking out */}
+          <g data-critter-tease="wing">
+            <ellipse {...WING} fill={palette.chickWing} />
+          </g>
+        </>
+      )}
     </svg>
   );
 }
