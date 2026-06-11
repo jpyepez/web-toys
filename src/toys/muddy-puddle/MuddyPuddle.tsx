@@ -20,6 +20,9 @@ import { WipeableCritter } from './WipeableCritter';
  */
 type LoopState = 'arriving' | 'wiping' | 'dismissing' | 'idle' | 'completed';
 
+/** How many piglets make up the Goal. Sized for ~15–30s of kid-paced loops. */
+const PIGLET_COUNT = 5;
+
 /**
  * Per-piglet beat durations (ms). The state machine drains its current timer
  * when each beat completes; transitions are time-driven except `wiping →
@@ -39,6 +42,12 @@ const TIMING_INTERMISSION_MS = 250;
  */
 export function MuddyPuddle(_props: ToyProps) {
   const [state, setState] = useState<LoopState>('arriving');
+  // Counts the piglets the kid has cleaned. Increments on each `wiping →
+  // dismissing` transition (the clean-snap). Reaching PIGLET_COUNT is the
+  // Goal-met signal: the loop terminates in `completed`.
+  const [cleaned, setCleaned] = useState(0);
+
+  const goalMet = cleaned >= PIGLET_COUNT;
 
   useEffect(() => {
     if (state === 'arriving') {
@@ -46,14 +55,18 @@ export function MuddyPuddle(_props: ToyProps) {
       return () => clearTimeout(timer);
     }
     if (state === 'dismissing') {
-      const timer = setTimeout(() => setState('idle'), TIMING_DISMISS_MS);
+      // The Goal-met trot-off (Nth piglet's exit) hands off to the terminal
+      // `completed` state rather than back into the loop — AC #4: no further
+      // piglet mounts underneath the Shell's celebration overlay.
+      const next: LoopState = goalMet ? 'completed' : 'idle';
+      const timer = setTimeout(() => setState(next), TIMING_DISMISS_MS);
       return () => clearTimeout(timer);
     }
     if (state === 'idle') {
       const timer = setTimeout(() => setState('arriving'), TIMING_INTERMISSION_MS);
       return () => clearTimeout(timer);
     }
-  }, [state]);
+  }, [state, goalMet]);
 
   // `idle` is the intermission gap — no piglet on stage, matching AC #1's
   // "zero Critters during idle".
@@ -72,6 +85,7 @@ export function MuddyPuddle(_props: ToyProps) {
               // arrival, no `onComplete`. Mirrors the Fish's `waiting`-only tap
               // guard.
               if (state !== 'wiping') return;
+              setCleaned((c) => c + 1);
               setState('dismissing');
             }}
           />
