@@ -41,7 +41,7 @@ single Critter; no loop yet (slice #4).
       are removed at once and the Critter flips to the revealed-clean art.
 - [x] Multiple simultaneous touch points each clear blobs they cross (accept-all-
       touch-points); no crash, no special-casing — just cleans faster.
-- [ ] The wipe surface carries `touch-action: none`.
+- [x] The wipe surface carries `touch-action: none`.
 - [ ] Coverage is asserted by **node count**, never by pixel/canvas reads (ADR-0006).
 - [ ] Public-interface tests pass; shim only the Web Audio boundary (no sound in
       this slice yet); never mock our own components.

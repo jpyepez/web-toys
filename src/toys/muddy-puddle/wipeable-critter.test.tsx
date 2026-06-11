@@ -128,4 +128,21 @@ describe('Muddy Puddle — WipeableCritter wipe-coverage mechanic', () => {
     // catching the touch points, not a detached sibling.
     expect(surface!.querySelector('[data-mud-blob]')).not.toBeNull();
   });
+
+  it('models coverage as countable blob nodes, never a canvas (ADR-0006)', () => {
+    // AC #5 / ADR-0006: wipe coverage is observed by counting remaining blob
+    // NODES, not by reading pixels — so no `<canvas>` may enter the mechanic,
+    // and partial coverage must remain countable. After a single crossing the
+    // mud is a positive, countable set of nodes (some cleared, the rest still
+    // present) and there is no canvas anywhere.
+    const { container } = render(<WipeableCritter />);
+
+    expect(container.querySelector('canvas')).toBeNull();
+
+    fireEvent.pointerOver(container.querySelector('[data-mud-blob]')!);
+
+    const remaining = container.querySelectorAll('[data-mud-blob]').length;
+    expect(remaining).toBeGreaterThan(0);
+    expect(container.querySelector('canvas')).toBeNull();
+  });
 });
