@@ -64,7 +64,17 @@ export function MuddyPuddle(_props: ToyProps) {
       <BarnyardBackdrop />
       {critterOnStage && (
         <div role="img" aria-label="Piglet">
-          <WipeableCritter onClean={() => setState('dismissing')} />
+          <WipeableCritter
+            onClean={() => {
+              // Only `wiping` accepts the clean-snap — a Wipe landing during the
+              // trot-in (`arriving`) or trot-off (`dismissing`) is a
+              // non-destructive no-op (AC #3): no count advance, no early
+              // arrival, no `onComplete`. Mirrors the Fish's `waiting`-only tap
+              // guard.
+              if (state !== 'wiping') return;
+              setState('dismissing');
+            }}
+          />
         </div>
       )}
     </main>
