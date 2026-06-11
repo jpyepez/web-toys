@@ -24,17 +24,42 @@ import { MUD_BLOBS, PigletDrawing } from './PigletDrawing';
  */
 const ALL_BLOBS = MUD_BLOBS.map((_, i) => i);
 
+/**
+ * The clean-snap fires once this fraction of blobs is wiped — the child never
+ * has to clear the final bit; partial completion is by design (touch-dev
+ * research: 3-year-olds abandon the last fraction). On-device-tuned (~80%) per
+ * the slice Notes; the contract tested is THAT crossing it snaps clean, not the
+ * exact value.
+ */
+const CLEAN_THRESHOLD = 0.8;
+
 export function WipeableCritter() {
-  const [remaining, setRemaining] = useState<number[]>(ALL_BLOBS);
+  // `remaining` and `cleaned` move together atomically through one updater so a
+  // burst of pointer events (multi-finger mashing) can't race: each crossing
+  // sees the prior crossing's result, and the snap to `cleaned` is computed
+  // from the same snapshot that drops the blob.
+  const [state, setState] = useState<{ remaining: number[]; cleaned: boolean }>({
+    remaining: ALL_BLOBS,
+    cleaned: false,
+  });
 
   // Delegated wipe: read the crossed blob's index off the event target and drop
-  // it from the remaining set. A blob already cleared by an earlier stroke is a
-  // no-op (it is no longer in `remaining`), so cleared mud stays cleared.
+  // it. A blob already cleared by an earlier stroke is a no-op (it is no longer
+  // in `remaining`), so cleared mud stays cleared. When the drop carries the
+  // wiped fraction past the threshold, the Critter snaps clean: any leftover
+  // blobs vanish at once (`remaining: []`) and the reveal art shows.
   const wipeBlobUnderPointer = (target: EventTarget) => {
     const raw = (target as Element).getAttribute?.('data-blob-index');
     if (raw == null) return;
     const index = Number(raw);
-    setRemaining((prev) => (prev.includes(index) ? prev.filter((i) => i !== index) : prev));
+    setState((prev) => {
+      if (prev.cleaned || !prev.remaining.includes(index)) return prev;
+      const next = prev.remaining.filter((i) => i !== index);
+      const wipedFraction = (ALL_BLOBS.length - next.length) / ALL_BLOBS.length;
+      return wipedFraction >= CLEAN_THRESHOLD
+        ? { remaining: [], cleaned: true }
+        : { remaining: next, cleaned: false };
+    });
   };
 
   return (
@@ -44,7 +69,7 @@ export function WipeableCritter() {
       style={{ touchAction: 'none' }}
       onPointerOver={(e) => wipeBlobUnderPointer(e.target)}
     >
-      <PigletDrawing remainingBlobIndices={remaining} />
+      <PigletDrawing cleaned={state.cleaned} remainingBlobIndices={state.remaining} />
     </div>
   );
 }
