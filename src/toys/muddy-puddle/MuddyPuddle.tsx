@@ -49,7 +49,7 @@ export function MuddyPuddle(_props: ToyProps) {
     <main data-toy-state={state} style={{ position: 'relative', minHeight: '100dvh' }}>
       <BarnyardBackdrop />
       <div role="img" aria-label="Piglet">
-        <WipeableCritter />
+        <WipeableCritter onClean={() => setState('dismissing')} />
       </div>
     </main>
   );
