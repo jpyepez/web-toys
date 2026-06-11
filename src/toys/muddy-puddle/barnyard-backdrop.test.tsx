@@ -118,4 +118,27 @@ describe('Muddy Puddle — BarnyardBackdrop', () => {
       }
     }
   });
+
+  it('renders the mud puddle in the lower third, addressable via its data-barnyard-layer hook and painted from the barnyard palette', () => {
+    // AC #2: the mud puddle the critters emerge from (and the last one splashes
+    // in, slice #04) — anchored in the lower third per the bottom-anchored
+    // layered pattern (ADR-0005). Addressed structurally via
+    // `data-barnyard-layer="puddle"`; every colour it paints traces to the
+    // barnyard palette (the puddle is built from `mud`/`puddle`/`sparkle`, so
+    // set membership covers the mud base, the wet sheen, and the glints).
+    // Position/shape is on-device per the slice DoD, so we assert presence + the
+    // palette trace, not geometry.
+    const paletteValues = new Set<string>(Object.values(palette));
+    const { container } = render(<BarnyardBackdrop />);
+
+    const puddle = container.querySelectorAll('[data-barnyard-layer="puddle"]');
+    expect(puddle.length).toBeGreaterThan(0);
+    for (const layer of puddle) {
+      const colours = paletteColoursOf(layer);
+      expect(colours.length).toBeGreaterThan(0);
+      for (const colour of colours) {
+        expect(paletteValues).toContain(colour);
+      }
+    }
+  });
 });
