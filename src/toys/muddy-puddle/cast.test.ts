@@ -29,4 +29,23 @@ describe('Muddy Puddle — shuffle', () => {
     expect(result).toHaveLength(input.length);
     expect(input).toEqual(before);
   });
+
+  it('applies the injected randomness — the order it produces is determined by the random source', () => {
+    // AC #4: the shuffle is APPLIED (not a pass-through copy). A real shuffle
+    // consults its randomness to place each element, so feeding two different
+    // deterministic random sources yields two different orders — proof the
+    // ordering depends on the source. We assert that dependence, never a
+    // specific permutation (that would couple to the algorithm and is
+    // non-deterministic at play time per the slice Notes). Randomness is the one
+    // boundary collaborator, injected so this stays deterministic.
+    const cast = ['piglet', 'duckling', 'lamb', 'chick', 'calf'];
+
+    const lows = shuffle(cast, () => 0.01);
+    const highs = shuffle(cast, () => 0.99);
+
+    expect(lows).not.toEqual(highs);
+    // Each remains a permutation — the applied shuffle never invents or drops.
+    expect([...lows].sort()).toEqual([...cast].sort());
+    expect([...highs].sort()).toEqual([...cast].sort());
+  });
 });
