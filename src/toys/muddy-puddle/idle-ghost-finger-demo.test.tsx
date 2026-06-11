@@ -74,4 +74,38 @@ describe('Muddy Puddle — idle ghost-finger demo', () => {
     // advancing the loop.
     expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'wiping');
   });
+
+  it('reforms its blobs — the demo never advances the cleaned count or the threshold', async () => {
+    // AC #3. The demo teaches HONESTLY: it shows the Wipe but does not play the
+    // Toy for the child. Its blobs lift and REFORM — so after it activates, the
+    // mud blanket is back to COMPLETE (the contiguous full set `0..n-1`, no
+    // pre-wiped gaps), the loop is still `wiping` (the clean-snap never fired),
+    // and `onComplete` has not advanced. The lift/reform animation itself is
+    // on-device-tuned (not asserted); what we pin is the honesty invariant —
+    // zero net progress — through the public DOM. (Asserting the contiguous
+    // full set, not a raw count, keeps it animal-agnostic across the shuffled
+    // cast, which carry different blob counts — slice #05.)
+    const onComplete = vi.fn();
+    const { container } = render(<MuddyPuddle onComplete={onComplete} />);
+
+    await vi.runOnlyPendingTimersAsync();
+    const before = [...container.querySelectorAll('[data-mud-blob]')]
+      .map((b) => Number(b.getAttribute('data-blob-index')))
+      .sort((a, b) => a - b);
+    expect(before.length).toBeGreaterThan(1);
+
+    // Let the demo activate (the child stalls, no Wipe).
+    await vi.advanceTimersByTimeAsync(PAST_IDLE_DELAY_MS);
+    expect(screen.getByRole('main')).toHaveAttribute('data-demo-active', 'true');
+
+    // The full mud blanket is intact — the demo lifted nothing for real.
+    const after = [...container.querySelectorAll('[data-mud-blob]')]
+      .map((b) => Number(b.getAttribute('data-blob-index')))
+      .sort((a, b) => a - b);
+    expect(after).toEqual(before);
+    expect(after).toEqual(after.map((_, i) => i));
+    // No progress advanced: still awaiting the kid's Wipe, Goal untouched.
+    expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'wiping');
+    expect(onComplete).not.toHaveBeenCalled();
+  });
 });
