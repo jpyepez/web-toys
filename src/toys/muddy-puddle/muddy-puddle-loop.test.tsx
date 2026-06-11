@@ -258,4 +258,39 @@ describe('Muddy Puddle — sequential loop mechanic', () => {
     rerender(<MuddyPuddle onComplete={vi.fn()} />);
     expect(onComplete).toHaveBeenCalledTimes(1);
   });
+
+  it('never has more than one piglet on stage across arriving / wiping / dismissing / idle', async () => {
+    // AC #1's headline invariant. Walks the loop through every state once and
+    // sweeps the role-query at each beat, asserting `length ≤ 1` (and = 0 at
+    // `idle`). The state-specific tests above pin individual transitions; this
+    // one is the single-glance guard against any future change that mounts two
+    // piglets at once (e.g. trotting the next piglet in before the previous
+    // one's trot-off completes).
+    const { container } = render(<MuddyPuddle onComplete={vi.fn()} />);
+
+    const assertAtMostOnePiglet = () => {
+      // `queryAllByRole` (not `getAll`) so the count is valid at `idle` where
+      // zero piglets is the right answer; `getAll` throws on 0 matches.
+      expect(screen.queryAllByRole('img', { name: /Piglet/ }).length).toBeLessThanOrEqual(1);
+    };
+
+    // arriving — one piglet mid-trot-in.
+    expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'arriving');
+    assertAtMostOnePiglet();
+
+    // wiping — same piglet, centred awaiting the Wipe.
+    await vi.runOnlyPendingTimersAsync();
+    expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'wiping');
+    assertAtMostOnePiglet();
+
+    // dismissing — same piglet, revealed clean and trotting off.
+    wipeCurrentPigletClean(container);
+    expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'dismissing');
+    assertAtMostOnePiglet();
+
+    // idle — no piglet on stage, intermission gap.
+    await vi.runOnlyPendingTimersAsync();
+    expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'idle');
+    expect(screen.queryAllByRole('img', { name: /Piglet/ })).toHaveLength(0);
+  });
 });
