@@ -29,8 +29,22 @@ export type Critter = {
  * five-set is invariant). This is NOT a collection to track — no progress/score
  * meta-layer; the Completion is the whole reward.
  */
+/**
+ * The piglet — the first Critter (slices #02–#04 were piglet-only) and the
+ * standalone default the Wipe mechanic falls back to when no cast member is
+ * named. Lifted to a named const so it is a single source of truth shared
+ * between `CAST` and that default, rather than the descriptor being written
+ * twice.
+ */
+export const PIGLET: Critter = {
+  id: 'piglet',
+  label: 'Piglet',
+  blobs: MUD_BLOBS,
+  Drawing: PigletDrawing,
+};
+
 export const CAST: readonly Critter[] = [
-  { id: 'piglet', label: 'Piglet', blobs: MUD_BLOBS, Drawing: PigletDrawing },
+  PIGLET,
   { id: 'duckling', label: 'Duckling', blobs: DUCKLING_BLOBS, Drawing: DucklingDrawing },
   { id: 'lamb', label: 'Lamb', blobs: LAMB_BLOBS, Drawing: LambDrawing },
   { id: 'chick', label: 'Chick', blobs: CHICK_BLOBS, Drawing: ChickDrawing },

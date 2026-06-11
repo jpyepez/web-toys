@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { MUD_BLOBS, PigletDrawing } from './PigletDrawing';
+import { type Critter, PIGLET } from './cast';
 
 /**
  * The Wipe — the first non-tap core interaction in the collection (muddy-puddle
@@ -23,8 +23,12 @@ import { MUD_BLOBS, PigletDrawing } from './PigletDrawing';
  * end-to-end on one Critter. The signal is the optional `onClean` callback,
  * fired once at the snap — the loop wires it to its `wiping → dismissing`
  * transition.
+ *
+ * Slice #05 makes it animal-agnostic: the Critter to Wipe is the injected
+ * `critter` descriptor (defaulting to the piglet — the slices #02–#04 default),
+ * so the loop sends a different cast member each round. The mud blanket and the
+ * reveal art come from that descriptor; the wipe logic below is unchanged.
  */
-const ALL_BLOBS = MUD_BLOBS.map((_, i) => i);
 
 /**
  * The clean-snap fires once this fraction of blobs is wiped — the child never
@@ -35,13 +39,25 @@ const ALL_BLOBS = MUD_BLOBS.map((_, i) => i);
  */
 const CLEAN_THRESHOLD = 0.8;
 
-export function WipeableCritter({ onClean }: { onClean?: () => void }) {
+export function WipeableCritter({
+  critter = PIGLET,
+  onClean,
+}: {
+  critter?: Critter;
+  onClean?: () => void;
+}) {
+  // The injected Critter's own mud blanket — every index caked on at mount. Each
+  // arrival is a fresh mount (the loop's `idle` beat unmounts the prior Critter),
+  // so this seeds the full set once per animal; no need to react to `critter`
+  // changing in place.
+  const allBlobs = critter.blobs.map((_, i) => i);
+  const Drawing = critter.Drawing;
   // `remaining` and `cleaned` move together atomically through one updater so a
   // burst of pointer events (multi-finger mashing) can't race: each crossing
   // sees the prior crossing's result, and the snap to `cleaned` is computed
   // from the same snapshot that drops the blob.
   const [state, setState] = useState<{ remaining: number[]; cleaned: boolean }>({
-    remaining: ALL_BLOBS,
+    remaining: allBlobs,
     cleaned: false,
   });
 
@@ -68,7 +84,7 @@ export function WipeableCritter({ onClean }: { onClean?: () => void }) {
     setState((prev) => {
       if (prev.cleaned || !prev.remaining.includes(index)) return prev;
       const next = prev.remaining.filter((i) => i !== index);
-      const wipedFraction = (ALL_BLOBS.length - next.length) / ALL_BLOBS.length;
+      const wipedFraction = (allBlobs.length - next.length) / allBlobs.length;
       return wipedFraction >= CLEAN_THRESHOLD
         ? { remaining: [], cleaned: true }
         : { remaining: next, cleaned: false };
@@ -99,7 +115,7 @@ export function WipeableCritter({ onClean }: { onClean?: () => void }) {
       }}
       onPointerOver={(e) => wipeBlobUnderPointer(e.target)}
     >
-      <PigletDrawing cleaned={state.cleaned} remainingBlobIndices={state.remaining} />
+      <Drawing cleaned={state.cleaned} remainingBlobIndices={state.remaining} />
     </div>
   );
 }
