@@ -1,7 +1,7 @@
 ---
 slice: 3
 title: Wipe-coverage mechanic + clean-snap reveal
-status: ready
+status: in-progress
 type: afk
 blocked_by: [2]
 parent_prd: muddy-puddle
