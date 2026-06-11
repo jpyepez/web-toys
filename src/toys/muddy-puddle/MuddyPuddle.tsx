@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ToyProps } from '../../shell/registry';
 import { BarnyardBackdrop } from './BarnyardBackdrop';
 import { WipeableCritter } from './WipeableCritter';
@@ -40,12 +40,16 @@ const TIMING_INTERMISSION_MS = 250;
  * `arriving`: one piglet trots in immediately, reachable as the accessible
  * element labelled "Piglet".
  */
-export function MuddyPuddle(_props: ToyProps) {
+export function MuddyPuddle({ onComplete }: ToyProps) {
   const [state, setState] = useState<LoopState>('arriving');
   // Counts the piglets the kid has cleaned. Increments on each `wiping →
   // dismissing` transition (the clean-snap). Reaching PIGLET_COUNT is the
-  // Goal-met signal: the loop terminates in `completed`.
+  // Goal-met signal: `onComplete` fires once and the loop terminates.
   const [cleaned, setCleaned] = useState(0);
+  // ADR-0001 amendment: `onComplete` is a one-shot. The ref guards against a
+  // re-render with a new `onComplete` reference (which the Shell does the moment
+  // Completion starts) re-firing the effect. Mirrors the Fish's `completedRef`.
+  const completedRef = useRef(false);
 
   const goalMet = cleaned >= PIGLET_COUNT;
 
@@ -67,6 +71,18 @@ export function MuddyPuddle(_props: ToyProps) {
       return () => clearTimeout(timer);
     }
   }, [state, goalMet]);
+
+  // Fire `onComplete` once when the Goal is met. Kept in its own effect so the
+  // Shell re-rendering with a new `onComplete` reference (which happens the
+  // moment Completion starts) doesn't double-fire — the completedRef pins it to
+  // a single call. Fires at the clean-snap (goalMet flips as `cleaned` hits
+  // PIGLET_COUNT), so the Shell's overlay layers over the 5th piglet's splash
+  // Outro while the Toy stays mounted through both (ADR-0001 amendment).
+  useEffect(() => {
+    if (!goalMet || completedRef.current) return;
+    completedRef.current = true;
+    onComplete();
+  }, [goalMet, onComplete]);
 
   // `idle` is the intermission gap — no piglet on stage, matching AC #1's
   // "zero Critters during idle".
