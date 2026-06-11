@@ -1,6 +1,36 @@
 import { palette } from './palette';
 
 /**
+ * Deterministic mud-blob smudges (in the piglet's `0 0 100 100` viewBox), caked
+ * over the clean piglet to obscure it. Stable across re-renders by construction
+ * (no `Math.random()`, no per-render jitter), like the backdrop's fence posts.
+ * Each entry becomes its OWN `data-mud-blob` SVG node so coverage is observable
+ * by COUNTING remaining nodes — never reading pixels — per ADR-0006; slice #3
+ * removes blobs from this layer as the child Wipes. Count/positions/radii are
+ * on-device-tuned (slice Notes); the contract is that the blobs are discrete,
+ * countable nodes blanketing the body. They cluster over the body and snout but
+ * deliberately leave the tease ear (drawn on top) poking out.
+ */
+const MUD_BLOBS: readonly { cx: number; cy: number; r: number }[] = [
+  { cx: 38, cy: 40, r: 11 },
+  { cx: 52, cy: 36, r: 12 },
+  { cx: 64, cy: 42, r: 10 },
+  { cx: 30, cy: 52, r: 11 },
+  { cx: 46, cy: 50, r: 13 },
+  { cx: 60, cy: 52, r: 12 },
+  { cx: 72, cy: 54, r: 9 },
+  { cx: 34, cy: 64, r: 11 },
+  { cx: 50, cy: 64, r: 13 },
+  { cx: 66, cy: 64, r: 11 },
+  { cx: 28, cy: 58, r: 8 },
+  { cx: 42, cy: 74, r: 10 },
+  { cx: 58, cy: 74, r: 10 },
+  { cx: 50, cy: 78, r: 9 },
+  { cx: 70, cy: 46, r: 8 },
+  { cx: 32, cy: 44, r: 8 },
+];
+
+/**
  * The Muddy Puddle piglet Critter, drawn from SVG primitives only — no image
  * assets (ADR-0002). Every fill sources the local barnyard palette. Structural
  * pieces are tagged `data-piglet-part` so tests address them without coupling
@@ -9,6 +39,11 @@ import { palette } from './palette';
  * A warm, round, kawaii pink piglet: round body, upright triangular ears, a big
  * snout with two nostrils, large dark eyes with catchlights, blushy cheeks, and
  * a small smile.
+ *
+ * The clean piglet is drawn first, then caked in a layer of discrete
+ * `data-mud-blob` smudges that obscure who it is (ADR-0006). Mirrors the Fish's
+ * single-component art-state pattern — slice #3 drives the mud-on ↔
+ * revealed-clean swap.
  */
 export function PigletDrawing() {
   return (
@@ -50,6 +85,22 @@ export function PigletDrawing() {
         strokeWidth="2"
         strokeLinecap="round"
       />
+
+      {/* mud layer — discrete smudge blobs caked over the clean piglet, each its
+       * own node so coverage is countable (ADR-0006). Drawn last so it sits on
+       * top of every piglet part, obscuring who it is. */}
+      <g data-mud-layer="mud">
+        {MUD_BLOBS.map((blob, i) => (
+          <circle
+            key={i}
+            data-mud-blob=""
+            cx={blob.cx}
+            cy={blob.cy}
+            r={blob.r}
+            fill={palette.mud}
+          />
+        ))}
+      </g>
     </svg>
   );
 }

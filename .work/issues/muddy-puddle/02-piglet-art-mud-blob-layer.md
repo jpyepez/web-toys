@@ -34,7 +34,7 @@ renders with one extremity teasing out. The wipe interaction is slice #3.
 
 - [x] The piglet renders from SVG primitives with `data-*` part hooks queryable
       in a render test; no image/sprite assets (ADR-0002).
-- [ ] The mud layer renders as **discrete** blob nodes (countable in a test),
+- [x] The mud layer renders as **discrete** blob nodes (countable in a test),
       layered over the clean piglet — not one merged shape, not a `<canvas>`.
 - [ ] With mud on, the piglet is obscured except a single tease extremity node.
 - [ ] A `cleaned`/`revealed` prop swaps to the fully-clean piglet (the reveal art).
