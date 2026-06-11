@@ -45,6 +45,35 @@ export function BarnyardBackdrop() {
       >
         <rect data-barnyard-layer="sky" x="0" y="0" width="100" height="100" fill={palette.sky} />
       </svg>
+
+      {/* Layer 2 — distant barn/fence silhouette: a bottom-anchored band sitting
+       * on the horizon where the grass meets the sky. `preserveAspectRatio="none"`
+       * maps the viewBox straight onto the band so the silhouette stays at a
+       * fixed fraction of the viewport at every aspect ratio (ADR-0005). Its
+       * height is the shared `--barnyard-floor` length so it rises with the
+       * ground band. The barn is the gable-roofed shape anchoring the horizon. */}
+      <svg
+        viewBox="0 0 100 100"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+        style={{
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          bottom: 0,
+          width: '100%',
+          height: 'var(--barnyard-floor)',
+          pointerEvents: 'none',
+        }}
+      >
+        {/* Barn — a simple gable-roofed barn body, its base at the horizon line
+         * (the top of the ground band) so it reads as standing in the field. */}
+        <path
+          data-barnyard-layer="barn"
+          d="M 16 40 L 16 18 L 26 10 L 36 18 L 36 40 Z"
+          fill={palette.barn}
+        />
+      </svg>
     </div>
   );
 }
