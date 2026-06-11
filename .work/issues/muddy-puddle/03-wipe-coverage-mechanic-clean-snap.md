@@ -39,7 +39,7 @@ single Critter; no loop yet (slice #4).
       count (via the `data-*` hook) decrements.
 - [x] Crossing the clean **threshold** triggers the clean-snap: leftover blobs
       are removed at once and the Critter flips to the revealed-clean art.
-- [ ] Multiple simultaneous touch points each clear blobs they cross (accept-all-
+- [x] Multiple simultaneous touch points each clear blobs they cross (accept-all-
       touch-points); no crash, no special-casing — just cleans faster.
 - [ ] The wipe surface carries `touch-action: none`.
 - [ ] Coverage is asserted by **node count**, never by pixel/canvas reads (ADR-0006).

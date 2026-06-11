@@ -113,4 +113,19 @@ describe('Muddy Puddle — WipeableCritter wipe-coverage mechanic', () => {
     expect(container.querySelector(`[data-blob-index="${idxA}"]`)).toBeNull();
     expect(container.querySelector(`[data-blob-index="${idxB}"]`)).toBeNull();
   });
+
+  it('sets touch-action: none on the wipe surface so the browser does not hijack the drag', () => {
+    // AC #4: the surface hosting the blobs must carry `touch-action: none`, or
+    // the browser claims the sustained drag for scroll/zoom and the Wipe never
+    // reaches the mud. We find the surface as the element wrapping a blob and
+    // assert the style — observed through the DOM, not the component internals.
+    const { container } = render(<WipeableCritter />);
+
+    const surface = container.querySelector<HTMLElement>('[data-wipe-surface]');
+    expect(surface).not.toBeNull();
+    expect(surface!.style.touchAction).toBe('none');
+    // The blobs being wiped live inside that same surface — it is the element
+    // catching the touch points, not a detached sibling.
+    expect(surface!.querySelector('[data-mud-blob]')).not.toBeNull();
+  });
 });
