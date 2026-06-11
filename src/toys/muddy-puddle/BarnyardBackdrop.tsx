@@ -120,6 +120,17 @@ export function BarnyardBackdrop() {
           d="M 0 24 Q 25 16 50 22 T 100 20 L 100 100 L 0 100 Z"
           fill={palette.grass}
         />
+        {/* Mud puddle — a wide, flat pool anchored in the lower third of the
+         * ground band: an earthy `mud` base with a lighter `puddle` wet sheen
+         * floated on top and a couple of `sparkle` glints. This is where the
+         * muddy critters emerge from (slice #02) and the last one splashes in
+         * (slice #04). Drawn after the grass so it sits on the field. Flat like
+         * the seabed, so the `none` stretch reads fine; the glints are small
+         * enough that the stretch doesn't betray them. */}
+        <ellipse data-barnyard-layer="puddle" cx="50" cy="82" rx="34" ry="12" fill={palette.mud} />
+        <ellipse data-barnyard-layer="puddle" cx="50" cy="80" rx="26" ry="8" fill={palette.puddle} />
+        <circle data-barnyard-layer="puddle" cx="40" cy="78" r="1.6" fill={palette.sparkle} />
+        <circle data-barnyard-layer="puddle" cx="60" cy="81" r="1.1" fill={palette.sparkle} />
       </svg>
     </div>
   );
