@@ -81,6 +81,22 @@ export function WipeableCritter({ onClean }: { onClean?: () => void }) {
       // `touch-action: none` so the browser does not hijack the drag for
       // scroll/zoom — the wipe gets every touch move (slice spec).
       style={{ touchAction: 'none' }}
+      onPointerDown={(e) => {
+        // Touch sets IMPLICIT pointer capture on the element the finger lands
+        // on, which would route the whole drag's moves to that one element and
+        // suppress `pointerover` on the sibling blobs the finger then crosses —
+        // the drag would clear only the first blob. Releasing it lets each
+        // crossed blob get its own `pointerover` so the sustained drag wipes
+        // along its path. (Pointer-capture + real movement aren't observable in
+        // jsdom — this is the on-device drag enabler behind AC #7.)
+        const target = e.target as Element;
+        if (target.hasPointerCapture?.(e.pointerId)) {
+          target.releasePointerCapture(e.pointerId);
+        }
+        // The press itself is a crossing — clear the blob under the finger so
+        // the stroke's first contact counts.
+        wipeBlobUnderPointer(e.target);
+      }}
       onPointerOver={(e) => wipeBlobUnderPointer(e.target)}
     >
       <PigletDrawing cleaned={state.cleaned} remainingBlobIndices={state.remaining} />
