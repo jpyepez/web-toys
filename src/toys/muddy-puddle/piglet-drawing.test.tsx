@@ -44,4 +44,16 @@ describe('Muddy Puddle — PigletDrawing', () => {
     expect(container.querySelectorAll('[data-mud-blob]').length).toBeGreaterThan(1);
     expect(container.querySelectorAll('canvas')).toHaveLength(0);
   });
+
+  it('leaves exactly one tease extremity poking out of the mud', () => {
+    // AC #3: the mud fully obscures who it is EXCEPT a single tease extremity
+    // (here the piglet's ear) poking out, to spark "who's that?" anticipation —
+    // the full reveal lands at the clean-snap (slice #3). The tease is drawn as
+    // its own node ON TOP of the mud, so "obscured except one bit" is an
+    // assertable contract: exactly one `data-piglet-tease` node renders while
+    // muddy. (Which extremity, and its geometry, are on-device-tuned.)
+    const { container } = render(<PigletDrawing />);
+
+    expect(container.querySelectorAll('[data-piglet-tease]')).toHaveLength(1);
+  });
 });
