@@ -31,4 +31,17 @@ describe('Muddy Puddle — PigletDrawing', () => {
     expect(container.querySelectorAll('[data-piglet-part="cheek"]').length).toBeGreaterThan(0);
     expect(container.querySelectorAll('[data-piglet-part="smile"]').length).toBeGreaterThan(0);
   });
+
+  it('cakes the piglet in DISCRETE mud blob nodes — countable, not one merged shape, not a canvas', () => {
+    // AC #2 + ADR-0006: the mud is modelled as a set of discrete SVG smudge
+    // blobs layered over the clean piglet, each its own node, so slice #3 can
+    // observe wipe coverage by COUNTING remaining nodes rather than reading
+    // pixels. The exact count is on-device-tuned (slice Notes), so we assert
+    // discreteness (more than one separate node) — proving it is not a single
+    // merged blob — and that no `<canvas>` smuggles in a pixel layer.
+    const { container } = render(<PigletDrawing />);
+
+    expect(container.querySelectorAll('[data-mud-blob]').length).toBeGreaterThan(1);
+    expect(container.querySelectorAll('canvas')).toHaveLength(0);
+  });
 });
