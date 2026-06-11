@@ -35,7 +35,7 @@ single Critter; no loop yet (slice #4).
 
 ## Acceptance criteria
 
-- [ ] A pointer/touch crossing a blob removes **that** blob; the remaining-blob
+- [x] A pointer/touch crossing a blob removes **that** blob; the remaining-blob
       count (via the `data-*` hook) decrements.
 - [ ] Crossing the clean **threshold** triggers the clean-snap: leftover blobs
       are removed at once and the Critter flips to the revealed-clean art.

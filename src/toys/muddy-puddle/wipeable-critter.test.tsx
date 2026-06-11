@@ -32,4 +32,31 @@ describe('Muddy Puddle — WipeableCritter wipe-coverage mechanic', () => {
 
     expect(container.querySelectorAll('[data-mud-blob]').length).toBe(before - 1);
   });
+
+  it('snaps clean at the threshold — leftover blobs vanish at once and the revealed-clean art shows', () => {
+    // AC #2: crossing the clean threshold (~80% wiped, on-device-tuned) snaps
+    // the Critter clean — any leftover blobs are removed AT ONCE and the reveal
+    // art shows. We must NOT hardcode the threshold (slice Notes), so we wipe
+    // blobs one at a time until the mud is gone and assert the load-bearing
+    // shape: it took FEWER crossings than there are blobs (the child never has
+    // to wipe the final bit — partial completion by design), the leftover blobs
+    // were cleared in one go (zero `data-mud-blob` remain), and the reveal art
+    // is showing — the tease is dropped and the clean piglet is fully visible.
+    const { container } = render(<WipeableCritter />);
+
+    const total = container.querySelectorAll('[data-mud-blob]').length;
+
+    let crossings = 0;
+    let blob = container.querySelector('[data-mud-blob]');
+    while (blob) {
+      fireEvent.pointerOver(blob);
+      crossings += 1;
+      blob = container.querySelector('[data-mud-blob]');
+    }
+
+    expect(crossings).toBeLessThan(total);
+    expect(container.querySelectorAll('[data-mud-blob]')).toHaveLength(0);
+    expect(container.querySelectorAll('[data-piglet-tease]')).toHaveLength(0);
+    expect(container.querySelectorAll('[data-piglet-part="body"]').length).toBeGreaterThan(0);
+  });
 });
