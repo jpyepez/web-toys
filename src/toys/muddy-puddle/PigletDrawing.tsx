@@ -1,17 +1,6 @@
 import { palette } from './palette';
 
 /**
- * Deterministic mud-blob smudges (in the piglet's `0 0 100 100` viewBox), caked
- * over the clean piglet to obscure it. Stable across re-renders by construction
- * (no `Math.random()`, no per-render jitter), like the backdrop's fence posts.
- * Each entry becomes its OWN `data-mud-blob` SVG node so coverage is observable
- * by COUNTING remaining nodes — never reading pixels — per ADR-0006; slice #3
- * removes blobs from this layer as the child Wipes. Count/positions/radii are
- * on-device-tuned (slice Notes); the contract is that the blobs are discrete,
- * countable nodes blanketing the body. They cluster over the body and snout but
- * deliberately leave the tease ear (drawn on top) poking out.
- */
-/**
  * The left ear's geometry, named once so the structural ear (drawn under the
  * mud) and the tease ear (re-drawn on top of the mud, the bit poking out) stay
  * pixel-identical — otherwise the ear would visibly jump at the clean-snap when
@@ -21,7 +10,26 @@ import { palette } from './palette';
 const LEFT_EAR_OUTER = 'M34 30 L30 12 L46 24 Z';
 const LEFT_EAR_INNER = 'M35 27 L33 17 L43 24 Z';
 
+/**
+ * Deterministic mud-blob smudges (in the piglet's `0 0 100 100` viewBox), caked
+ * over the clean piglet to obscure it. Stable across re-renders by construction
+ * (no `Math.random()`, no per-render jitter), like the backdrop's fence posts.
+ * Each entry becomes its OWN `data-mud-blob` SVG node so coverage is observable
+ * by COUNTING remaining nodes — never reading pixels — per ADR-0006; slice #3
+ * removes blobs from this layer as the child Wipes. Count/positions/radii are
+ * on-device-tuned (slice Notes); the contract is that the blobs are discrete,
+ * countable nodes blanketing the Critter. They blanket the body AND the ear
+ * zone — caking over BOTH structural ears — so the only bit left legible is the
+ * single tease ear, redrawn on top of the mud (below).
+ */
 const MUD_BLOBS: readonly { cx: number; cy: number; r: number }[] = [
+  // ear zone — caked over both structural ears so neither pokes out on its own;
+  // the left tease ear is redrawn on top, so it alone stays visible.
+  { cx: 38, cy: 24, r: 10 },
+  { cx: 50, cy: 22, r: 12 },
+  { cx: 62, cy: 22, r: 11 },
+  { cx: 68, cy: 18, r: 8 },
+  // body + snout
   { cx: 38, cy: 40, r: 11 },
   { cx: 52, cy: 36, r: 12 },
   { cx: 64, cy: 42, r: 10 },
