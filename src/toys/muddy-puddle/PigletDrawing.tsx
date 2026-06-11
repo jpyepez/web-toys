@@ -11,6 +11,16 @@ import { palette } from './palette';
  * countable nodes blanketing the body. They cluster over the body and snout but
  * deliberately leave the tease ear (drawn on top) poking out.
  */
+/**
+ * The left ear's geometry, named once so the structural ear (drawn under the
+ * mud) and the tease ear (re-drawn on top of the mud, the bit poking out) stay
+ * pixel-identical — otherwise the ear would visibly jump at the clean-snap when
+ * slice #3 drops the tease. Shape is on-device-tuned; the invariant is that the
+ * two references coincide.
+ */
+const LEFT_EAR_OUTER = 'M34 30 L30 12 L46 24 Z';
+const LEFT_EAR_INNER = 'M35 27 L33 17 L43 24 Z';
+
 const MUD_BLOBS: readonly { cx: number; cy: number; r: number }[] = [
   { cx: 38, cy: 40, r: 11 },
   { cx: 52, cy: 36, r: 12 },
@@ -54,10 +64,11 @@ export function PigletDrawing({ cleaned = false }: { cleaned?: boolean }) {
       aria-hidden="true"
       style={{ width: 'min(220px, 55vw)', height: 'auto', display: 'block' }}
     >
-      {/* ears — upright soft triangles behind the body, deeper-pink inners */}
-      <path data-piglet-part="ear" d="M34 30 L30 12 L46 24 Z" fill={palette.pigletBody} />
+      {/* ears — upright soft triangles behind the body, deeper-pink inners. The
+       * left ear's geometry is shared with the tease (below) so they coincide. */}
+      <path data-piglet-part="ear" d={LEFT_EAR_OUTER} fill={palette.pigletBody} />
       <path data-piglet-part="ear" d="M66 30 L70 12 L54 24 Z" fill={palette.pigletBody} />
-      <path data-piglet-part="ear" d="M35 27 L33 17 L43 24 Z" fill={palette.pigletSnout} />
+      <path data-piglet-part="ear" d={LEFT_EAR_INNER} fill={palette.pigletSnout} />
       <path data-piglet-part="ear" d="M65 27 L67 17 L57 24 Z" fill={palette.pigletSnout} />
 
       {/* smooth round body */}
@@ -112,8 +123,8 @@ export function PigletDrawing({ cleaned = false }: { cleaned?: boolean }) {
            * clean-snap (slice #3). Tagged `data-piglet-tease` so the "obscured
            * except one bit" contract is assertable without reading pixels. */}
           <g data-piglet-tease="ear">
-            <path d="M34 30 L30 12 L46 24 Z" fill={palette.pigletBody} />
-            <path d="M35 27 L33 17 L43 24 Z" fill={palette.pigletSnout} />
+            <path d={LEFT_EAR_OUTER} fill={palette.pigletBody} />
+            <path d={LEFT_EAR_INNER} fill={palette.pigletSnout} />
           </g>
         </>
       )}
