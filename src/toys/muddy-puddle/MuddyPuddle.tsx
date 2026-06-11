@@ -7,19 +7,19 @@ import { WipeableCritter } from './WipeableCritter';
 import { CAST, shuffle } from './cast';
 
 /**
- * The five states of the per-piglet loop — its OWN copy, duplicated from the
+ * The five states of the per-Critter loop — its OWN copy, duplicated from the
  * Puffer Fish / Counting Sheep machine rather than shared (the deliberate cost
  * of Toy independence; a shared/extracted Toy-loop hook is explicitly rejected,
  * see `../../out-of-scope/shared-toy-loop-abstraction.md`).
  *
- *  - `arriving`   — current piglet trotting in muddy from the side
- *  - `wiping`     — current piglet centred, awaiting the kid's Wipe (the
+ *  - `arriving`   — current Critter trotting in muddy from the side
+ *  - `wiping`     — current Critter centred, awaiting the kid's Wipe (the
  *                   user-driven beat; named `wiping` here vs the tap toys'
  *                   `waiting`)
- *  - `dismissing` — current piglet revealed clean + trotting off (or, for the
+ *  - `dismissing` — current Critter revealed clean + trotting off (or, for the
  *                   last one, splashing in the now-clean puddle)
- *  - `idle`       — no piglet on stage; intermission beat between piglets
- *  - `completed`  — N piglets cleaned; loop terminal, `onComplete` fired
+ *  - `idle`       — no Critter on stage; intermission beat between Critters
+ *  - `completed`  — N Critters cleaned; loop terminal, `onComplete` fired
  */
 type LoopState = 'arriving' | 'wiping' | 'dismissing' | 'idle' | 'completed';
 
@@ -32,7 +32,7 @@ type LoopState = 'arriving' | 'wiping' | 'dismissing' | 'idle' | 'completed';
 const GOAL_COUNT = CAST.length;
 
 /**
- * Per-piglet beat durations (ms). The state machine drains its current timer
+ * Per-Critter beat durations (ms). The state machine drains its current timer
  * when each beat completes; transitions are time-driven except `wiping →
  * dismissing` (the kid's Wipe crossing the clean threshold). Exact ms is
  * on-device-tuned per the slice DoD — the structural rule is the named beats.
@@ -43,10 +43,11 @@ const TIMING_DISMISS_MS = 1100;
 const TIMING_INTERMISSION_MS = 250;
 
 /**
- * Motion variants for the piglet's per-state choreography (slice spec body):
- * the piglet trots in muddy from the side, holds centred for the Wipe, then on
- * the clean-snap either trots off happy to the far side (`dismissing`) or — for
- * the last one — splashes for joy in the now-clean puddle (`splashing`, the
+ * Motion variants for the on-stage Critter's per-state choreography (slice spec
+ * body), shared by every cast member (slice #05): the Critter trots in muddy
+ * from the side, holds centred for the Wipe, then on the clean-snap either trots
+ * off happy to the far side (`dismissing`) or — for the last one — splashes for
+ * joy in the now-clean puddle (`splashing`, the
  * on-stage-only Outro layered under the Shell's Completion, ADR-0001
  * amendment). The trot/splash offsets, scales and timing tuples are
  * on-device-tuned per the slice testing decisions and deliberately NOT
@@ -61,7 +62,7 @@ const TIMING_INTERMISSION_MS = 250;
  * Motion fully owns — an inline `translateX(-50%)` here would be clobbered the
  * moment Motion writes its first transform string.
  */
-const pigletVariants: Variants = {
+const critterVariants: Variants = {
   arriving: {
     x: 0,
     y: 0,
@@ -77,7 +78,7 @@ const pigletVariants: Variants = {
     transition: { duration: 0 },
   },
   // Happy trot-off to the far side: a couple of bouncy hops carry the revealed-
-  // clean piglet off the right edge, fading only at the very end so the reveal
+  // clean Critter off the right edge, fading only at the very end so the reveal
   // is savoured before it leaves.
   dismissing: {
     x: [0, 40, 120, 260, 420],
@@ -90,7 +91,7 @@ const pigletVariants: Variants = {
       times: [0, 0.25, 0.5, 0.75, 1],
     },
   },
-  // The last piglet's splash-for-joy Outro: it hops up then plops down into the
+  // The last Critter's splash-for-joy Outro: it hops up then plops down into the
   // puddle with a squash-and-settle, staying centred (the Shell's Completion
   // overlay layers on top). Held opaque throughout — it's celebrating, not
   // leaving.
@@ -179,7 +180,7 @@ export function MuddyPuddle({ onComplete }: ToyProps) {
     onComplete();
   }, [goalMet, onComplete]);
 
-  // `idle` is the intermission gap — no piglet on stage, matching AC #1's
+  // `idle` is the intermission gap — no Critter on stage, matching AC #1's
   // "zero Critters during idle".
   const critterOnStage = state === 'arriving' || state === 'wiping' || state === 'dismissing';
 
@@ -228,12 +229,12 @@ export function MuddyPuddle({ onComplete }: ToyProps) {
             // animals without coupling to the non-deterministic shuffle order.
             aria-label={current.label}
             data-critter={current.id}
-            variants={pigletVariants}
+            variants={critterVariants}
             // Off-stage-left start for the trot-in; the `arriving` variant eases
             // x back to 0 (centred) over TIMING_ARRIVAL_MS. Deltas are relative
             // to the wrapper's fixed centring.
             initial={{ x: -280, opacity: 0, scale: 1 }}
-            // The last piglet's goal-met exit is the splash Outro, not a trot-off
+            // The last Critter's goal-met exit is the splash Outro, not a trot-off
             // — picked here so the Completion overlay layers over the splash.
             animate={goalMet && state === 'dismissing' ? 'splashing' : state}
             style={{ transformOrigin: 'center center' }}
