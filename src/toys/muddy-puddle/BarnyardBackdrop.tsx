@@ -79,17 +79,47 @@ export function BarnyardBackdrop() {
          * (the top of the ground band) so it reads as standing in the field. */}
         <path
           data-barnyard-layer="barn"
-          d="M 16 40 L 16 18 L 26 10 L 36 18 L 36 40 Z"
+          d="M 16 22 L 16 8 L 26 2 L 36 8 L 36 22 Z"
           fill={palette.barn}
         />
         {/* Fence — a low post-and-rail run flanking the barn to the right,
          * deterministic posts (no jitter) so it's stable across re-renders. The
          * rail and each post are tagged `fence` so the test addresses the run
-         * without coupling to how many posts draw it. */}
+         * without coupling to how many posts draw it. Posts stand on the horizon
+         * line, so their feet sit where the grass band begins. */}
         {FENCE_POSTS.map((x, i) => (
-          <rect key={i} data-barnyard-layer="fence" x={x} y="28" width="2" height="12" fill={palette.fence} />
+          <rect key={i} data-barnyard-layer="fence" x={x} y="13" width="2" height="9" fill={palette.fence} />
         ))}
-        <rect data-barnyard-layer="fence" x={FENCE_POSTS[0]} y="31" width={FENCE_POSTS[FENCE_POSTS.length - 1] - FENCE_POSTS[0] + 2} height="2.4" fill={palette.fence} />
+        <rect data-barnyard-layer="fence" x={FENCE_POSTS[0]} y="16" width={FENCE_POSTS[FENCE_POSTS.length - 1] - FENCE_POSTS[0] + 2} height="2.2" fill={palette.fence} />
+      </svg>
+
+      {/* Layer 3 — grass ground band: a bottom-anchored band whose height is the
+       * shared `--barnyard-floor` length, so the grass horizon sits at a fixed
+       * fraction of the viewport at every aspect ratio (ADR-0005 — the barnyard
+       * analog of Puffer Fish's seabed). `preserveAspectRatio="none"` maps the
+       * viewBox straight onto the box; the gentle grass curve stretches
+       * horizontally, which reads fine for a field. Drawn after the silhouette so
+       * the near foreground field sits in front of the distant barn/fence, whose
+       * feet meet the grass at the horizon. */}
+      <svg
+        viewBox="0 0 100 100"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+        style={{
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          bottom: 0,
+          width: '100%',
+          height: 'var(--barnyard-floor)',
+          pointerEvents: 'none',
+        }}
+      >
+        <path
+          data-barnyard-layer="grass"
+          d="M 0 24 Q 25 16 50 22 T 100 20 L 100 100 L 0 100 Z"
+          fill={palette.grass}
+        />
       </svg>
     </div>
   );
