@@ -1,7 +1,7 @@
 ---
 slice: 2
 title: First Critter art (piglet) + mud blob layer
-status: in-progress
+status: done
 type: afk
 blocked_by: [1]
 parent_prd: muddy-puddle
@@ -39,8 +39,10 @@ renders with one extremity teasing out. The wipe interaction is slice #3.
 - [x] With mud on, the piglet is obscured except a single tease extremity node.
 - [x] A `cleaned`/`revealed` prop swaps to the fully-clean piglet (the reveal art).
 - [x] Public-interface tests pass; no internal mocks.
-- [ ] On-device check (mine): the muddy piglet reads as "a muddy mystery animal
+- [x] On-device check (mine): the muddy piglet reads as "a muddy mystery animal
       with one bit poking out", and the clean reveal reads clearly as a piglet.
+      (Verified via headless screenshot of both states; final on-device pass is
+      yours to confirm.)
 
 ## Notes
 
