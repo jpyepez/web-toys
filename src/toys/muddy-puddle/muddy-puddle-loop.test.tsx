@@ -1,6 +1,21 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { MuddyPuddle } from './MuddyPuddle';
+
+/**
+ * Drive the on-stage piglet's Wipe to the clean-snap: cross every blob the
+ * surface still shows, in turn, until the mud is gone. A finger "crossing" a
+ * blob is simulated by firing `pointerOver` on that blob node (the assertable
+ * boundary, ADR-0006) — no layout/geometry from jsdom needed. Mirrors the
+ * slice-#3 wipe test's `wipeUntilClean`.
+ */
+function wipeCurrentPigletClean(container: HTMLElement) {
+  let blob = container.querySelector('[data-mud-blob]');
+  while (blob) {
+    fireEvent.pointerOver(blob);
+    blob = container.querySelector('[data-mud-blob]');
+  }
+}
 
 /**
  * Muddy Puddle — sequential loop mechanic (muddy-puddle PRD, slice #04).
@@ -59,5 +74,26 @@ describe('Muddy Puddle — sequential loop mechanic', () => {
     await vi.runOnlyPendingTimersAsync();
 
     expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'wiping');
+  });
+
+  it('transitions wiping → dismissing when the Wipe crosses the clean threshold, snapping the mud away', async () => {
+    // AC #2 — the only user-driven transition. The kid's Wipe crossing the
+    // threshold is the rhythm of the loop: it consumes slice #3's "clean
+    // reached" signal (`WipeableCritter`'s `onClean`) to advance the machine.
+    // Driven through the slice-#3 `data-mud-blob` nodes (never pixels, ADR-0006)
+    // rather than a synthetic event, so the real wipe mechanic is exercised
+    // end-to-end. The clean-snap is observable two ways through the public
+    // surface: `data-toy-state` flips to `dismissing`, and every remaining blob
+    // vanishes at once (the child never has to wipe the final bit).
+    const { container } = render(<MuddyPuddle onComplete={vi.fn()} />);
+
+    // Drive to `wiping` — the only state in which a Wipe advances the loop.
+    await vi.runOnlyPendingTimersAsync();
+    expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'wiping');
+
+    wipeCurrentPigletClean(container);
+
+    expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'dismissing');
+    expect(container.querySelectorAll('[data-mud-blob]')).toHaveLength(0);
   });
 });
