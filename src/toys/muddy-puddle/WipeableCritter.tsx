@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { MUD_BLOBS, PigletDrawing } from './PigletDrawing';
 
 /**
@@ -20,7 +20,9 @@ import { MUD_BLOBS, PigletDrawing } from './PigletDrawing';
  * just clears faster — forgiving, not broken.
  *
  * The loop that consumes the "clean reached" signal is slice #04; this slice is
- * end-to-end on one Critter.
+ * end-to-end on one Critter. The signal is the optional `onClean` callback,
+ * fired once at the snap — the loop wires it to its `wiping → dismissing`
+ * transition.
  */
 const ALL_BLOBS = MUD_BLOBS.map((_, i) => i);
 
@@ -33,7 +35,7 @@ const ALL_BLOBS = MUD_BLOBS.map((_, i) => i);
  */
 const CLEAN_THRESHOLD = 0.8;
 
-export function WipeableCritter() {
+export function WipeableCritter({ onClean }: { onClean?: () => void }) {
   // `remaining` and `cleaned` move together atomically through one updater so a
   // burst of pointer events (multi-finger mashing) can't race: each crossing
   // sees the prior crossing's result, and the snap to `cleaned` is computed
@@ -48,6 +50,17 @@ export function WipeableCritter() {
   // in `remaining`), so cleared mud stays cleared. When the drop carries the
   // wiped fraction past the threshold, the Critter snaps clean: any leftover
   // blobs vanish at once (`remaining: []`) and the reveal art shows.
+  // The "clean reached" signal is a one-shot. The ref guards against the loop
+  // (slice #04) handing a fresh `onClean` reference on re-render — without it
+  // the effect's `onClean` dependency would re-fire the signal. Mirrors the
+  // Fish's `completedRef`.
+  const signalledRef = useRef(false);
+  useEffect(() => {
+    if (!state.cleaned || signalledRef.current) return;
+    signalledRef.current = true;
+    onClean?.();
+  }, [state.cleaned, onClean]);
+
   const wipeBlobUnderPointer = (target: EventTarget) => {
     const raw = (target as Element).getAttribute?.('data-blob-index');
     if (raw == null) return;
