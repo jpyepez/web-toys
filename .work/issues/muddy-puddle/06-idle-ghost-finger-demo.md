@@ -1,7 +1,7 @@
 ---
 slice: 6
 title: Idle-triggered ghost-finger demo
-status: ready
+status: in-progress
 type: afk
 blocked_by: [4]
 parent_prd: muddy-puddle
