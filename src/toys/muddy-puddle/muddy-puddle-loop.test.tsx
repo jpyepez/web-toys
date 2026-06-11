@@ -219,4 +219,43 @@ describe('Muddy Puddle — sequential loop mechanic', () => {
     expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'completed');
     expect(screen.queryByRole('img', { name: /Piglet/ })).toBeNull();
   });
+
+  it('fires onComplete exactly once at the fifth clean-snap, holding through a long settle and a fresh reference', async () => {
+    // AC #5. The Goal is "clean five piglets"; the 5th clean-snap is the moment
+    // the Goal is met and the Shell's celebration overlay layers on top
+    // (ADR-0001 amendment — layered-concurrent). `onComplete` fires at the
+    // clean-snap (the `wiping → dismissing` transition), NOT at the end of the
+    // trot-off, so the Shell overlay begins simultaneously with the last
+    // piglet's splash Outro.
+    //
+    // Two guards in one test: the long-settle rules out a spurious 2nd call from
+    // a stale timer; the re-render with a brand-new `onComplete` reference (which
+    // the Shell does the moment Completion starts) rules out a re-fire — the ref
+    // pins it to a single call.
+    const onComplete = vi.fn();
+    const { container, rerender } = render(<MuddyPuddle onComplete={onComplete} />);
+
+    // Clean 4 piglets — Goal isn't met yet.
+    for (let i = 0; i < 4; i += 1) {
+      await cleanOnePiglet(container);
+      await vi.runOnlyPendingTimersAsync(); // idle → arriving (next piglet)
+    }
+    expect(onComplete).not.toHaveBeenCalled();
+
+    // 5th piglet trots in, kid Wipes it clean — Goal met at the clean-snap.
+    await vi.runOnlyPendingTimersAsync(); // arriving → wiping
+    wipeCurrentPigletClean(container); // → dismissing + onComplete
+
+    expect(onComplete).toHaveBeenCalledTimes(1);
+
+    // A generously long settle (covers the 5th piglet's trot-off plus several
+    // intermissions' worth of stale-timer risk). No spurious 2nd call.
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(onComplete).toHaveBeenCalledTimes(1);
+
+    // The Shell hands the Toy a fresh `onComplete` reference on re-render at
+    // Completion — the ref-guard must not re-fire it.
+    rerender(<MuddyPuddle onComplete={vi.fn()} />);
+    expect(onComplete).toHaveBeenCalledTimes(1);
+  });
 });
