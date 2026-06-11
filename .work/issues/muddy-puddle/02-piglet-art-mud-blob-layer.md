@@ -37,7 +37,7 @@ renders with one extremity teasing out. The wipe interaction is slice #3.
 - [x] The mud layer renders as **discrete** blob nodes (countable in a test),
       layered over the clean piglet — not one merged shape, not a `<canvas>`.
 - [x] With mud on, the piglet is obscured except a single tease extremity node.
-- [ ] A `cleaned`/`revealed` prop swaps to the fully-clean piglet (the reveal art).
+- [x] A `cleaned`/`revealed` prop swaps to the fully-clean piglet (the reveal art).
 - [ ] Public-interface tests pass; no internal mocks.
 - [ ] On-device check (mine): the muddy piglet reads as "a muddy mystery animal
       with one bit poking out", and the clean reveal reads clearly as a piglet.

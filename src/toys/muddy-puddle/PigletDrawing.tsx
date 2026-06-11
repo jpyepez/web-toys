@@ -40,12 +40,14 @@ const MUD_BLOBS: readonly { cx: number; cy: number; r: number }[] = [
  * snout with two nostrils, large dark eyes with catchlights, blushy cheeks, and
  * a small smile.
  *
- * The clean piglet is drawn first, then caked in a layer of discrete
- * `data-mud-blob` smudges that obscure who it is (ADR-0006). Mirrors the Fish's
- * single-component art-state pattern — slice #3 drives the mud-on ↔
- * revealed-clean swap.
+ * The clean piglet is drawn first, then (while muddy) caked in a layer of
+ * discrete `data-mud-blob` smudges that obscure who it is (ADR-0006), with one
+ * tease ear poking out on top. `cleaned` swaps mud-on → the fully-clean reveal
+ * art by dropping the mud layer + tease — mirrors the Fish's single-component
+ * `puffed` art-state pattern. This slice just wires the prop; slice #3's
+ * threshold logic flips it. Muddy is the default (the Toy starts muddy).
  */
-export function PigletDrawing() {
+export function PigletDrawing({ cleaned = false }: { cleaned?: boolean }) {
   return (
     <svg
       viewBox="0 0 100 100"
@@ -86,31 +88,35 @@ export function PigletDrawing() {
         strokeLinecap="round"
       />
 
-      {/* mud layer — discrete smudge blobs caked over the clean piglet, each its
-       * own node so coverage is countable (ADR-0006). Drawn last so it sits on
-       * top of every piglet part, obscuring who it is. */}
-      <g data-mud-layer="mud">
-        {MUD_BLOBS.map((blob, i) => (
-          <circle
-            key={i}
-            data-mud-blob=""
-            cx={blob.cx}
-            cy={blob.cy}
-            r={blob.r}
-            fill={palette.mud}
-          />
-        ))}
-      </g>
+      {!cleaned && (
+        <>
+          {/* mud layer — discrete smudge blobs caked over the clean piglet, each
+           * its own node so coverage is countable (ADR-0006). Drawn last so it
+           * sits on top of every piglet part, obscuring who it is. */}
+          <g data-mud-layer="mud">
+            {MUD_BLOBS.map((blob, i) => (
+              <circle
+                key={i}
+                data-mud-blob=""
+                cx={blob.cx}
+                cy={blob.cy}
+                r={blob.r}
+                fill={palette.mud}
+              />
+            ))}
+          </g>
 
-      {/* tease — one extremity (the left ear) re-drawn ON TOP of the mud so it
-       * pokes out of the smudges: the only legible bit of the Critter while
-       * muddy, sparking "who's that?". The full reveal lands at the clean-snap
-       * (slice #3). Tagged `data-piglet-tease` so the "obscured except one bit"
-       * contract is assertable without reading pixels. */}
-      <g data-piglet-tease="ear">
-        <path d="M34 30 L30 12 L46 24 Z" fill={palette.pigletBody} />
-        <path d="M35 27 L33 17 L43 24 Z" fill={palette.pigletSnout} />
-      </g>
+          {/* tease — one extremity (the left ear) re-drawn ON TOP of the mud so
+           * it pokes out of the smudges: the only legible bit of the Critter
+           * while muddy, sparking "who's that?". The full reveal lands at the
+           * clean-snap (slice #3). Tagged `data-piglet-tease` so the "obscured
+           * except one bit" contract is assertable without reading pixels. */}
+          <g data-piglet-tease="ear">
+            <path d="M34 30 L30 12 L46 24 Z" fill={palette.pigletBody} />
+            <path d="M35 27 L33 17 L43 24 Z" fill={palette.pigletSnout} />
+          </g>
+        </>
+      )}
     </svg>
   );
 }
