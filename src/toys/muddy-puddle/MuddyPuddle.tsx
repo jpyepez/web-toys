@@ -152,6 +152,13 @@ export function MuddyPuddle({ onComplete }: ToyProps) {
   // instant the kid Wipes. Toy-LOCAL on purpose — NOT pre-abstracted into a
   // shared primitive (the `shared-toy-loop-abstraction` cautionary precedent).
   const [demoActive, setDemoActive] = useState(false);
+  // Has the kid made a contributing Wipe on the CURRENT Critter? Set the instant
+  // they Wipe, reset when the next Critter settles in `wiping`. Suppresses the
+  // demo for the rest of this Critter (it teaches, then gets out of the way) —
+  // but re-arms on a later Critter where they stall again (AC: cancel on this
+  // one, re-prompt on a later one). A ref, not state: it gates the idle timer's
+  // own callback without needing to re-run the arming effect.
+  const wipedRef = useRef(false);
 
   const goalMet = cleaned >= GOAL_COUNT;
   // The on-stage Critter (clamped so the last Critter's dismissing/splash beat,
@@ -204,7 +211,14 @@ export function MuddyPuddle({ onComplete }: ToyProps) {
   // unit-asserted.
   useEffect(() => {
     if (state !== 'wiping') return;
-    const timer = setTimeout(() => setDemoActive(true), IDLE_DEMO_DELAY_MS);
+    // A fresh Critter has settled — clear the prior one's Wipe flag so the demo
+    // can re-prompt here if the kid stalls.
+    wipedRef.current = false;
+    const timer = setTimeout(() => {
+      // Don't prompt if the kid started Wiping during the wait — they don't need
+      // teaching once they're already doing it.
+      if (!wipedRef.current) setDemoActive(true);
+    }, IDLE_DEMO_DELAY_MS);
     return () => {
       clearTimeout(timer);
       setDemoActive(false);
@@ -273,6 +287,12 @@ export function MuddyPuddle({ onComplete }: ToyProps) {
           >
             <WipeableCritter
               critter={current}
+              onWipe={() => {
+                // The kid is Wiping for real — cancel the ghost-finger demo at
+                // once and suppress it for the rest of this Critter (AC #2).
+                wipedRef.current = true;
+                setDemoActive(false);
+              }}
               onClean={() => {
                 // Only `wiping` accepts the clean-snap — a Wipe landing during
                 // the trot-in (`arriving`) or trot-off (`dismissing`) is a

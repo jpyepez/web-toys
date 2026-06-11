@@ -42,9 +42,15 @@ const CLEAN_THRESHOLD = 0.8;
 export function WipeableCritter({
   critter = PIGLET,
   onClean,
+  onWipe,
 }: {
   critter?: Critter;
   onClean?: () => void;
+  // Fired on each contributing crossing — a touch point passing over a still-
+  // caked blob node. Distinct from `onClean` (the one-shot threshold snap):
+  // `onWipe` is the "the child is actually Wiping" signal the loop's slice-#06
+  // ghost-finger demo consumes to cancel itself the instant real wiping starts.
+  onWipe?: () => void;
 }) {
   // The injected Critter's own mud blanket — every index caked on at mount. Each
   // arrival is a fresh mount (the loop's `idle` beat unmounts the prior Critter),
@@ -81,6 +87,10 @@ export function WipeableCritter({
     const raw = (target as Element).getAttribute?.('data-blob-index');
     if (raw == null) return;
     const index = Number(raw);
+    // A pointer over a still-rendered blob node IS a contributing Wipe (cleared
+    // blobs unmount, so they can't be crossed again) — signal it before the drop
+    // so the demo cancels the moment real wiping starts, sub-threshold included.
+    onWipe?.();
     setState((prev) => {
       if (prev.cleaned || !prev.remaining.includes(index)) return prev;
       const next = prev.remaining.filter((i) => i !== index);
