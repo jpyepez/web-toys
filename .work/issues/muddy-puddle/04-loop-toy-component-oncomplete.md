@@ -1,7 +1,7 @@
 ---
 slice: 4
 title: Loop + Toy component (5-state machine, onComplete, splash Outro)
-status: ready
+status: in-progress
 type: afk
 blocked_by: [3]
 parent_prd: muddy-puddle
