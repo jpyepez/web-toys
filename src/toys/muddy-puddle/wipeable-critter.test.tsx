@@ -90,4 +90,27 @@ describe('Muddy Puddle — WipeableCritter wipe-coverage mechanic', () => {
     rerender(<WipeableCritter onClean={vi.fn()} />);
     expect(onClean).toHaveBeenCalledTimes(1);
   });
+
+  it('accepts all touch points — simultaneous fingers each clear the blob they cross', () => {
+    // AC #3: any finger or palm crossing a blob clears it, with no special-
+    // casing of a "primary" pointer — so multi-finger / whole-hand mashing just
+    // cleans faster (forgiving, not broken). Two distinct touch points
+    // (different `pointerId`) each cross a different blob; both clear, the count
+    // drops by two, and nothing throws.
+    const { container } = render(<WipeableCritter />);
+
+    const before = container.querySelectorAll('[data-mud-blob]').length;
+    const [a, b] = container.querySelectorAll('[data-mud-blob]');
+    const idxA = a.getAttribute('data-blob-index');
+    const idxB = b.getAttribute('data-blob-index');
+
+    expect(() => {
+      fireEvent.pointerOver(a, { pointerId: 1 });
+      fireEvent.pointerOver(b, { pointerId: 2 });
+    }).not.toThrow();
+
+    expect(container.querySelectorAll('[data-mud-blob]').length).toBe(before - 2);
+    expect(container.querySelector(`[data-blob-index="${idxA}"]`)).toBeNull();
+    expect(container.querySelector(`[data-blob-index="${idxB}"]`)).toBeNull();
+  });
 });
