@@ -129,6 +129,26 @@ describe('Muddy Puddle — WipeableCritter wipe-coverage mechanic', () => {
     expect(surface!.querySelector('[data-mud-blob]')).not.toBeNull();
   });
 
+  it('clears the blob a finger presses down on — the start of a wipe counts', () => {
+    // A Wipe begins with the finger landing on the mud, not gliding in from
+    // outside. The press itself is a crossing, so the blob under a `pointerdown`
+    // clears immediately — the child gets cause-and-effect from the very first
+    // contact, and every stroke's starting blob counts. (The same handler
+    // releases the browser's implicit touch pointer-capture so the rest of the
+    // drag's crossings reach the sibling blobs — an on-device concern not
+    // observable in jsdom; here we pin only the press-clears-the-blob half.)
+    const { container } = render(<WipeableCritter />);
+
+    const before = container.querySelectorAll('[data-mud-blob]').length;
+    const blob = container.querySelector('[data-mud-blob]')!;
+    const idx = blob.getAttribute('data-blob-index');
+
+    fireEvent.pointerDown(blob);
+
+    expect(container.querySelectorAll('[data-mud-blob]').length).toBe(before - 1);
+    expect(container.querySelector(`[data-blob-index="${idx}"]`)).toBeNull();
+  });
+
   it('models coverage as countable blob nodes, never a canvas (ADR-0006)', () => {
     // AC #5 / ADR-0006: wipe coverage is observed by counting remaining blob
     // NODES, not by reading pixels — so no `<canvas>` may enter the mechanic,

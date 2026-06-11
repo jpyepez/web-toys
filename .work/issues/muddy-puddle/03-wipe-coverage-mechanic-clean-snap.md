@@ -42,8 +42,8 @@ single Critter; no loop yet (slice #4).
 - [x] Multiple simultaneous touch points each clear blobs they cross (accept-all-
       touch-points); no crash, no special-casing — just cleans faster.
 - [x] The wipe surface carries `touch-action: none`.
-- [ ] Coverage is asserted by **node count**, never by pixel/canvas reads (ADR-0006).
-- [ ] Public-interface tests pass; shim only the Web Audio boundary (no sound in
+- [x] Coverage is asserted by **node count**, never by pixel/canvas reads (ADR-0006).
+- [x] Public-interface tests pass; shim only the Web Audio boundary (no sound in
       this slice yet); never mock our own components.
 - [ ] On-device check (mine): wiping the piglet clears mud under the finger with
       clear cause-and-effect and snaps clean at ~80% without chasing the last bit.
