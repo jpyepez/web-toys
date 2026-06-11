@@ -1,4 +1,5 @@
 import { palette } from './palette';
+import { MudBlobs, type MudBlob } from './MudBlobs';
 
 /**
  * The left ear's geometry, named once so the structural ear (drawn under the
@@ -22,7 +23,7 @@ const LEFT_EAR_INNER = 'M35 27 L33 17 L43 24 Z';
  * zone — caking over BOTH structural ears — so the only bit left legible is the
  * single tease ear, redrawn on top of the mud (below).
  */
-export const MUD_BLOBS: readonly { cx: number; cy: number; r: number }[] = [
+export const MUD_BLOBS: readonly MudBlob[] = [
   // ear zone — caked over both structural ears so neither pokes out on its own;
   // the left tease ear is redrawn on top, so it alone stays visible.
   { cx: 38, cy: 24, r: 10 },
@@ -80,7 +81,6 @@ export function PigletDrawing({
    */
   remainingBlobIndices?: readonly number[];
 }) {
-  const blobIndices = remainingBlobIndices ?? MUD_BLOBS.map((_, i) => i);
   return (
     <svg
       viewBox="0 0 100 100"
@@ -126,20 +126,9 @@ export function PigletDrawing({
         <>
           {/* mud layer — discrete smudge blobs caked over the clean piglet, each
            * its own node so coverage is countable (ADR-0006). Drawn last so it
-           * sits on top of every piglet part, obscuring who it is. */}
-          <g data-mud-layer="mud">
-            {blobIndices.map((i) => (
-              <circle
-                key={i}
-                data-mud-blob=""
-                data-blob-index={i}
-                cx={MUD_BLOBS[i].cx}
-                cy={MUD_BLOBS[i].cy}
-                r={MUD_BLOBS[i].r}
-                fill={palette.mud}
-              />
-            ))}
-          </g>
+           * sits on top of every piglet part, obscuring who it is. The same
+           * shared `MudBlobs` layer the rest of the cast uses (slice #05). */}
+          <MudBlobs blobs={MUD_BLOBS} remaining={remainingBlobIndices} />
 
           {/* tease — one extremity (the left ear) re-drawn ON TOP of the mud so
            * it pokes out of the smudges: the only legible bit of the Critter
