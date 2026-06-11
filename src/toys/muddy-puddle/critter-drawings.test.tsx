@@ -59,4 +59,38 @@ describe('Muddy Puddle — surprise-cast Critter drawings', () => {
       }
     },
   );
+
+  it.each(NEW_CRITTERS)(
+    'cakes the $id in discrete mud blobs with exactly one tease, and `cleaned` reveals the clean animal',
+    ({ Drawing }) => {
+      // AC #1 (mud + tease) + ADR-0006: muddy is the default. The mud is a set of
+      // discrete `data-mud-blob` nodes (countable, never a merged shape or a
+      // `<canvas>`, so slice #3's wipe can observe coverage by node count), and
+      // exactly one tease extremity (`data-critter-tease`) pokes out on top to
+      // spark "who's that?". The exact blob count is on-device-tuned, so we
+      // assert discreteness (more than one node), not the number. `cleaned` then
+      // swaps to the reveal: all mud and the tease drop, and the same structural
+      // parts (drawn underneath) stay, now fully visible. Colours stay
+      // palette-sourced even in the muddy state (the mud + tease layer included).
+      const muddy = render(<Drawing />).container;
+
+      expect(muddy.querySelector('canvas')).toBeNull();
+      expect(muddy.querySelectorAll('[data-mud-blob]').length).toBeGreaterThan(1);
+      expect(muddy.querySelectorAll('[data-critter-tease]')).toHaveLength(1);
+
+      const values = new Set<string>(Object.values(palette));
+      for (const node of muddy.querySelectorAll('[fill], [stroke]')) {
+        for (const attr of ['fill', 'stroke'] as const) {
+          const colour = node.getAttribute(attr);
+          if (colour === null || colour === 'none') continue;
+          expect(values).toContain(colour);
+        }
+      }
+
+      const clean = render(<Drawing cleaned />).container;
+      expect(clean.querySelectorAll('[data-mud-blob]')).toHaveLength(0);
+      expect(clean.querySelectorAll('[data-critter-tease]')).toHaveLength(0);
+      expect(clean.querySelectorAll('[data-critter-part="body"]').length).toBeGreaterThan(0);
+    },
+  );
 });
