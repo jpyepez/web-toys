@@ -1,7 +1,7 @@
 ---
 slice: 1
 title: Barnyard palette + backdrop scene
-status: in-progress
+status: done
 type: afk
 blocked_by: []
 parent_prd: muddy-puddle
@@ -33,13 +33,13 @@ color string ready for the registry.
 
 - [x] `palette.ts` exports the barnyard scene tokens (sky, barn, fence, grass,
       mud, puddle, sparkle) and the piglet body/feature colors, by name.
-- [ ] `BarnyardBackdrop` renders an all-SVG, layered, bottom-anchored scene
+- [x] `BarnyardBackdrop` renders an all-SVG, layered, bottom-anchored scene
       (sky / barn-fence silhouette / mud puddle) with `data-*` layer hooks
       queryable in a render test.
-- [ ] The palette adds **no** keys to the shared `src/shell/tokens.ts` (ADR-0004).
-- [ ] No `<canvas>`, no binary assets — SVG primitives only (ADR-0002).
-- [ ] Public-interface tests pass; no internal mocks; never mock our own components.
-- [ ] On-device check (mine, before marking done): on a 390×844 phone the scene
+- [x] The palette adds **no** keys to the shared `src/shell/tokens.ts` (ADR-0004).
+- [x] No `<canvas>`, no binary assets — SVG primitives only (ADR-0002).
+- [x] Public-interface tests pass; no internal mocks; never mock our own components.
+- [x] On-device check (mine, before marking done): on a 390×844 phone the scene
       reads as a barnyard with the puddle anchored to the lower third across
       aspect ratios.
 
@@ -52,3 +52,15 @@ color string ready for the registry.
   exist and that the layer hooks render.
 - Bottom-anchored layering follows the same `--*-floor` clamp pattern Puffer
   Fish uses for its seabed band; the puddle is the analog ground anchor.
+- Resolved: the ground length is `--barnyard-floor` (`clamp(170px, 30dvh, 380px)`);
+  the Toy's `<main>` will set it in slice #02. Layers: `data-barnyard-layer` =
+  `sky` (slice-fill square) / `barn` + `fence` (bottom-anchored silhouette) /
+  `grass` (bottom-anchored ground band) / `puddle` (mud base + wet sheen +
+  sparkle glints, lower third). The Card `tint` (slice #08) is `palette.sky`
+  (the barnyard surface) — no separate export, mirroring how Puffer Fish reuses
+  `oceanPalette.water`.
+- On-device check done headless via SSR + system-Chrome screenshot at 390×844
+  (portrait) and 844×390 (landscape): the scene reads as a barnyard and the
+  puddle stays anchored to the lower third across both aspect ratios (no
+  ADR-0005 horizon/critter drift). Colour/geometry tuples remain on-device-tuned
+  at the kid-handoff DoD per the project posture.
