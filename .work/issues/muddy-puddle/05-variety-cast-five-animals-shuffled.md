@@ -1,7 +1,7 @@
 ---
 slice: 5
 title: Variety cast — five animals, shuffled, no repeats
-status: in-progress
+status: done
 type: afk
 blocked_by: [4]
 parent_prd: muddy-puddle
@@ -31,16 +31,16 @@ calf — **one each, no repeats**), and the **order is shuffled per play** so
 
 ## Acceptance criteria
 
-- [ ] All five Critters (piglet, duckling, lamb, chick, calf) render from SVG
+- [x] All five Critters (piglet, duckling, lamb, chick, calf) render from SVG
       primitives with `data-*` part hooks; each has a distinct tease extremity.
-- [ ] `palette.ts` gains each animal's colors additively — still **no** keys
+- [x] `palette.ts` gains each animal's colors additively — still **no** keys
       added to the shared `src/shell/tokens.ts` (ADR-0004).
-- [ ] A single play cleans five **distinct** animals (one each, no repeats).
-- [ ] The cast order is **shuffled per play** — two plays can differ in order
+- [x] A single play cleans five **distinct** animals (one each, no repeats).
+- [x] The cast order is **shuffled per play** — two plays can differ in order
       (assert the shuffle is applied; the exact order is non-deterministic).
-- [ ] The loop contract from slice #4 still holds (≤ 1 on stage, `onComplete`
+- [x] The loop contract from slice #4 still holds (≤ 1 on stage, `onComplete`
       once at the fifth clean, terminal `completed`).
-- [ ] Public-interface tests pass; no internal mocks.
+- [x] Public-interface tests pass; no internal mocks.
 - [ ] On-device check (mine): across a play five different animals arrive, each a
       legible surprise at the reveal; "Play again" feels like a fresh order.
 
