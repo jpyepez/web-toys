@@ -184,4 +184,39 @@ describe('Muddy Puddle — sequential loop mechanic', () => {
     expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'dismissing');
     expect(onComplete).not.toHaveBeenCalled();
   });
+
+  /**
+   * Walk the machine through one full piglet-cycle: arriving → wiping → Wipe →
+   * dismissing → (idle | completed). A following `runOnlyPendingTimersAsync`
+   * then moves idle → arriving for the next piglet. Lifted into a helper
+   * because the 5-piglet tests below repeat the pattern.
+   */
+  async function cleanOnePiglet(container: HTMLElement) {
+    await vi.runOnlyPendingTimersAsync(); // arriving → wiping (trot-in)
+    wipeCurrentPigletClean(container); // → dismissing (clean-snap)
+    await vi.runOnlyPendingTimersAsync(); // → idle | completed (trot-off beat)
+  }
+
+  it('terminates the loop after the fifth clean — state is completed and no further piglet mounts', async () => {
+    // AC #4. The Goal is "clean five piglets"; the 5th clean-snap meets it. The
+    // loop's `completed` state is terminal: once the Goal is met, no 6th (or
+    // 7th, …) piglet mounts no matter how far time advances. This guards against
+    // a regression where the dismissing → idle → arriving cycle keeps trotting
+    // piglets in underneath the Shell's celebration overlay.
+    const { container } = render(<MuddyPuddle onComplete={vi.fn()} />);
+
+    // Clean 4 piglets, returning to a fresh arriving piglet each time.
+    for (let i = 0; i < 4; i += 1) {
+      await cleanOnePiglet(container);
+      await vi.runOnlyPendingTimersAsync(); // idle → arriving (next piglet)
+    }
+    // The 5th piglet — clean it; this meets the Goal.
+    await cleanOnePiglet(container);
+
+    // Drain everything time could possibly fire — many cycles' worth.
+    await vi.advanceTimersByTimeAsync(10_000);
+
+    expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'completed');
+    expect(screen.queryByRole('img', { name: /Piglet/ })).toBeNull();
+  });
 });
