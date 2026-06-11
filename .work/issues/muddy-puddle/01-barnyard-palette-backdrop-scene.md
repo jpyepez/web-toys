@@ -31,7 +31,7 @@ color string ready for the registry.
 
 ## Acceptance criteria
 
-- [ ] `palette.ts` exports the barnyard scene tokens (sky, barn, fence, grass,
+- [x] `palette.ts` exports the barnyard scene tokens (sky, barn, fence, grass,
       mud, puddle, sparkle) and the piglet body/feature colors, by name.
 - [ ] `BarnyardBackdrop` renders an all-SVG, layered, bottom-anchored scene
       (sky / barn-fence silhouette / mud puddle) with `data-*` layer hooks

@@ -40,8 +40,17 @@ The single hook a Toy exposes to the Shell. A Toy renders its own world and call
 contract between Shell and Toy.
 
 **Critter**:
-A tappable character in a Toy (fish, sheep, etc.), drawn from code SVG primitives — never
-an image. Tapping a Critter is the core interaction.
+A character in a Toy (fish, sheep, piglet, etc.) the child interacts with, drawn from code
+SVG primitives — never an image. The interaction is interaction-agnostic: it may be a tap
+(Counting Sheep, Puffer Fish) or a sustained **Wipe** (Muddy Puddle) or some future gesture.
+Engaging the Critter is the core interaction; the specific gesture is per-Toy.
+
+**Wipe**:
+The core gesture of the Muddy Puddle Toy: a sustained finger drag across a muddy **Critter**
+that removes the mud it passes over. One cleaning stroke is "a Wipe"; the verb is "to Wipe".
+Distinct from a tap — it is continuous and accumulative (mud removed by earlier strokes stays
+removed when the finger lifts), so it is the first non-tap core interaction in the collection.
+_Avoid_: scrub, wash, swipe (reserve "swipe" for a fast directional flick, which this is not)
 
 **Outro**:
 A Toy's choreographed end-beat after its Goal is met — the Toy keeps rendering its
@@ -77,3 +86,6 @@ runtime (Web Audio / Tone.js) — there are no binary assets. See
 
 - "end screen" was used loosely — clarified that **Completion** is a *success* celebration,
   not a fail/timeout state. The word "timeout" is retired for this concept.
+- **Critter** originally read "a *tappable* character… tapping is the core interaction" —
+  broadened during the Muddy Puddle grill to be interaction-agnostic, since that Toy's core
+  interaction is a **Wipe**, not a tap. The Critter is the character; the gesture is per-Toy.

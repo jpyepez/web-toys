@@ -58,4 +58,24 @@ describe('Muddy Puddle — BarnyardBackdrop', () => {
       }
     }
   });
+
+  it('renders a distant barn silhouette, addressable via its data-barnyard-layer hook and painted from the barnyard palette', () => {
+    // AC #2: the distant barn on the horizon — part of the barn/fence
+    // silhouette that makes the scene read as a barnyard. Addressed structurally
+    // via `data-barnyard-layer="barn"`; its colour traces to the barnyard
+    // palette. Shape/position is on-device per the slice DoD, so we assert
+    // presence + the palette trace, not geometry.
+    const paletteValues = new Set<string>(Object.values(palette));
+    const { container } = render(<BarnyardBackdrop />);
+
+    const barn = container.querySelectorAll('[data-barnyard-layer="barn"]');
+    expect(barn.length).toBeGreaterThan(0);
+    for (const layer of barn) {
+      const colours = paletteColoursOf(layer);
+      expect(colours.length).toBeGreaterThan(0);
+      for (const colour of colours) {
+        expect(paletteValues).toContain(colour);
+      }
+    }
+  });
 });
