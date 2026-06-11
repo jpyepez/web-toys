@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { shuffle } from './cast';
+import { shuffle, CAST } from './cast';
 
 /**
  * Muddy Puddle — the surprise cast's ordering (muddy-puddle PRD, slice #05).
@@ -47,5 +47,24 @@ describe('Muddy Puddle — shuffle', () => {
     // Each remains a permutation — the applied shuffle never invents or drops.
     expect([...lows].sort()).toEqual([...cast].sort());
     expect([...highs].sort()).toEqual([...cast].sort());
+  });
+
+  it('is the fixed five-animal cast — piglet, duckling, lamb, chick, calf, one each, no repeats', () => {
+    // AC #3 at the roster layer: the cast is fixed at exactly these five animals,
+    // one each — so a play that walks the whole cast cleans five DISTINCT
+    // animals. Each descriptor carries what the loop needs to mount it: a human
+    // `label` (the accessible name on stage) and its own `blobs` mud blanket to
+    // Wipe (the slice-#3 levers live per-Critter). We assert the distinct
+    // five-set and that each is mountable, never the colours/geometry
+    // (on-device-tuned).
+    const ids = CAST.map((c) => c.id);
+
+    expect(ids).toHaveLength(5);
+    expect(new Set(ids)).toEqual(new Set(['piglet', 'duckling', 'lamb', 'chick', 'calf']));
+    for (const critter of CAST) {
+      expect(critter.label).toMatch(/\S/);
+      expect(critter.blobs.length).toBeGreaterThan(1);
+      expect(critter.Drawing).toBeTypeOf('function');
+    }
   });
 });
