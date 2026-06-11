@@ -117,4 +117,29 @@ describe('Muddy Puddle — sequential loop mechanic', () => {
     expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'idle');
     expect(screen.queryByRole('img', { name: /Piglet/ })).toBeNull();
   });
+
+  it('advances to a fresh muddy piglet after the intermission beat', async () => {
+    // Closing the loop: after the kid Wipes the current piglet clean and it
+    // trots off, the intermission gap plays out and the next piglet trots in on
+    // its own. This is the kid-paced rhythm — the kid drives the Wipe, the loop
+    // drives the trot-in / trot-off / intermission beats. The "fresh" piglet
+    // must arrive fully muddy again: the next mount has the full blob set, not
+    // the cleaned-out remnants of the previous one (the `idle` unmount makes
+    // each arrival a genuinely fresh `WipeableCritter`).
+    const { container } = render(<MuddyPuddle onComplete={vi.fn()} />);
+    const fullMud = container.querySelectorAll('[data-mud-blob]').length;
+
+    // One full iteration: arriving → wiping → dismissing → idle.
+    await vi.runOnlyPendingTimersAsync(); // trot-in → wiping
+    wipeCurrentPigletClean(container); // clean-snap → dismissing
+    await vi.runOnlyPendingTimersAsync(); // trot-off → idle
+    expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'idle');
+
+    // Drain the intermission timer.
+    await vi.runOnlyPendingTimersAsync();
+
+    expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'arriving');
+    expect(screen.getByRole('img', { name: /Piglet/ })).toBeInTheDocument();
+    expect(container.querySelectorAll('[data-mud-blob]')).toHaveLength(fullMud);
+  });
 });
