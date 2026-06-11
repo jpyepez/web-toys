@@ -12,12 +12,13 @@ describe('Muddy Puddle — barnyard palette', () => {
     // module gains no barnyard keys (AC #3) — these live here by construction.
     //
     // Names are load-bearing: `sky`/`barn`/`fence`/`grass`/`mud`/`puddle`/
-    // `sparkle` paint the barnyard scene; `pigletBody`/`pigletSnout`/
-    // `pigletCheek`/`pigletEye`/`pigletEyeShine` paint the first Critter (slice
-    // #02 needs them — the other four animals land additively in slice #05).
-    // The *values* are HSL strings, on-device-tuned per the slice DoD, so we pin
-    // the key set + the HSL shape, not the exact tuples — mirrors the Puffer
-    // Fish ocean palette test.
+    // `sparkle` paint the barnyard scene; the `<animal>…` keys paint each
+    // Critter of the surprise cast — piglet (slice #02) plus the four animals
+    // that land ADDITIVELY here in slice #05 (duckling, lamb, chick, calf), one
+    // colour set each, mirroring the piglet's body/feature/cheek/eye/eyeShine
+    // shape. The *values* are HSL strings, on-device-tuned per the slice DoD, so
+    // we pin the key set + the HSL shape, not the exact tuples — mirrors the
+    // Puffer Fish ocean palette test.
     expect(Object.keys(palette).sort()).toEqual(
       [
         'sky',
@@ -32,6 +33,30 @@ describe('Muddy Puddle — barnyard palette', () => {
         'pigletCheek',
         'pigletEye',
         'pigletEyeShine',
+        'ducklingBody',
+        'ducklingBeak',
+        'ducklingWing',
+        'ducklingCheek',
+        'ducklingEye',
+        'ducklingEyeShine',
+        'lambWool',
+        'lambFace',
+        'lambEar',
+        'lambCheek',
+        'lambEye',
+        'lambEyeShine',
+        'chickBody',
+        'chickBeak',
+        'chickWing',
+        'chickCheek',
+        'chickEye',
+        'chickEyeShine',
+        'calfBody',
+        'calfMuzzle',
+        'calfSpot',
+        'calfCheek',
+        'calfEye',
+        'calfEyeShine',
       ].sort(),
     );
     for (const value of Object.values(palette)) {
