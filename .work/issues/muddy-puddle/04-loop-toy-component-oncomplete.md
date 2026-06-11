@@ -1,7 +1,7 @@
 ---
 slice: 4
 title: Loop + Toy component (5-state machine, onComplete, splash Outro)
-status: in-progress
+status: done
 type: afk
 blocked_by: [3]
 parent_prd: muddy-puddle
@@ -50,18 +50,18 @@ Observables for tests:
 
 ## Acceptance criteria
 
-- [ ] At most one Critter is on stage at any time (zero during `idle`).
-- [ ] Simulating wipes that cross the threshold during `wiping` advances to
+- [x] At most one Critter is on stage at any time (zero during `idle`).
+- [x] Simulating wipes that cross the threshold during `wiping` advances to
       `dismissing` and increments the cleaned count; the clean-snap removes
       remaining blobs.
-- [ ] Wipes during `arriving` / `dismissing` are non-destructive **no-ops** — no
+- [x] Wipes during `arriving` / `dismissing` are non-destructive **no-ops** — no
       count advance, no early arrival, no `onComplete`.
-- [ ] After the fifth clean the state is terminal `completed` and **no further
+- [x] After the fifth clean the state is terminal `completed` and **no further
       Critters mount**.
-- [ ] `onComplete` fires **exactly once** — ref-guarded against the Shell
+- [x] `onComplete` fires **exactly once** — ref-guarded against the Shell
       re-rendering a new `onComplete` reference at Completion (assert a single
       call settling past the fifth clean).
-- [ ] The loop owns its own state machine in the muddy-puddle folder — no shared
+- [x] The loop owns its own state machine in the muddy-puddle folder — no shared
       loop hook/module is introduced or imported.
 - [ ] On-device check (mine): on a 390×844 phone a muddy piglet trots in, wipes
       clean + snaps, the next trots in, the fifth splashes in the puddle under the
