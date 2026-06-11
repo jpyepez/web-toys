@@ -31,7 +31,7 @@ child wipes, and re-prompts on any Critter where they stall.
 - [x] After the idle delay with no wipe, the demo is **active** (observable
       state/flag).
 - [x] A real wipe **cancels/suppresses** the demo.
-- [ ] The demo's blobs **reform** — it does **not** advance the cleaned count or
+- [x] The demo's blobs **reform** — it does **not** advance the cleaned count or
       move the threshold (assert at the state/flag level).
 - [ ] The demo re-arms on a later Critter where the child stalls.
 - [ ] Public-interface tests pass; no internal mocks.

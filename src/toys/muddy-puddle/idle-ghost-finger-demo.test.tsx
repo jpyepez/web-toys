@@ -33,6 +33,15 @@ describe('Muddy Puddle — idle ghost-finger demo', () => {
   /** Comfortably past the ~2–3s idle delay — robust to on-device tuning. */
   const PAST_IDLE_DELAY_MS = 4000;
 
+  /** Wipe the on-stage Critter to its clean-snap (cross every caked blob). */
+  function wipeCurrentCritterClean(container: HTMLElement) {
+    let blob = container.querySelector('[data-mud-blob]');
+    while (blob) {
+      fireEvent.pointerOver(blob);
+      blob = container.querySelector('[data-mud-blob]');
+    }
+  }
+
   it('activates the demo after the idle delay when a settled Critter goes un-wiped', async () => {
     // AC #1. Once a Critter is settled in `wiping` with no contributing Wipe,
     // the idle timer arms; after the delay with still no Wipe the demo becomes
@@ -107,5 +116,28 @@ describe('Muddy Puddle — idle ghost-finger demo', () => {
     // No progress advanced: still awaiting the kid's Wipe, Goal untouched.
     expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'wiping');
     expect(onComplete).not.toHaveBeenCalled();
+  });
+
+  it('re-arms the demo on a later Critter where the child stalls again', async () => {
+    // AC #4. The teaching isn't one-and-done: the child Wipes the first Critter
+    // clean (so no demo there — they didn't need it), but then stalls on the
+    // NEXT Critter. The demo must re-prompt, arming afresh each time a Critter
+    // settles in `wiping`. We clean Critter #1, let Critter #2 trot in and
+    // settle, then stall — the demo activates again on this later Critter.
+    const { container } = render(<MuddyPuddle onComplete={vi.fn()} />);
+
+    // Critter #1: settle, Wipe clean, trot off — no stall, so no demo.
+    await vi.runOnlyPendingTimersAsync(); // arriving → wiping
+    wipeCurrentCritterClean(container); //   wiping → dismissing (clean-snap)
+    await vi.runOnlyPendingTimersAsync(); // dismissing → idle
+    await vi.runOnlyPendingTimersAsync(); // idle → arriving (Critter #2)
+    await vi.runOnlyPendingTimersAsync(); // arriving → wiping (Critter #2)
+    expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'wiping');
+    expect(screen.getByRole('main')).toHaveAttribute('data-demo-active', 'false');
+
+    // The child stalls on Critter #2 — the demo re-arms and re-prompts.
+    await vi.advanceTimersByTimeAsync(PAST_IDLE_DELAY_MS);
+
+    expect(screen.getByRole('main')).toHaveAttribute('data-demo-active', 'true');
   });
 });
