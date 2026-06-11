@@ -160,4 +160,28 @@ describe('Muddy Puddle — sequential loop mechanic', () => {
     expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'arriving');
     expect(onComplete).not.toHaveBeenCalled();
   });
+
+  it('ignores a Wipe during dismissing — the trot-off is not interruptible into an early advance', async () => {
+    // AC #3, the trot-off half. Once the clean-snap fires the piglet is revealed
+    // and trotting off in `dismissing`; a kid still dragging at it must not
+    // advance the loop early or re-fire the Goal. The snapped `WipeableCritter`
+    // has no mud left to cross AND the loop's `wiping`-only guard rejects a fresh
+    // clean-snap — together a no-op. Firing more pointer events on the on-stage
+    // piglet must leave the machine on `dismissing` with no `onComplete`.
+    const onComplete = vi.fn();
+    const { container } = render(<MuddyPuddle onComplete={onComplete} />);
+
+    // Drive to `dismissing` via a legitimate Wipe.
+    await vi.runOnlyPendingTimersAsync(); // trot-in → wiping
+    wipeCurrentPigletClean(container); // clean-snap → dismissing
+    expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'dismissing');
+
+    // Keep dragging at the (now-clean) piglet — the trot-off must not advance.
+    const surface = container.querySelector('[data-wipe-surface]')!;
+    fireEvent.pointerDown(surface);
+    fireEvent.pointerOver(surface);
+
+    expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'dismissing');
+    expect(onComplete).not.toHaveBeenCalled();
+  });
 });
