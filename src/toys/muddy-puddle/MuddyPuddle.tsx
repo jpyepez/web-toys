@@ -29,6 +29,7 @@ type LoopState = 'arriving' | 'wiping' | 'dismissing' | 'idle' | 'completed';
  */
 const TIMING_ARRIVAL_MS = 500;
 const TIMING_DISMISS_MS = 1100;
+const TIMING_INTERMISSION_MS = 250;
 
 /**
  * Muddy Puddle — a barnyard scene that sends one muddy piglet at a time onto
@@ -46,6 +47,10 @@ export function MuddyPuddle(_props: ToyProps) {
     }
     if (state === 'dismissing') {
       const timer = setTimeout(() => setState('idle'), TIMING_DISMISS_MS);
+      return () => clearTimeout(timer);
+    }
+    if (state === 'idle') {
+      const timer = setTimeout(() => setState('arriving'), TIMING_INTERMISSION_MS);
       return () => clearTimeout(timer);
     }
   }, [state]);
