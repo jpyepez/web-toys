@@ -56,4 +56,19 @@ describe('Muddy Puddle — PigletDrawing', () => {
 
     expect(container.querySelectorAll('[data-piglet-tease]')).toHaveLength(1);
   });
+
+  it('swaps muddy ↔ revealed-clean: `cleaned` removes all mud and the tease, leaving the clean piglet', () => {
+    // AC #4: a `cleaned` prop swaps mud-on → the fully-clean piglet (the reveal
+    // art). This slice just wires the prop; the threshold logic that flips it is
+    // slice #3. Mirrors the Fish's `puffed` art-state swap. The load-bearing,
+    // geometry-free signal: cleaned, no mud blobs and no tease-on-top remain —
+    // and the same structural piglet parts (drawn underneath the mud) still
+    // render, now fully visible.
+    const clean = render(<PigletDrawing cleaned />).container;
+
+    expect(clean.querySelectorAll('[data-mud-blob]')).toHaveLength(0);
+    expect(clean.querySelectorAll('[data-piglet-tease]')).toHaveLength(0);
+    expect(clean.querySelectorAll('[data-piglet-part="body"]').length).toBeGreaterThan(0);
+    expect(clean.querySelectorAll('[data-piglet-part="snout"]').length).toBeGreaterThan(0);
+  });
 });
