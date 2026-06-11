@@ -98,4 +98,24 @@ describe('Muddy Puddle — BarnyardBackdrop', () => {
       }
     }
   });
+
+  it('renders the bottom-anchored grass ground band, addressable via its data-barnyard-layer hook and painted from the barnyard palette', () => {
+    // AC #2: the ground band the critters trot on — the bottom-anchored ground
+    // anchor of the layered scene (ADR-0005), the barnyard analog of Puffer
+    // Fish's seabed. Addressed structurally via `data-barnyard-layer="grass"`;
+    // its colour traces to the barnyard palette. Height/shape is on-device per
+    // the slice DoD, so we assert presence + the palette trace, not geometry.
+    const paletteValues = new Set<string>(Object.values(palette));
+    const { container } = render(<BarnyardBackdrop />);
+
+    const grass = container.querySelectorAll('[data-barnyard-layer="grass"]');
+    expect(grass.length).toBeGreaterThan(0);
+    for (const layer of grass) {
+      const colours = paletteColoursOf(layer);
+      expect(colours.length).toBeGreaterThan(0);
+      for (const colour of colours) {
+        expect(paletteValues).toContain(colour);
+      }
+    }
+  });
 });
