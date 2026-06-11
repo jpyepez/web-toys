@@ -1,6 +1,15 @@
 import { palette } from './palette';
 
 /**
+ * Deterministic fence-post x-positions (in the silhouette layer's `0 0 100 100`
+ * viewBox), a low post-and-rail run flanking the barn to the right. Stable
+ * across re-renders by construction (no `Math.random()`, no per-render jitter),
+ * like the meadow's cloud scatter and the ocean's bubbles. Count/positions are
+ * on-device-tuned; the structural contract is that the fence renders.
+ */
+const FENCE_POSTS: readonly number[] = [46, 56, 66, 76, 86];
+
+/**
  * The Muddy Puddle barnyard backdrop — the analog of `UnderwaterBackdrop` / the
  * meadow: the code-drawn world behind the Critter (ADR-0002, all SVG; ADR-0004,
  * the Toy owns its scene assets locally). Every colour sources the local
@@ -73,6 +82,14 @@ export function BarnyardBackdrop() {
           d="M 16 40 L 16 18 L 26 10 L 36 18 L 36 40 Z"
           fill={palette.barn}
         />
+        {/* Fence — a low post-and-rail run flanking the barn to the right,
+         * deterministic posts (no jitter) so it's stable across re-renders. The
+         * rail and each post are tagged `fence` so the test addresses the run
+         * without coupling to how many posts draw it. */}
+        {FENCE_POSTS.map((x, i) => (
+          <rect key={i} data-barnyard-layer="fence" x={x} y="28" width="2" height="12" fill={palette.fence} />
+        ))}
+        <rect data-barnyard-layer="fence" x={FENCE_POSTS[0]} y="31" width={FENCE_POSTS[FENCE_POSTS.length - 1] - FENCE_POSTS[0] + 2} height="2.4" fill={palette.fence} />
       </svg>
     </div>
   );
