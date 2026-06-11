@@ -158,4 +158,25 @@ describe('Muddy Puddle — BarnyardBackdrop', () => {
       expect(svg.style.pointerEvents).toBe('none');
     }
   });
+
+  it('sources every fill from the barnyard palette — no hardcoded HSL anywhere in the scene', () => {
+    // AC #4 + ADR-0002: the whole backdrop is SVG primitives whose every colour
+    // routes through the local barnyard palette — no raw colour strings, no
+    // `<canvas>`, no binary assets. This is the scene-wide guard that
+    // generalises the per-layer traces above: we sweep every colour-bearing
+    // attribute (`fill`/`stroke`, plus gradient `stop-color`) on every element,
+    // excluding the structural `none` sentinel and `url(...)` paint-server
+    // references, and assert each traces back to a `palette` value. Guards
+    // against a hardcoded HSL slipping into any future layer tuned on-device.
+    const paletteValues = new Set<string>(Object.values(palette));
+    const { container } = render(<BarnyardBackdrop />);
+
+    const elements = container.querySelectorAll('svg *');
+    expect(elements.length).toBeGreaterThan(0);
+    for (const el of elements) {
+      for (const colour of paletteColoursOf(el)) {
+        expect(paletteValues).toContain(colour);
+      }
+    }
+  });
 });
