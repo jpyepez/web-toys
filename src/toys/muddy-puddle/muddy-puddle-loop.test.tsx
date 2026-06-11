@@ -42,4 +42,22 @@ describe('Muddy Puddle — sequential loop mechanic', () => {
     const piglets = screen.getAllByRole('img', { name: /Piglet/ });
     expect(piglets).toHaveLength(1);
   });
+
+  it('transitions arriving → wiping once the trot-in beat completes', async () => {
+    // The first time-driven transition. `arriving` is the entry state (piglet
+    // trotting in muddy from the side); `wiping` is the centred-piglet-awaiting-
+    // Wipe state (this Toy's user-driven beat, named `wiping` vs the tap toys'
+    // `waiting`). The transition fires when the trot-in beat completes —
+    // `vi.runOnlyPendingTimersAsync` drains the currently-queued transition
+    // timer (and only that one), so the assertion lands at exactly the wiping
+    // beat. State is observed via `data-toy-state` on the root `<main>` (the
+    // structural state-query the slice spec authorises).
+    render(<MuddyPuddle onComplete={vi.fn()} />);
+
+    expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'arriving');
+
+    await vi.runOnlyPendingTimersAsync();
+
+    expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'wiping');
+  });
 });
