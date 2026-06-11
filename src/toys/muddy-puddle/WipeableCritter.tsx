@@ -45,11 +45,6 @@ export function WipeableCritter({ onClean }: { onClean?: () => void }) {
     cleaned: false,
   });
 
-  // Delegated wipe: read the crossed blob's index off the event target and drop
-  // it. A blob already cleared by an earlier stroke is a no-op (it is no longer
-  // in `remaining`), so cleared mud stays cleared. When the drop carries the
-  // wiped fraction past the threshold, the Critter snaps clean: any leftover
-  // blobs vanish at once (`remaining: []`) and the reveal art shows.
   // The "clean reached" signal is a one-shot. The ref guards against the loop
   // (slice #04) handing a fresh `onClean` reference on re-render — without it
   // the effect's `onClean` dependency would re-fire the signal. Mirrors the
@@ -61,6 +56,11 @@ export function WipeableCritter({ onClean }: { onClean?: () => void }) {
     onClean?.();
   }, [state.cleaned, onClean]);
 
+  // Delegated wipe: read the crossed blob's index off the event target and drop
+  // it. A blob already cleared by an earlier stroke is a no-op (it is no longer
+  // in `remaining`), so cleared mud stays cleared. When the drop carries the
+  // wiped fraction past the threshold, the Critter snaps clean: any leftover
+  // blobs vanish at once (`remaining: []`) and the reveal art shows.
   const wipeBlobUnderPointer = (target: EventTarget) => {
     const raw = (target as Element).getAttribute?.('data-blob-index');
     if (raw == null) return;
