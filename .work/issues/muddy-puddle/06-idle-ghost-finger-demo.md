@@ -28,7 +28,7 @@ child wipes, and re-prompts on any Critter where they stall.
 
 ## Acceptance criteria
 
-- [ ] After the idle delay with no wipe, the demo is **active** (observable
+- [x] After the idle delay with no wipe, the demo is **active** (observable
       state/flag).
 - [ ] A real wipe **cancels/suppresses** the demo.
 - [ ] The demo's blobs **reform** — it does **not** advance the cleaned count or
