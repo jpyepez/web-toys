@@ -22,7 +22,7 @@ const LEFT_EAR_INNER = 'M35 27 L33 17 L43 24 Z';
  * zone — caking over BOTH structural ears — so the only bit left legible is the
  * single tease ear, redrawn on top of the mud (below).
  */
-const MUD_BLOBS: readonly { cx: number; cy: number; r: number }[] = [
+export const MUD_BLOBS: readonly { cx: number; cy: number; r: number }[] = [
   // ear zone — caked over both structural ears so neither pokes out on its own;
   // the left tease ear is redrawn on top, so it alone stays visible.
   { cx: 38, cy: 24, r: 10 },
@@ -65,7 +65,22 @@ const MUD_BLOBS: readonly { cx: number; cy: number; r: number }[] = [
  * `puffed` art-state pattern. This slice just wires the prop; slice #3's
  * threshold logic flips it. Muddy is the default (the Toy starts muddy).
  */
-export function PigletDrawing({ cleaned = false }: { cleaned?: boolean }) {
+export function PigletDrawing({
+  cleaned = false,
+  remainingBlobIndices,
+}: {
+  cleaned?: boolean;
+  /**
+   * Which mud blobs (by index into `MUD_BLOBS`) are still caked on. Defaults to
+   * all of them — the static fully-muddy art of slice #2. The Wipe mechanic
+   * (slice #3's `WipeableCritter`) drives this down as the child clears blobs;
+   * each rendered blob carries `data-blob-index` so the wipe surface can tell
+   * which one a touch point crossed. Ignored when `cleaned` (the reveal drops
+   * the whole mud layer at the clean-snap).
+   */
+  remainingBlobIndices?: readonly number[];
+}) {
+  const blobIndices = remainingBlobIndices ?? MUD_BLOBS.map((_, i) => i);
   return (
     <svg
       viewBox="0 0 100 100"
@@ -113,13 +128,14 @@ export function PigletDrawing({ cleaned = false }: { cleaned?: boolean }) {
            * its own node so coverage is countable (ADR-0006). Drawn last so it
            * sits on top of every piglet part, obscuring who it is. */}
           <g data-mud-layer="mud">
-            {MUD_BLOBS.map((blob, i) => (
+            {blobIndices.map((i) => (
               <circle
                 key={i}
                 data-mud-blob=""
-                cx={blob.cx}
-                cy={blob.cy}
-                r={blob.r}
+                data-blob-index={i}
+                cx={MUD_BLOBS[i].cx}
+                cy={MUD_BLOBS[i].cy}
+                r={MUD_BLOBS[i].r}
                 fill={palette.mud}
               />
             ))}
