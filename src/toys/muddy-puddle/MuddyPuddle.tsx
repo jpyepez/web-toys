@@ -4,6 +4,7 @@ import type { ToyProps } from '../../shell/registry';
 import { timing } from '../../shell/tokens';
 import { BarnyardBackdrop } from './BarnyardBackdrop';
 import { WipeableCritter } from './WipeableCritter';
+import { CAST, shuffle } from './cast';
 
 /**
  * The five states of the per-piglet loop — its OWN copy, duplicated from the
@@ -22,8 +23,13 @@ import { WipeableCritter } from './WipeableCritter';
  */
 type LoopState = 'arriving' | 'wiping' | 'dismissing' | 'idle' | 'completed';
 
-/** How many piglets make up the Goal. Sized for ~15–30s of kid-paced loops. */
-const PIGLET_COUNT = 5;
+/**
+ * How many Critters make up the Goal — the whole cast, one each (slice #05). The
+ * count and the cast are the same number by construction, so the ~15–30s
+ * duration is tuned via blobs-per-Critter + threshold (slice #3 levers), never
+ * by changing this. Sized for ~15–30s of kid-paced loops.
+ */
+const GOAL_COUNT = CAST.length;
 
 /**
  * Per-piglet beat durations (ms). The state machine drains its current timer
@@ -102,23 +108,40 @@ const pigletVariants: Variants = {
 };
 
 /**
- * Muddy Puddle — a barnyard scene that sends one muddy piglet at a time onto
- * the stage for the kid to Wipe clean. The state machine bootstraps to
- * `arriving`: one piglet trots in immediately, reachable as the accessible
- * element labelled "Piglet".
+ * Muddy Puddle — a barnyard scene that sends one muddy Critter at a time onto
+ * the stage for the kid to Wipe clean. The cast is the fixed five animals,
+ * SHUFFLED once per play (slice #05), so each round is a different animal and
+ * "Play again" feels fresh (a replay is a fresh mount → a fresh shuffle). The
+ * state machine bootstraps to `arriving`: the first cast member trots in
+ * immediately, reachable as the accessible element labelled with its name and
+ * tagged `data-critter` with its id.
  */
 export function MuddyPuddle({ onComplete }: ToyProps) {
+  // The per-play running order — `CAST` shuffled once at mount. `useState`'s lazy
+  // initialiser runs the shuffle exactly once per mount (not per render), so the
+  // order is stable across a play and re-rolled only when the Shell remounts the
+  // Toy for "Play again". `Math.random` is fine here (slice Notes); the shuffle's
+  // randomness is unit-tested separately through its injectable boundary.
+  const [cast] = useState(() => shuffle(CAST));
   const [state, setState] = useState<LoopState>('arriving');
-  // Counts the piglets the kid has cleaned. Increments on each `wiping →
-  // dismissing` transition (the clean-snap). Reaching PIGLET_COUNT is the
-  // Goal-met signal: `onComplete` fires once and the loop terminates.
+  // Which cast member is on stage — the index into the shuffled `cast`. Advances
+  // only when a fresh Critter trots in (the `idle → arriving` beat), so it stays
+  // pinned to the on-stage animal through that animal's whole wipe-and-dismiss
+  // cycle (distinct from `cleaned`, which advances at the clean-snap).
+  const [round, setRound] = useState(0);
+  // Counts the Critters the kid has cleaned. Increments on each `wiping →
+  // dismissing` transition (the clean-snap). Reaching GOAL_COUNT is the Goal-met
+  // signal: `onComplete` fires once and the loop terminates.
   const [cleaned, setCleaned] = useState(0);
   // ADR-0001 amendment: `onComplete` is a one-shot. The ref guards against a
   // re-render with a new `onComplete` reference (which the Shell does the moment
   // Completion starts) re-firing the effect. Mirrors the Fish's `completedRef`.
   const completedRef = useRef(false);
 
-  const goalMet = cleaned >= PIGLET_COUNT;
+  const goalMet = cleaned >= GOAL_COUNT;
+  // The on-stage Critter (clamped so the last Critter's dismissing/splash beat,
+  // where `round` has reached the final index, still resolves in-bounds).
+  const current = cast[Math.min(round, cast.length - 1)];
 
   useEffect(() => {
     if (state === 'arriving') {
@@ -126,15 +149,20 @@ export function MuddyPuddle({ onComplete }: ToyProps) {
       return () => clearTimeout(timer);
     }
     if (state === 'dismissing') {
-      // The Goal-met trot-off (Nth piglet's exit) hands off to the terminal
-      // `completed` state rather than back into the loop — AC #4: no further
-      // piglet mounts underneath the Shell's celebration overlay.
+      // The Goal-met trot-off (last Critter's exit) hands off to the terminal
+      // `completed` state rather than back into the loop — AC #5: no further
+      // Critter mounts underneath the Shell's celebration overlay.
       const next: LoopState = goalMet ? 'completed' : 'idle';
       const timer = setTimeout(() => setState(next), TIMING_DISMISS_MS);
       return () => clearTimeout(timer);
     }
     if (state === 'idle') {
-      const timer = setTimeout(() => setState('arriving'), TIMING_INTERMISSION_MS);
+      // The intermission gap, then the NEXT cast member trots in — advancing
+      // `round` so a different animal arrives (the surprise-cast rhythm).
+      const timer = setTimeout(() => {
+        setRound((r) => r + 1);
+        setState('arriving');
+      }, TIMING_INTERMISSION_MS);
       return () => clearTimeout(timer);
     }
   }, [state, goalMet]);
@@ -143,7 +171,7 @@ export function MuddyPuddle({ onComplete }: ToyProps) {
   // Shell re-rendering with a new `onComplete` reference (which happens the
   // moment Completion starts) doesn't double-fire — the completedRef pins it to
   // a single call. Fires at the clean-snap (goalMet flips as `cleaned` hits
-  // PIGLET_COUNT), so the Shell's overlay layers over the 5th piglet's splash
+  // GOAL_COUNT), so the Shell's overlay layers over the last Critter's splash
   // Outro while the Toy stays mounted through both (ADR-0001 amendment).
   useEffect(() => {
     if (!goalMet || completedRef.current) return;
@@ -194,7 +222,12 @@ export function MuddyPuddle({ onComplete }: ToyProps) {
             // Letting the existing node carry `wiping → dismissing` animates the
             // exit in place — the signature beat.
             role="img"
-            aria-label="Piglet"
+            // The on-stage Critter's identity — the accessible name (`aria-label`)
+            // for screen readers, and `data-critter` (its id) as the public hook
+            // the loop tests read to confirm the play reveals five DISTINCT
+            // animals without coupling to the non-deterministic shuffle order.
+            aria-label={current.label}
+            data-critter={current.id}
             variants={pigletVariants}
             // Off-stage-left start for the trot-in; the `arriving` variant eases
             // x back to 0 (centred) over TIMING_ARRIVAL_MS. Deltas are relative
@@ -206,6 +239,7 @@ export function MuddyPuddle({ onComplete }: ToyProps) {
             style={{ transformOrigin: 'center center' }}
           >
             <WipeableCritter
+              critter={current}
               onClean={() => {
                 // Only `wiping` accepts the clean-snap — a Wipe landing during
                 // the trot-in (`arriving`) or trot-off (`dismissing`) is a
