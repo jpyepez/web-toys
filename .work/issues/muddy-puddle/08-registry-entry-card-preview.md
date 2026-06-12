@@ -1,7 +1,7 @@
 ---
 slice: 8
 title: Registry entry + Home Card preview
-status: ready
+status: in-progress
 type: afk
 blocked_by: [4, 5]
 parent_prd: muddy-puddle
