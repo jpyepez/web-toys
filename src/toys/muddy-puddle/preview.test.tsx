@@ -45,4 +45,26 @@ describe('Muddy Puddle — Preview', () => {
     expect(svg).not.toBeNull();
     expect(svg!.getAttribute('aria-hidden')).toBe('true');
   });
+
+  it('sources every fill from the barnyard palette — no hardcoded HSL, no foreign-palette leak', () => {
+    // AC #3 / ADR-0002: the preview is drawn "from this Toy's primitives/palette"
+    // — so every colour-bearing attribute across the whole vignette must route
+    // through the local barnyard `palette`, no raw HSL strings and no borrowed
+    // colour from another Toy. This is a set-membership guard (colours come FROM
+    // the palette), not an assertion of which on-device-tuned tuples are used —
+    // it survives tuning because the palette is the single source of truth, the
+    // same scene-wide rule `BarnyardBackdrop` and the Fish preview carry. It
+    // keeps the Card art coherent with the Toy's own world and catches a
+    // hardcoded colour slipping in when the miniature is tuned on-device.
+    const paletteValues = new Set<string>(Object.values(palette));
+    const { container } = render(<Preview />);
+
+    const elements = container.querySelectorAll('svg *');
+    expect(elements.length).toBeGreaterThan(0);
+    for (const el of elements) {
+      for (const colour of paletteColoursOf(el)) {
+        expect(paletteValues).toContain(colour);
+      }
+    }
+  });
 });
