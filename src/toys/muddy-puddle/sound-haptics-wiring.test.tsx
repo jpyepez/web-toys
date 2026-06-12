@@ -41,6 +41,19 @@ function wipeOneBlob(container: HTMLElement) {
   fireEvent.pointerOver(container.querySelector('[data-mud-blob]')!);
 }
 
+/**
+ * Cross `n` DISTINCT still-caked blobs in turn — each crossing unmounts its blob
+ * so the next `querySelector` finds a fresh one. Kept well under the ~80% snap
+ * threshold (animals carry ~17–20 blobs) so this stays a run of plain wipes.
+ */
+function wipeNBlobs(container: HTMLElement, n: number) {
+  for (let i = 0; i < n; i += 1) {
+    const blob = container.querySelector('[data-mud-blob]');
+    if (!blob) break;
+    fireEvent.pointerOver(blob);
+  }
+}
+
 describe('Muddy Puddle — sound + haptics wiring', () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -74,5 +87,28 @@ describe('Muddy Puddle — sound + haptics wiring', () => {
     wipeOneBlob(container);
 
     expect(haptics.tick).toHaveBeenCalledTimes(1);
+  });
+
+  it('throttles rapid wipes — a burst of crossings is rate-limited, not one squelch per blob', async () => {
+    // AC #2: a fast drag crosses many blobs in an instant; squelches must be
+    // rate-limited so they read as playful, not a machine-gun. We assert the
+    // rate limit, NOT the interval (on-device-tuned): a synchronous BURST of
+    // five distinct crossings — all at the same instant on the (fake) clock —
+    // yields just ONE squelch, not five. Then we let the clock move well past
+    // any sane throttle window and a further wipe squelches again, proving the
+    // gate releases over time rather than swallowing everything after the first.
+    const sound = fakeSound();
+    const { container } = render(<MuddyPuddle onComplete={vi.fn()} sound={sound} />);
+
+    await vi.runOnlyPendingTimersAsync(); // arriving → wiping
+
+    wipeNBlobs(container, 5);
+    expect(squelchCalls(sound)).toHaveLength(1);
+
+    // Advance the clock past the throttle window (1s dwarfs the ~60–80ms gate,
+    // and stays under the ~2.5s idle-demo timer so nothing else stirs).
+    await vi.advanceTimersByTimeAsync(1000);
+    wipeOneBlob(container);
+    expect(squelchCalls(sound)).toHaveLength(2);
   });
 });
