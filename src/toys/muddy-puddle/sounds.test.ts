@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { squelch, sparkle } from './sounds';
+import { squelch, sparkle, REVEAL_VOICES } from './sounds';
+import { CAST } from './cast';
 
 /**
  * Muddy Puddle — local sound recipes (slice #07).
@@ -33,5 +34,26 @@ describe('Muddy Puddle — sparkle sound recipe', () => {
     // the concrete pitch / bend / decay are tuned by ear, not asserted.
     expect(sparkle.bendTo).toBeDefined();
     expect(sparkle.bendTo!).toBeGreaterThan(sparkle.freq);
+  });
+});
+
+describe('Muddy Puddle — per-animal reveal voices', () => {
+  it('keys a distinct reveal voice to every cast member by id (oink / quack / baa / peep / moo)', () => {
+    // The clean-snap plays a happy animal voice keyed to whichever Critter just
+    // snapped clean (slice body). The contract pinned here is structural: the
+    // map covers the WHOLE cast by `id` (so the loop can always look one up for
+    // the on-stage animal), each entry is a real `play(voice)` recipe, and the
+    // five voices are DISTINCT — an oink must not be a quack. The concrete
+    // timbres are tuned by ear, not asserted; we discriminate by freq, the one
+    // field that separates the animals' registers without pinning the recipe.
+    for (const critter of CAST) {
+      const voice = REVEAL_VOICES[critter.id];
+      expect(voice, `missing reveal voice for ${critter.id}`).toBeDefined();
+      expect(voice.peak).toBeGreaterThan(0);
+      expect(voice.decay).toBeGreaterThan(0);
+    }
+
+    const freqs = CAST.map((c) => REVEAL_VOICES[c.id].freq);
+    expect(new Set(freqs).size).toBe(CAST.length);
   });
 });
