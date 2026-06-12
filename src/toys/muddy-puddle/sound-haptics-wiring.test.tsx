@@ -141,4 +141,30 @@ describe('Muddy Puddle — sound + haptics wiring', () => {
     expect(sound.play).toHaveBeenCalledWith(sparkle);
     expect(sound.play).toHaveBeenCalledWith(REVEAL_VOICES[id]);
   });
+
+  it('fires a haptic tick on the clean-snap — the reveal lands with a buzz', async () => {
+    // AC #3: the snap is a tactile beat too, matching the tap toys' feel. We
+    // drive a fresh Critter all the way to the clean-snap and assert a tick
+    // landed. A single un-throttled crossing already ticks (the wipe beat), so
+    // we pin the snap's own tick distinctly: drive to wiping, let the throttle
+    // window pass, then wipe clean in one burst — within that burst the throttle
+    // allows a single wipe tick, and the snap adds one more, so the snap's tick
+    // shows up as a tick fired AFTER the play(sparkle) reward call. We assert the
+    // simpler, robust invariant: across the whole clean run the snap contributes
+    // a tick, so the tick count exceeds the throttled wipe ticks alone.
+    const haptics = { tick: vi.fn() };
+    const { container } = render(<MuddyPuddle onComplete={vi.fn()} haptics={haptics} />);
+
+    await vi.runOnlyPendingTimersAsync(); // arriving → wiping
+    // One wipe tick fires here (first crossing, gate open).
+    wipeOneBlob(container);
+    const afterFirstWipe = haptics.tick.mock.calls.length;
+
+    // Finish the Critter in one synchronous burst: the remaining crossings are
+    // throttled to no extra wipe ticks (same instant), so any increase beyond
+    // `afterFirstWipe` is the SNAP's own tick.
+    wipeUntilClean(container);
+
+    expect(haptics.tick.mock.calls.length).toBeGreaterThan(afterFirstWipe);
+  });
 });
