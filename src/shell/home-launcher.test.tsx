@@ -159,19 +159,21 @@ describe('home launcher', () => {
 });
 
 describe('registered toys', () => {
-  it('registers Counting Sheep and Puffer Fish as the two launchable Cards', async () => {
-    // Slice #09 (AC #1/#2): the registry now declares a second real Toy, so the
-    // Home reads as a small *collection* — two Cards, not one. This test
-    // supersedes the earlier "one launchable Card" assertion: adding the fish
-    // entry is the behaviour change the slice ships, so the launcher's expected
-    // Card count moves from 1 → 2 here. Both Cards carry their title and both
-    // route to their own Toy; the per-Card tint + preview wiring is asserted in
+  it('registers Counting Sheep, Puffer Fish and Muddy Puddle as the three launchable Cards', async () => {
+    // Muddy Puddle slice #08 (AC #1/#2): the registry now declares a third real
+    // Toy, so the Home reads as a small *collection* of three Cards. This test
+    // supersedes the earlier "two launchable Cards" assertion: adding the
+    // muddy-puddle entry is the behaviour change the slice ships, so the
+    // launcher's expected Card count moves from 2 → 3 here (the same way slice
+    // #09 moved it 1 → 2 when the fish landed). Each Card carries its title and
+    // routes to its own Toy; the per-Card tint + preview wiring is asserted in
     // the focused tests below.
     renderApp(registry);
 
     expect(await screen.findByText('Counting Sheep')).toBeInTheDocument();
     expect(screen.getByText('Puffer Fish')).toBeInTheDocument();
-    expect(screen.getAllByRole('link')).toHaveLength(2);
+    expect(screen.getByText('Muddy Puddle')).toBeInTheDocument();
+    expect(screen.getAllByRole('link')).toHaveLength(3);
 
     // The Counting Sheep Card still backs its preview cover with the cream tint,
     // sourced from the Sheep-local palette (`palette.sheepWool`, ADR-0004 —
