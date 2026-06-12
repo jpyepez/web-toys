@@ -41,7 +41,7 @@ const GOAL_COUNT = CAST.length;
  * Own copies, duplicated from the Fish's machine rather than shared.
  */
 const TIMING_ARRIVAL_MS = 500;
-const TIMING_DISMISS_MS = 1100;
+const TIMING_DISMISS_MS = 2300;
 const TIMING_INTERMISSION_MS = 250;
 
 /**
@@ -97,18 +97,27 @@ const critterVariants: Variants = {
     opacity: 1,
     transition: { duration: 0 },
   },
-  // Happy trot-off to the far side: a couple of bouncy hops carry the revealed-
-  // clean Critter off the right edge, fading only at the very end so the reveal
-  // is savoured before it leaves.
+  // The revealed-clean Critter's exit, in three SEQUENTIAL phases so the kid
+  // registers the clean before it goes: celebration → move out → (hold) → fade.
+  // One shared transition (so the full TIMING_DISMISS_MS duration is honoured),
+  // with the keyframes arranged so the phases don't overlap — the load-bearing
+  // trick is the OPAQUE HOLD between the move and the fade: the Critter slides
+  // to its exit spot and then SITS there, fully opaque, for a beat before any
+  // fade starts, so "it moved out, THEN faded" reads unmistakably.
+  //   1. Celebration (0 → 0.4): x held at 0, a couple of joyful hops in place.
+  //   2. Move out    (0.4 → 0.55): x slides to the side, fully opaque.
+  //   3. Hold        (0.55 → 0.9): x parked at the exit spot, still fully opaque
+  //      — the long opaque dwell that keeps the fade firmly at the very end.
+  //   4. Fade        (0.9 → 1): only now does opacity drop to 0, x still parked.
   dismissing: {
-    x: [0, 40, 120, 260, 420],
-    y: [0, -18, 0, -14, 0],
+    x: [0, 0, 0, 0, 300, 300, 300],
+    y: [0, -18, 0, -10, 0, 0, 0],
     scale: 1,
-    opacity: [1, 1, 1, 1, 0],
+    opacity: [1, 1, 1, 1, 1, 1, 0],
     transition: {
       duration: TIMING_DISMISS_MS / 1000,
       ease: timing.entrance,
-      times: [0, 0.25, 0.5, 0.75, 1],
+      times: [0, 0.16, 0.3, 0.4, 0.55, 0.9, 1],
     },
   },
   // The last Critter's splash-for-joy Outro: it hops up then plops down into the
