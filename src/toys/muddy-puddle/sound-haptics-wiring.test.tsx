@@ -62,4 +62,17 @@ describe('Muddy Puddle — sound + haptics wiring', () => {
 
     expect(squelchCalls(sound)).toHaveLength(1);
   });
+
+  it('fires a haptic tick on a contributing wipe — the tactile beat under the finger', async () => {
+    // AC #3: the Wipe buzzes under the finger like the tap toys, riding the same
+    // beat as the squelch. A fake Haptics injected through the contract records
+    // the tick; a single sub-threshold crossing fires exactly one.
+    const haptics = { tick: vi.fn() };
+    const { container } = render(<MuddyPuddle onComplete={vi.fn()} haptics={haptics} />);
+
+    await vi.runOnlyPendingTimersAsync(); // arriving → wiping
+    wipeOneBlob(container);
+
+    expect(haptics.tick).toHaveBeenCalledTimes(1);
+  });
 });
