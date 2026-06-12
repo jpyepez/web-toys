@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { squelch } from './sounds';
+import { squelch, sparkle } from './sounds';
 
 /**
  * Muddy Puddle — local sound recipes (slice #07).
@@ -22,5 +22,16 @@ describe('Muddy Puddle — squelch sound recipe', () => {
 
     expect(voice.bendTo).toBeDefined();
     expect(voice.bendTo!).toBeLessThan(voice.freq);
+  });
+});
+
+describe('Muddy Puddle — sparkle sound recipe', () => {
+  it('is a bright rising pitch-bend (bendTo above freq) — reads as the clean-snap shimmer', () => {
+    // The clean-snap's shimmer lives in an *upward* glide (like the Fish's puff,
+    // unlike the squelch's downward pull) — that lift is what reads as the mud
+    // lifting away to a sparkle. `bendTo > freq` is the structural invariant;
+    // the concrete pitch / bend / decay are tuned by ear, not asserted.
+    expect(sparkle.bendTo).toBeDefined();
+    expect(sparkle.bendTo!).toBeGreaterThan(sparkle.freq);
   });
 });
