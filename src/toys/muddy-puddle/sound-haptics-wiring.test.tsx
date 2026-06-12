@@ -167,4 +167,20 @@ describe('Muddy Puddle — sound + haptics wiring', () => {
 
     expect(haptics.tick.mock.calls.length).toBeGreaterThan(afterFirstWipe);
   });
+
+  it('degrades to silence under a bare mount — wiping clean never throws and the loop still advances', async () => {
+    // AC #5: `sound` / `haptics` are optional on the contract (ADR-0003), so a
+    // bare-mounted Toy plays nothing rather than crashing. We pin that the WIPE
+    // PATH survives with neither utility wired — a full wipe-to-snap runs past
+    // every (absent) feedback call without throwing, and the clean-snap still
+    // advances the loop (proving execution reached the state transition after
+    // the optional `sound?.`/`haptics?.` calls no-op'd).
+    const { container } = render(<MuddyPuddle onComplete={vi.fn()} />);
+
+    await vi.runOnlyPendingTimersAsync(); // arriving → wiping
+    expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'wiping');
+
+    expect(() => wipeUntilClean(container)).not.toThrow();
+    expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'dismissing');
+  });
 });
