@@ -1,0 +1,37 @@
+import type { Voice } from '../../shell/sound';
+
+/**
+ * Muddy Puddle's local sound recipes. Per ADR-0004 each Toy owns its own sound
+ * recipes; the shared Sound engine exposes only the generic `play(voice)`
+ * primitive (slice #01). The Toy reaches audio solely through the injected
+ * `Sound` (ADR-0003) — never Web Audio directly. These join the Sheep's `baa`
+ * and the Fish's `puff` as consumers of `play(voice)`.
+ */
+
+/**
+ * The wet squelch played per contributing Wipe: a short `sawtooth` (the toy's
+ * only sawtooth voice — a wet, raspy timbre vs the Fish's pure sine) with a
+ * quick *downward* pitch glide over a fast attack/decay. The falling bend is
+ * what reads as mud being pulled off — the inverse of the Fish's rising puff.
+ *
+ * Pitch jitter so a rapid run of squelches reads as playful, not a machine-gun:
+ * one multiplicative factor scales `freq` and `bendTo` together, so the wet
+ * downward direction (`bendTo < freq`) holds for every draw while the overall
+ * pitch wobbles. The concrete frequency / bend / decay and the jitter spread are
+ * on-device-tuned by ear (slice Notes), not unit-asserted. `random` is injected
+ * (default `Math.random`) so the jitter is the one boundary collaborator —
+ * deterministic in tests, seed-free in app code.
+ */
+export function squelch(random: () => number = Math.random): Voice {
+  // ±~15% pitch wobble around the base, applied as a single factor so the
+  // bend's direction is preserved. The spread is on-device-tuned, not asserted.
+  const jitter = 0.85 + random() * 0.3;
+  return {
+    type: 'sawtooth',
+    freq: 200 * jitter,
+    bendTo: 90 * jitter,
+    bendOver: 0.05,
+    peak: 0.18,
+    decay: 0.09,
+  };
+}
