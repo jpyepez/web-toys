@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MuddyPuddle } from './MuddyPuddle';
+import { sparkle, REVEAL_VOICES } from './sounds';
 
 /**
  * Muddy Puddle — sound + haptics wiring (slice #07).
@@ -51,6 +52,15 @@ function wipeNBlobs(container: HTMLElement, n: number) {
     const blob = container.querySelector('[data-mud-blob]');
     if (!blob) break;
     fireEvent.pointerOver(blob);
+  }
+}
+
+/** Cross every remaining blob in turn, driving the Critter to the clean-snap. */
+function wipeUntilClean(container: HTMLElement) {
+  let blob = container.querySelector('[data-mud-blob]');
+  while (blob) {
+    fireEvent.pointerOver(blob);
+    blob = container.querySelector('[data-mud-blob]');
   }
 }
 
@@ -110,5 +120,25 @@ describe('Muddy Puddle — sound + haptics wiring', () => {
     await vi.advanceTimersByTimeAsync(1000);
     wipeOneBlob(container);
     expect(squelchCalls(sound)).toHaveLength(2);
+  });
+
+  it('plays the sparkle and the on-stage animal’s reveal voice on the clean-snap', async () => {
+    // AC #1: the clean-snap is the reward beat — a sparkle shimmer PLUS the
+    // happy voice of whichever animal just snapped clean (oink / quack / …). The
+    // cast is shuffled per play, so we read the on-stage Critter's id off its
+    // `data-critter` hook (the loop's public identity attribute) and assert the
+    // matching reveal voice fired — never coupling to the non-deterministic
+    // shuffle order. Both are identity assertions (sparkle and the reveal voices
+    // are un-jittered consts), distinct from the sawtooth squelch.
+    const sound = fakeSound();
+    const { container } = render(<MuddyPuddle onComplete={vi.fn()} sound={sound} />);
+
+    await vi.runOnlyPendingTimersAsync(); // arriving → wiping
+    const id = container.querySelector('[data-critter]')!.getAttribute('data-critter')!;
+
+    wipeUntilClean(container);
+
+    expect(sound.play).toHaveBeenCalledWith(sparkle);
+    expect(sound.play).toHaveBeenCalledWith(REVEAL_VOICES[id]);
   });
 });
