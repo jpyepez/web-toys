@@ -128,7 +128,7 @@ const critterVariants: Variants = {
  * immediately, reachable as the accessible element labelled with its name and
  * tagged `data-critter` with its id.
  */
-export function MuddyPuddle({ onComplete, sound }: ToyProps) {
+export function MuddyPuddle({ onComplete, sound, haptics }: ToyProps) {
   // The per-play running order — `CAST` shuffled once at mount. `useState`'s lazy
   // initialiser runs the shuffle exactly once per mount (not per render), so the
   // order is stable across a play and re-rolled only when the Shell remounts the
@@ -293,8 +293,10 @@ export function MuddyPuddle({ onComplete, sound }: ToyProps) {
                 // Every contributing Wipe gets its wet squelch (slice #07) —
                 // the playful per-blob feedback, played through the injected
                 // Sound (the Toy never touches Web Audio, ADR-0003). Optional, so
-                // a bare mount degrades to silence.
+                // a bare mount degrades to silence. The haptic tick rides the
+                // same beat (slice #07) — the tactile half of the same feedback.
                 sound?.play(squelch());
+                haptics?.tick();
                 // The kid is Wiping for real — cancel the ghost-finger demo at
                 // once and suppress it for the rest of this Critter (AC #2).
                 wipedRef.current = true;
