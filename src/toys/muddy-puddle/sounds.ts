@@ -35,3 +35,19 @@ export function squelch(random: () => number = Math.random): Voice {
     decay: 0.09,
   };
 }
+
+/**
+ * The sparkle played on the clean-snap: a bright `triangle` with an *upward*
+ * pitch glide (like the Fish's puff, the inverse of the squelch's downward
+ * pull) over a longer-tailed decay — the lift that reads as the last of the mud
+ * shimmering away to reveal the clean Critter. The `bendTo > freq` shape is
+ * load-bearing; the concrete values are on-device-tuned, not unit-asserted.
+ */
+export const sparkle: Voice = {
+  type: 'triangle',
+  freq: 880,
+  bendTo: 1760,
+  bendOver: 0.12,
+  peak: 0.2,
+  decay: 0.3,
+};
