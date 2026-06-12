@@ -1,7 +1,7 @@
 ---
 slice: 8
 title: Registry entry + Home Card preview
-status: in-progress
+status: done
 type: afk
 blocked_by: [4, 5]
 parent_prd: muddy-puddle
@@ -30,12 +30,12 @@ from Home — a clearly different *activity* from the two tap toys.
 - [x] The registry exposes a `muddy-puddle` entry with `id`, `title`
       ("Muddy Puddle"), `component`, `tint`, and `preview`.
 - [x] The entry is **additive** — no other registry entries or Shell code change.
-- [ ] The Home Card renders the Toy's `preview` (an inline SVG muddy-critter-with-
+- [x] The Home Card renders the Toy's `preview` (an inline SVG muddy-critter-with-
       wiped-streak scene) and the `tint` surface.
-- [ ] Launching the Card mounts the playable `MuddyPuddle` Toy through the
+- [x] Launching the Card mounts the playable `MuddyPuddle` Toy through the
       standard contract.
-- [ ] No image/sprite assets — the preview is SVG primitives only (ADR-0002).
-- [ ] Public-interface tests pass; no internal mocks.
+- [x] No image/sprite assets — the preview is SVG primitives only (ADR-0002).
+- [x] Public-interface tests pass; no internal mocks.
 - [ ] On-device check (mine): the Home grid shows three Cards; the Muddy Puddle
       Card teases wiping and launches the Toy.
 
