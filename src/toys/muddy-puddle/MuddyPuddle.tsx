@@ -54,6 +54,15 @@ const TIMING_INTERMISSION_MS = 250;
 const IDLE_DEMO_DELAY_MS = 2500;
 
 /**
+ * Minimum gap between squelches (ms) — the rate limit that keeps a fast drag's
+ * per-blob feedback playful, not a machine-gun (slice #07). A burst of crossings
+ * inside one window fires a single squelch + tick; the next only fires once this
+ * much wall-clock has passed. ~60–80ms, on-device-tuned per the slice DoD — the
+ * structural contract tested is THAT throttling happens, never the exact ms.
+ */
+const SQUELCH_THROTTLE_MS = 70;
+
+/**
  * Motion variants for the on-stage Critter's per-state choreography (slice spec
  * body), shared by every cast member (slice #05): the Critter trots in muddy
  * from the side, holds centred for the Wipe, then on the clean-snap either trots
@@ -161,6 +170,12 @@ export function MuddyPuddle({ onComplete, sound, haptics }: ToyProps) {
   // one, re-prompt on a later one). A ref, not state: it gates the idle timer's
   // own callback without needing to re-run the arming effect.
   const wipedRef = useRef(false);
+  // Wall-clock time (ms, via the `Date.now` boundary) the last squelch fired —
+  // the throttle's only state. A ref, not state: the gate reads/writes it inside
+  // the pointer handler without re-rendering. Starts at 0 so the very first Wipe
+  // always squelches. Governs the haptic tick on the same beat, so squelch and
+  // tick rise and fall together (slice #07).
+  const lastSquelchAtRef = useRef(0);
 
   const goalMet = cleaned >= GOAL_COUNT;
   // The on-stage Critter (clamped so the last Critter's dismissing/splash beat,
@@ -290,15 +305,26 @@ export function MuddyPuddle({ onComplete, sound, haptics }: ToyProps) {
             <WipeableCritter
               critter={current}
               onWipe={() => {
-                // Every contributing Wipe gets its wet squelch (slice #07) —
-                // the playful per-blob feedback, played through the injected
-                // Sound (the Toy never touches Web Audio, ADR-0003). Optional, so
-                // a bare mount degrades to silence. The haptic tick rides the
-                // same beat (slice #07) — the tactile half of the same feedback.
-                sound?.play(squelch());
-                haptics?.tick();
+                // Every contributing Wipe gets its wet squelch + haptic tick
+                // (slice #07) — but THROTTLED: a fast drag crosses many blobs in
+                // an instant, so the gate rate-limits the feedback to one per
+                // window, keeping it playful, not a machine-gun (AC #2). Played
+                // through the injected Sound/Haptics (the Toy never touches Web
+                // Audio, ADR-0003); both optional, so a bare mount degrades to
+                // silence. The state-advance guard (in onClean) is separate — a
+                // throttled-away squelch does not throttle the *wipe* itself, the
+                // blob is still cleared.
+                const now = Date.now();
+                if (now - lastSquelchAtRef.current >= SQUELCH_THROTTLE_MS) {
+                  lastSquelchAtRef.current = now;
+                  sound?.play(squelch());
+                  haptics?.tick();
+                }
                 // The kid is Wiping for real — cancel the ghost-finger demo at
-                // once and suppress it for the rest of this Critter (AC #2).
+                // once and suppress it for the rest of this Critter (AC #2). This
+                // runs on EVERY contributing Wipe, throttled or not — the demo
+                // must die the instant real wiping starts, independent of whether
+                // this particular crossing's feedback was rate-limited away.
                 wipedRef.current = true;
                 setDemoActive(false);
               }}
