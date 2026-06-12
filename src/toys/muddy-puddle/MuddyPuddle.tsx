@@ -6,7 +6,7 @@ import { BarnyardBackdrop } from './BarnyardBackdrop';
 import { WipeableCritter } from './WipeableCritter';
 import { GhostFinger } from './GhostFinger';
 import { CAST, shuffle } from './cast';
-import { squelch } from './sounds';
+import { squelch, sparkle, REVEAL_VOICES } from './sounds';
 
 /**
  * The five states of the per-Critter loop — its OWN copy, duplicated from the
@@ -333,8 +333,16 @@ export function MuddyPuddle({ onComplete, sound, haptics }: ToyProps) {
                 // the trot-in (`arriving`) or trot-off (`dismissing`) is a
                 // non-destructive no-op (AC #3): no count advance, no early
                 // arrival, no `onComplete`. Mirrors the Fish's `waiting`-only tap
-                // guard.
+                // guard. The reveal feedback rides the ACCEPTED snap (inside the
+                // guard) — it is the reward beat for an actual clean, not the
+                // per-wipe feedback (that squelch fires on every contributing
+                // Wipe in onWipe, guard or no guard).
                 if (state !== 'wiping') return;
+                // The clean-snap's reward: a sparkle shimmer + the happy voice of
+                // the animal that just snapped clean, keyed by its id (slice
+                // #07). Optional → silent under a bare mount.
+                sound?.play(sparkle);
+                sound?.play(REVEAL_VOICES[current.id]);
                 setCleaned((c) => c + 1);
                 setState('dismissing');
               }}
