@@ -1,7 +1,7 @@
 ---
 slice: 7
 title: Sound recipes + haptics wiring
-status: in-progress
+status: done
 type: afk
 blocked_by: [4]
 parent_prd: muddy-puddle
@@ -28,18 +28,18 @@ the same beats via the injected `haptics?.tick()`.
 
 ## Acceptance criteria
 
-- [ ] The Toy calls `sound.play(...)` for a contributing wipe (squelch) and for
+- [x] The Toy calls `sound.play(...)` for a contributing wipe (squelch) and for
       the clean-snap (sparkle + the per-animal reveal voice).
-- [ ] Rapid wipes are **throttled** — squelch sounds are rate-limited, **not**
+- [x] Rapid wipes are **throttled** — squelch sounds are rate-limited, **not**
       one-per-blob unbounded (assert the rate limit, not exact frequencies).
-- [ ] `haptics.tick()` fires on contributing wipes/snap (inject a fake `Haptics`
+- [x] `haptics.tick()` fires on contributing wipes/snap (inject a fake `Haptics`
       through the contract).
-- [ ] At the Web Audio boundary (the way the tap toys test `baa`/`puff`): inject
+- [x] At the Web Audio boundary (the way the tap toys test `baa`/`puff`): inject
       a fake `AudioContext` via the engine's `contextFactory` and assert an
       oscillator started; `play` **no-ops** when muted and when no context exists
       (jsdom).
-- [ ] `sound`/`haptics` are optional — a bare mount degrades to silence (no crash).
-- [ ] Public-interface tests pass; shim **only** the Web Audio boundary and inject
+- [x] `sound`/`haptics` are optional — a bare mount degrades to silence (no crash).
+- [x] Public-interface tests pass; shim **only** the Web Audio boundary and inject
       fakes through the contract; never mock our own components.
 - [ ] On-device check (mine): wiping gives playful (not machine-gun) squelches, a
       sparkle + the right animal voice on the snap, and a tick under the finger.
