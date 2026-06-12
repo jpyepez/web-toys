@@ -7,6 +7,7 @@ import type { ToyEntry } from './registry';
 import { ink } from './tokens';
 import { palette } from '../toys/counting-sheep/palette';
 import { palette as oceanPalette } from '../toys/puffer-fish/palette';
+import { palette as barnyardPalette } from '../toys/muddy-puddle/palette';
 import { registry } from '../toys/registry';
 
 function renderApp(toys: ToyEntry[], initialPath = '/') {
@@ -159,19 +160,21 @@ describe('home launcher', () => {
 });
 
 describe('registered toys', () => {
-  it('registers Counting Sheep and Puffer Fish as the two launchable Cards', async () => {
-    // Slice #09 (AC #1/#2): the registry now declares a second real Toy, so the
-    // Home reads as a small *collection* — two Cards, not one. This test
-    // supersedes the earlier "one launchable Card" assertion: adding the fish
-    // entry is the behaviour change the slice ships, so the launcher's expected
-    // Card count moves from 1 → 2 here. Both Cards carry their title and both
-    // route to their own Toy; the per-Card tint + preview wiring is asserted in
+  it('registers Counting Sheep, Puffer Fish and Muddy Puddle as the three launchable Cards', async () => {
+    // Muddy Puddle slice #08 (AC #1/#2): the registry now declares a third real
+    // Toy, so the Home reads as a small *collection* of three Cards. This test
+    // supersedes the earlier "two launchable Cards" assertion: adding the
+    // muddy-puddle entry is the behaviour change the slice ships, so the
+    // launcher's expected Card count moves from 2 → 3 here (the same way slice
+    // #09 moved it 1 → 2 when the fish landed). Each Card carries its title and
+    // routes to its own Toy; the per-Card tint + preview wiring is asserted in
     // the focused tests below.
     renderApp(registry);
 
     expect(await screen.findByText('Counting Sheep')).toBeInTheDocument();
     expect(screen.getByText('Puffer Fish')).toBeInTheDocument();
-    expect(screen.getAllByRole('link')).toHaveLength(2);
+    expect(screen.getByText('Muddy Puddle')).toBeInTheDocument();
+    expect(screen.getAllByRole('link')).toHaveLength(3);
 
     // The Counting Sheep Card still backs its preview cover with the cream tint,
     // sourced from the Sheep-local palette (`palette.sheepWool`, ADR-0004 —
@@ -227,6 +230,54 @@ describe('registered toys', () => {
     await user.click(await screen.findByText('Puffer Fish'));
 
     expect(await screen.findByRole('button', { name: 'Fish' })).toBeInTheDocument();
+    expect(screen.queryByRole('link')).toBeNull();
+  });
+
+  it("backs the Muddy Puddle preview cover from its own barnyard-palette tint", async () => {
+    // AC #3 (tint surface): the Muddy Puddle Card's tint is a concrete CSS color
+    // string the Toy supplies from its OWN world — `barnyardPalette.sky`, the
+    // open sky the live scene sits in — not a key into a shared palette grab-bag
+    // (ADR-0004 / the tint→color-string contract). It backs the Card's preview
+    // cover. Pinned to the same barnyard-palette token the registry entry reads
+    // from so it stays a single source of truth; round-tripped through jsdom's
+    // parser (which normalises hsl() → rgb()) exactly as the sheep/fish tint
+    // checks do.
+    renderApp(registry);
+
+    const card = await screen.findByRole('link', { name: /Muddy Puddle/ });
+    const cover = card.querySelector('[data-card-cover]') as HTMLElement;
+    const probe = document.createElement('div');
+    probe.style.backgroundColor = barnyardPalette.sky;
+    expect(cover.style.backgroundColor).toBe(probe.style.backgroundColor);
+  });
+
+  it("hosts the Muddy Puddle's own preview-scene inside its Card", async () => {
+    // AC #3 (preview): the muddy-puddle entry declares a `preview`, and the Card
+    // mounts it. We assert the REAL muddy-puddle preview is wired (not just any
+    // sentinel) by finding the clean-piglet body it draws — the same
+    // `data-piglet-part="body"` hook the live `PigletDrawing` carries — inside
+    // the Muddy Puddle Card. The live Toy isn't mounted on Home, so this hook
+    // can only come from the Card's preview, proving the entry's `preview`
+    // resolves to the muddy critter's own scene.
+    renderApp(registry);
+
+    const card = await screen.findByRole('link', { name: /Muddy Puddle/ });
+    expect(card.querySelector('[data-piglet-part="body"]')).not.toBeNull();
+  });
+
+  it('routes to the Muddy Puddle Toy when its Card is tapped', async () => {
+    // AC #4: tapping the Muddy Puddle Card mounts the playable Toy through the
+    // standard contract. The loop bootstraps to `arriving` with one muddy
+    // Critter trotting in — observable through the public surface as the on-stage
+    // `role="img"` Critter (the cast is shuffled, so we assert the role, not a
+    // specific animal). After the tap the launcher is gone — the Toy is mounted
+    // in its place, not alongside it (mirrors the fish routing check).
+    const user = userEvent.setup();
+    renderApp(registry);
+
+    await user.click(await screen.findByText('Muddy Puddle'));
+
+    expect(await screen.findByRole('img')).toBeInTheDocument();
     expect(screen.queryByRole('link')).toBeNull();
   });
 });

@@ -5,6 +5,9 @@ import { Preview as CountingSheepPreview } from './counting-sheep/Preview';
 import { PufferFish } from './puffer-fish/PufferFish';
 import { palette as oceanPalette } from './puffer-fish/palette';
 import { Preview as PufferFishPreview } from './puffer-fish/Preview';
+import { MuddyPuddle } from './muddy-puddle/MuddyPuddle';
+import { palette as barnyardPalette } from './muddy-puddle/palette';
+import { Preview as MuddyPuddlePreview } from './muddy-puddle/Preview';
 
 /**
  * The registered Toys. Adding a Toy is adding an entry here — the Shell renders
@@ -38,5 +41,20 @@ export const registry: ToyEntry[] = [
     component: PufferFish,
     tint: oceanPalette.water,
     preview: PufferFishPreview,
+  },
+  // Muddy Puddle — the third Toy, a clearly different *activity* (wipe-clean)
+  // from the two tap toys. Like the fish, its `tint` is a concrete color string
+  // the Toy supplies from its own world — the barnyard `palette.sky`, the open
+  // sky the live scene sits in (ADR-0004 / the tint→color-string contract), not
+  // a key into a shared palette. The `preview` is its own miniature barnyard
+  // vignette — a muddy critter mid-wipe — drawn from inside the Toy so the Card
+  // art coheres with the live scene. Additive only: nothing else in the Shell
+  // changes, per the registry contract.
+  {
+    id: 'muddy-puddle',
+    title: 'Muddy Puddle',
+    component: MuddyPuddle,
+    tint: barnyardPalette.sky,
+    preview: MuddyPuddlePreview,
   },
 ];

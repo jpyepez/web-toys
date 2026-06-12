@@ -1,0 +1,186 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { MuddyPuddle } from './MuddyPuddle';
+import { sparkle, REVEAL_VOICES } from './sounds';
+
+/**
+ * Muddy Puddle — sound + haptics wiring (slice #07).
+ *
+ * The Toy makes the Wipe feel and sound alive through the injected `sound` /
+ * `haptics` utilities (ADR-0003) — it never imports Web Audio directly. We
+ * inject FAKE `Sound` / `Haptics` through the public contract and observe the
+ * calls the Toy makes (`sound.play(voice)`, `haptics.tick()`); the recipes'
+ * audibility is validated at the Web Audio boundary in `sounds.test.ts` and by
+ * hand on a device. Per the mocking policy we shim only those boundaries and
+ * never mock our own components — the wipe runs through the real
+ * `WipeableCritter` / loop, driven via the slice-#3 `data-mud-blob` nodes
+ * (never pixels, ADR-0006). Time is the other boundary: `vi.useFakeTimers()`
+ * drives the loop's trot-in beat AND the squelch throttle's clock (`Date.now`).
+ */
+
+/** A fake `Sound` recording every `play(voice)` the Toy makes. */
+function fakeSound() {
+  return {
+    unlock: vi.fn(),
+    play: vi.fn(),
+    celebrate: vi.fn(),
+    isMuted: vi.fn(() => false),
+    setMuted: vi.fn(),
+  };
+}
+
+/**
+ * The squelch is the Toy's ONLY `sawtooth` voice (sounds.ts) — so we count
+ * squelches by that timbre, robust against the per-play pitch jitter that
+ * varies its frequency. The sparkle and the reveal voices use other waveforms.
+ */
+const squelchCalls = (sound: ReturnType<typeof fakeSound>) =>
+  sound.play.mock.calls.filter(([voice]) => voice.type === 'sawtooth');
+
+/** Cross one still-caked blob — a single contributing Wipe, far below the snap. */
+function wipeOneBlob(container: HTMLElement) {
+  fireEvent.pointerOver(container.querySelector('[data-mud-blob]')!);
+}
+
+/**
+ * Cross `n` DISTINCT still-caked blobs in turn — each crossing unmounts its blob
+ * so the next `querySelector` finds a fresh one. Kept well under the ~80% snap
+ * threshold (animals carry ~17–20 blobs) so this stays a run of plain wipes.
+ */
+function wipeNBlobs(container: HTMLElement, n: number) {
+  for (let i = 0; i < n; i += 1) {
+    const blob = container.querySelector('[data-mud-blob]');
+    if (!blob) break;
+    fireEvent.pointerOver(blob);
+  }
+}
+
+/** Cross every remaining blob in turn, driving the Critter to the clean-snap. */
+function wipeUntilClean(container: HTMLElement) {
+  let blob = container.querySelector('[data-mud-blob]');
+  while (blob) {
+    fireEvent.pointerOver(blob);
+    blob = container.querySelector('[data-mud-blob]');
+  }
+}
+
+describe('Muddy Puddle — sound + haptics wiring', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('plays the squelch on a contributing wipe', async () => {
+    // AC #1: a finger crossing a still-caked blob (a contributing Wipe) plays
+    // the wet squelch through the injected Sound. Driven to `wiping` first so a
+    // single sub-threshold crossing is a plain wipe, not the clean-snap — the
+    // one call we expect is the squelch (the Toy's sole sawtooth voice).
+    const sound = fakeSound();
+    const { container } = render(<MuddyPuddle onComplete={vi.fn()} sound={sound} />);
+
+    await vi.runOnlyPendingTimersAsync(); // arriving → wiping
+    wipeOneBlob(container);
+
+    expect(squelchCalls(sound)).toHaveLength(1);
+  });
+
+  it('fires a haptic tick on a contributing wipe — the tactile beat under the finger', async () => {
+    // AC #3: the Wipe buzzes under the finger like the tap toys, riding the same
+    // beat as the squelch. A fake Haptics injected through the contract records
+    // the tick; a single sub-threshold crossing fires exactly one.
+    const haptics = { tick: vi.fn() };
+    const { container } = render(<MuddyPuddle onComplete={vi.fn()} haptics={haptics} />);
+
+    await vi.runOnlyPendingTimersAsync(); // arriving → wiping
+    wipeOneBlob(container);
+
+    expect(haptics.tick).toHaveBeenCalledTimes(1);
+  });
+
+  it('throttles rapid wipes — a burst of crossings is rate-limited, not one squelch per blob', async () => {
+    // AC #2: a fast drag crosses many blobs in an instant; squelches must be
+    // rate-limited so they read as playful, not a machine-gun. We assert the
+    // rate limit, NOT the interval (on-device-tuned): a synchronous BURST of
+    // five distinct crossings — all at the same instant on the (fake) clock —
+    // yields just ONE squelch, not five. Then we let the clock move well past
+    // any sane throttle window and a further wipe squelches again, proving the
+    // gate releases over time rather than swallowing everything after the first.
+    const sound = fakeSound();
+    const { container } = render(<MuddyPuddle onComplete={vi.fn()} sound={sound} />);
+
+    await vi.runOnlyPendingTimersAsync(); // arriving → wiping
+
+    wipeNBlobs(container, 5);
+    expect(squelchCalls(sound)).toHaveLength(1);
+
+    // Advance the clock past the throttle window (1s dwarfs the ~60–80ms gate,
+    // and stays under the ~2.5s idle-demo timer so nothing else stirs).
+    await vi.advanceTimersByTimeAsync(1000);
+    wipeOneBlob(container);
+    expect(squelchCalls(sound)).toHaveLength(2);
+  });
+
+  it('plays the sparkle and the on-stage animal’s reveal voice on the clean-snap', async () => {
+    // AC #1: the clean-snap is the reward beat — a sparkle shimmer PLUS the
+    // happy voice of whichever animal just snapped clean (oink / quack / …). The
+    // cast is shuffled per play, so we read the on-stage Critter's id off its
+    // `data-critter` hook (the loop's public identity attribute) and assert the
+    // matching reveal voice fired — never coupling to the non-deterministic
+    // shuffle order. Both are identity assertions (sparkle and the reveal voices
+    // are un-jittered consts), distinct from the sawtooth squelch.
+    const sound = fakeSound();
+    const { container } = render(<MuddyPuddle onComplete={vi.fn()} sound={sound} />);
+
+    await vi.runOnlyPendingTimersAsync(); // arriving → wiping
+    const id = container.querySelector('[data-critter]')!.getAttribute('data-critter')!;
+
+    wipeUntilClean(container);
+
+    expect(sound.play).toHaveBeenCalledWith(sparkle);
+    expect(sound.play).toHaveBeenCalledWith(REVEAL_VOICES[id]);
+  });
+
+  it('fires a haptic tick on the clean-snap — the reveal lands with a buzz', async () => {
+    // AC #3: the snap is a tactile beat too, matching the tap toys' feel. We
+    // drive a fresh Critter all the way to the clean-snap and assert a tick
+    // landed. A single un-throttled crossing already ticks (the wipe beat), so
+    // we pin the snap's own tick distinctly: drive to wiping, let the throttle
+    // window pass, then wipe clean in one burst — within that burst the throttle
+    // allows a single wipe tick, and the snap adds one more, so the snap's tick
+    // shows up as a tick fired AFTER the play(sparkle) reward call. We assert the
+    // simpler, robust invariant: across the whole clean run the snap contributes
+    // a tick, so the tick count exceeds the throttled wipe ticks alone.
+    const haptics = { tick: vi.fn() };
+    const { container } = render(<MuddyPuddle onComplete={vi.fn()} haptics={haptics} />);
+
+    await vi.runOnlyPendingTimersAsync(); // arriving → wiping
+    // One wipe tick fires here (first crossing, gate open).
+    wipeOneBlob(container);
+    const afterFirstWipe = haptics.tick.mock.calls.length;
+
+    // Finish the Critter in one synchronous burst: the remaining crossings are
+    // throttled to no extra wipe ticks (same instant), so any increase beyond
+    // `afterFirstWipe` is the SNAP's own tick.
+    wipeUntilClean(container);
+
+    expect(haptics.tick.mock.calls.length).toBeGreaterThan(afterFirstWipe);
+  });
+
+  it('degrades to silence under a bare mount — wiping clean never throws and the loop still advances', async () => {
+    // AC #5: `sound` / `haptics` are optional on the contract (ADR-0003), so a
+    // bare-mounted Toy plays nothing rather than crashing. We pin that the WIPE
+    // PATH survives with neither utility wired — a full wipe-to-snap runs past
+    // every (absent) feedback call without throwing, and the clean-snap still
+    // advances the loop (proving execution reached the state transition after
+    // the optional `sound?.`/`haptics?.` calls no-op'd).
+    const { container } = render(<MuddyPuddle onComplete={vi.fn()} />);
+
+    await vi.runOnlyPendingTimersAsync(); // arriving → wiping
+    expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'wiping');
+
+    expect(() => wipeUntilClean(container)).not.toThrow();
+    expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'dismissing');
+  });
+});
