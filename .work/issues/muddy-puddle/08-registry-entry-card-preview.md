@@ -27,9 +27,9 @@ from Home — a clearly different *activity* from the two tap toys.
 
 ## Acceptance criteria
 
-- [ ] The registry exposes a `muddy-puddle` entry with `id`, `title`
+- [x] The registry exposes a `muddy-puddle` entry with `id`, `title`
       ("Muddy Puddle"), `component`, `tint`, and `preview`.
-- [ ] The entry is **additive** — no other registry entries or Shell code change.
+- [x] The entry is **additive** — no other registry entries or Shell code change.
 - [ ] The Home Card renders the Toy's `preview` (an inline SVG muddy-critter-with-
       wiped-streak scene) and the `tint` surface.
 - [ ] Launching the Card mounts the playable `MuddyPuddle` Toy through the
