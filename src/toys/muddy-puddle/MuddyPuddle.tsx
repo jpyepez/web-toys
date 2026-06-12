@@ -343,6 +343,10 @@ export function MuddyPuddle({ onComplete, sound, haptics }: ToyProps) {
                 // #07). Optional → silent under a bare mount.
                 sound?.play(sparkle);
                 sound?.play(REVEAL_VOICES[current.id]);
+                // The snap's own tick — distinct from the throttled wipe ticks,
+                // so the reveal lands with a buzz even after a fast burst whose
+                // wipe ticks were rate-limited away (slice #07).
+                haptics?.tick();
                 setCleaned((c) => c + 1);
                 setState('dismissing');
               }}
