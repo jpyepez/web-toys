@@ -1,7 +1,7 @@
 ---
 slice: 7
 title: Sound recipes + haptics wiring
-status: ready
+status: in-progress
 type: afk
 blocked_by: [4]
 parent_prd: muddy-puddle
