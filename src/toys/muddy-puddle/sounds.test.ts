@@ -1,6 +1,8 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { squelch, sparkle, REVEAL_VOICES } from './sounds';
 import { CAST } from './cast';
+import { createSound } from '../../shell/sound';
+import { fakeStorage } from '../../test/fakes';
 
 /**
  * Muddy Puddle — local sound recipes (slice #07).
@@ -55,5 +57,93 @@ describe('Muddy Puddle — per-animal reveal voices', () => {
 
     const freqs = CAST.map((c) => REVEAL_VOICES[c.id].freq);
     expect(new Set(freqs).size).toBe(CAST.length);
+  });
+});
+
+/**
+ * AC #4 — the recipes at the Web Audio boundary, tested the way the tap toys
+ * test `baa`/`puff`: shim ONLY Web Audio (a fake `AudioContext` injected through
+ * the engine's `contextFactory`) and observe `oscillator.start` — the only
+ * proxy for "a sound played" (ADR-0003). This proves the muddy recipes are
+ * valid `play(voice)` inputs that reach the boundary, plus the inert contract
+ * (no-op when muted / when no context exists) the engine guarantees every Toy.
+ */
+function fakeParam() {
+  return {
+    value: 0,
+    setValueAtTime: vi.fn(),
+    linearRampToValueAtTime: vi.fn(),
+    exponentialRampToValueAtTime: vi.fn(),
+  };
+}
+function fakeOscillator() {
+  return {
+    type: 'sine' as OscillatorType,
+    frequency: fakeParam(),
+    connect: vi.fn(),
+    start: vi.fn(),
+    stop: vi.fn(),
+  };
+}
+function fakeContext(state: AudioContextState = 'running') {
+  const oscillators: ReturnType<typeof fakeOscillator>[] = [];
+  return {
+    state,
+    currentTime: 0,
+    destination: {},
+    resume: vi.fn(),
+    createOscillator: vi.fn(() => {
+      const osc = fakeOscillator();
+      oscillators.push(osc);
+      return osc;
+    }),
+    createGain: vi.fn(() => ({ gain: fakeParam(), connect: vi.fn() })),
+    oscillators,
+  };
+}
+
+describe('Muddy Puddle — recipes at the Web Audio boundary (AC #4)', () => {
+  it('starts an oscillator for the squelch and the sparkle through the injected context', () => {
+    const ctx = fakeContext();
+    const sound = createSound({ contextFactory: () => ctx as unknown as AudioContext });
+
+    sound.play(squelch());
+    sound.play(sparkle);
+
+    // Two recipes played → two enveloped tones started at the boundary; this is
+    // the same observable the engine's own baa/puff tests pin, now for the
+    // muddy recipes.
+    expect(ctx.oscillators).toHaveLength(2);
+    for (const osc of ctx.oscillators) {
+      expect(osc.start).toHaveBeenCalled();
+    }
+  });
+
+  it('no-ops when muted — no oscillator starts for a muddy recipe', () => {
+    const ctx = fakeContext();
+    // Inject fake storage so muting here does not bleed into jsdom's shared
+    // localStorage and silence other default-storage tests.
+    const sound = createSound({
+      contextFactory: () => ctx as unknown as AudioContext,
+      storage: fakeStorage(),
+    });
+
+    sound.setMuted(true);
+    sound.play(squelch());
+    sound.play(sparkle);
+
+    expect(ctx.createOscillator).not.toHaveBeenCalled();
+  });
+
+  it('no-ops where Web Audio is unavailable (jsdom) — playing a recipe never throws', () => {
+    // The default factory yields no context in jsdom, so the recipes must
+    // degrade to silence rather than throw — the inert contract ADR-0003 gives
+    // every Toy. A bare `createSound()` exercises the real default factory.
+    const sound = createSound();
+
+    expect(() => {
+      sound.play(squelch());
+      sound.play(sparkle);
+    }).not.toThrow();
   });
 });
