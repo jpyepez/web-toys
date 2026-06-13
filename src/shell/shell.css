@@ -11,6 +11,17 @@ body {
   margin: 0;
 }
 
+/* Kill the browser's pull-to-refresh (and the overscroll bounce/glow) so a
+ * downward drag mid-Toy can't reload the page out from under a small child.
+ * `overscroll-behavior: none` on the root scroll container is the CSS-only
+ * way to do this — no JS touch-event hijacking, and it leaves intentional
+ * in-Toy scrolling untouched (the Toys don't scroll anyway). Set on both
+ * html and body since browsers differ on which is the viewport scroller. */
+html,
+body {
+  overscroll-behavior: none;
+}
+
 /* The Shell frame.
  *
  * Insets all four sides by the device's safe-area inset values so iOS standalone
