@@ -112,6 +112,25 @@ describe('Shell Completion lifecycle', () => {
   // contract is asserted by the rewritten test above; pinning a specific
   // delay-shape any further would re-couple to a retired feature.
 
+  it('holds the celebration for winDelayMs after onComplete, then shows it', async () => {
+    // A Toy with a declared win-animation beat: `onComplete` fires the instant
+    // the Goal is met (at the START of its win animation), and the Shell holds
+    // the Completion overlay for `winDelayMs` so the critter finishes its dance
+    // before the dialogue lands (e.g. balloons floating off over FLOAT_AWAY_MS).
+    const delayedToy: ToyEntry = { ...finishableToy, winDelayMs: 300 };
+    const user = userEvent.setup();
+    renderAppAt([delayedToy], '/toy/finishable');
+
+    await user.click(await screen.findByRole('button', { name: 'finish' }));
+
+    // Synchronously after the Goal is met the hold is still running: the win
+    // animation plays on, no dialogue yet.
+    expect(screen.queryByText('You did it!')).toBeNull();
+
+    // Once the hold elapses, the celebration lands.
+    expect(await screen.findByText('You did it!')).toBeInTheDocument();
+  });
+
   it('never reaches the end state without onComplete — no timer or fail path', async () => {
     renderAppAt([finishableToy], '/toy/finishable');
 

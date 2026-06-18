@@ -51,4 +51,17 @@ export type ToyEntry = {
    * forcing every entry to declare one.
    */
   preview?: ComponentType;
+  /**
+   * Optional grace period, in milliseconds, the Shell waits AFTER the Toy
+   * fires `onComplete` before it celebrates (sound) and raises the Completion
+   * overlay. A Toy fires `onComplete` the instant its Goal is met — often at
+   * the *start* of its win animation (e.g. balloons detach and float off over
+   * `FLOAT_AWAY_MS`). Without this hold the "You did it!" card lands on top of
+   * the critter mid-celebration. Each Toy declares its own win-animation
+   * duration here so the dialogue waits for the dance to finish; the hold is
+   * registry-driven (not a Shell-wide constant) because the right beat is
+   * Toy-specific. Omitted → no hold (the Shell celebrates immediately, the
+   * prior layered-concurrent behaviour — ADR-0001 amendment).
+   */
+  winDelayMs?: number;
 };

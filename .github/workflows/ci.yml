@@ -1,0 +1,26 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      # `bun run build` is `tsc -b && vite build`, so this covers the typecheck
+      # and the production build in one step.
+      - name: Build (typecheck + production build)
+        run: bun run build
+
+      - name: Test
+        run: bun run test

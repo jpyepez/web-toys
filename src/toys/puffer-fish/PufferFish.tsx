@@ -17,7 +17,9 @@ const FISH_COUNT = 5;
  * Sheep's machine rather than shared.
  */
 const TIMING_ARRIVAL_MS = 500;
-const TIMING_DISMISS_MS = 1100;
+// Exported so the registry holds the Shell's Completion for this final-Fish
+// puff-then-float exit beat before the dialogue lands.
+export const TIMING_DISMISS_MS = 1100;
 const TIMING_INTERMISSION_MS = 250;
 
 /**

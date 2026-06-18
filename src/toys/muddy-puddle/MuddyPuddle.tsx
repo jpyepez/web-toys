@@ -41,7 +41,9 @@ const GOAL_COUNT = CAST.length;
  * Own copies, duplicated from the Fish's machine rather than shared.
  */
 const TIMING_ARRIVAL_MS = 500;
-const TIMING_DISMISS_MS = 2300;
+// Exported so the registry holds the Shell's Completion for this final-critter
+// clean-snap exit beat before the dialogue lands.
+export const TIMING_DISMISS_MS = 2300;
 const TIMING_INTERMISSION_MS = 250;
 
 /**

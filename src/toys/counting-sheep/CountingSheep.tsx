@@ -19,8 +19,9 @@ const TIMING_ARRIVAL_MS = 400;
 // Lengthened from 700 → 1100 to give the dismiss beat a savour-the-glow linger
 // before the Sheep slides off (mirrors the Puffer Fish's puff-then-float exit,
 // which the kid handoff liked). The extra ~400ms is the hold in the middle of
-// the choreography, not a slower hop — see the `dismissing` variant.
-const TIMING_DISMISS_MS = 1100;
+// the choreography, not a slower hop — see the `dismissing` variant. Exported
+// so the registry holds the Shell's Completion for this final-Sheep exit beat.
+export const TIMING_DISMISS_MS = 1100;
 const TIMING_INTERMISSION_MS = 200;
 
 /**

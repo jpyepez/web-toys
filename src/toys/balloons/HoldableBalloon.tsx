@@ -39,7 +39,9 @@ const LEAK_PER_MS = 1 / 4000;
 // the app-root MotionConfig (main.tsx), so this needs no per-Toy reduced-motion
 // gate; the state is set on self-cap regardless, so the ending never strands.
 const FLOAT_AWAY_Y = '-120vh';
-const FLOAT_AWAY_MS = 2200;
+// Exported so the registry can hold the Shell's Completion for exactly this
+// beat — the last balloon's rise off-screen — before the dialogue lands.
+export const FLOAT_AWAY_MS = 2200;
 
 // The "this is the one you're holding" cue (slice #03 on-device polish). With the
 // balloons overlapping in a bunch it was unclear which one a press had grabbed,

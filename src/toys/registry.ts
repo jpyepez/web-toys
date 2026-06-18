@@ -1,16 +1,17 @@
 import type { ToyEntry } from '../shell/registry';
-import { CountingSheep } from './counting-sheep/CountingSheep';
+import { CountingSheep, TIMING_DISMISS_MS as SHEEP_EXIT_MS } from './counting-sheep/CountingSheep';
 import { palette } from './counting-sheep/palette';
 import { Preview as CountingSheepPreview } from './counting-sheep/Preview';
-import { PufferFish } from './puffer-fish/PufferFish';
+import { PufferFish, TIMING_DISMISS_MS as FISH_EXIT_MS } from './puffer-fish/PufferFish';
 import { palette as oceanPalette } from './puffer-fish/palette';
 import { Preview as PufferFishPreview } from './puffer-fish/Preview';
-import { MuddyPuddle } from './muddy-puddle/MuddyPuddle';
+import { MuddyPuddle, TIMING_DISMISS_MS as PUDDLE_EXIT_MS } from './muddy-puddle/MuddyPuddle';
 import { palette as barnyardPalette } from './muddy-puddle/palette';
 import { Preview as MuddyPuddlePreview } from './muddy-puddle/Preview';
 import { Balloons } from './balloons/Balloons';
 import { palette as skyPalette } from './balloons/palette';
 import { Preview as BalloonsPreview } from './balloons/Preview';
+import { FLOAT_AWAY_MS } from './balloons/HoldableBalloon';
 
 /**
  * The registered Toys. Adding a Toy is adding an entry here — the Shell renders
@@ -30,6 +31,9 @@ export const registry: ToyEntry[] = [
     component: CountingSheep,
     tint: palette.sheepWool,
     preview: CountingSheepPreview,
+    // Hold the Completion until the last Sheep finishes its dismiss exit —
+    // `onComplete` fires on the 5th tap, at the START of that exit.
+    winDelayMs: SHEEP_EXIT_MS,
   },
   // Puffer Fish — the second Toy. Its `tint` is a concrete ocean-palette color
   // string (`oceanPalette.water`) the Toy supplies from its own world, not a
@@ -44,6 +48,8 @@ export const registry: ToyEntry[] = [
     component: PufferFish,
     tint: oceanPalette.water,
     preview: PufferFishPreview,
+    // Hold the Completion until the last Fish finishes its puff-then-float exit.
+    winDelayMs: FISH_EXIT_MS,
   },
   // Muddy Puddle — the third Toy, a clearly different *activity* (wipe-clean)
   // from the two tap toys. Like the fish, its `tint` is a concrete color string
@@ -59,6 +65,8 @@ export const registry: ToyEntry[] = [
     component: MuddyPuddle,
     tint: barnyardPalette.sky,
     preview: MuddyPuddlePreview,
+    // Hold the Completion until the last critter finishes its clean-snap exit.
+    winDelayMs: PUDDLE_EXIT_MS,
   },
   // Up & Away — the fourth Toy (slug `balloons`), and the first to break the
   // sequential conveyor: a free-order bunch the child fills and floats. A
@@ -76,5 +84,9 @@ export const registry: ToyEntry[] = [
     component: Balloons,
     tint: skyPalette.sky,
     preview: BalloonsPreview,
+    // Hold the Completion until the last balloon has floated up and off-screen
+    // (`FLOAT_AWAY_MS`) — `onComplete` fires on the final detach, at the START
+    // of that rise, so without this the dialogue lands on a balloon mid-flight.
+    winDelayMs: FLOAT_AWAY_MS,
   },
 ];

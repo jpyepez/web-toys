@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import type { ToyEntry } from './registry';
 import type { Sound } from './sound';
@@ -41,17 +41,38 @@ export function ToyHost({
   const navigate = useNavigate();
   const Toy = toy.component;
 
+  // One-shot guard + handle for the optional `winDelayMs` hold. `completingRef`
+  // also covers the hold window (not just `phase === 'complete'`), so a Toy
+  // firing `onComplete` repeatedly while the win animation plays schedules the
+  // celebration exactly once. The timer is cleared on unmount and reset on
+  // Play again (ToyHost itself doesn't remount — only the Toy does, via the
+  // `playId` key — so the guard must be cleared by hand).
+  const completingRef = useRef(false);
+  const winTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  useEffect(() => () => clearTimeout(winTimerRef.current), []);
+
   return (
     <>
       <Toy
         key={playId}
         onComplete={() => {
           // `onComplete` is a one-shot signal (ADR-0001 amendment): ignore any
-          // re-entrant calls during the celebration window so the celebration
-          // sound doesn't retrigger.
-          if (phase === 'complete') return;
-          sound.celebrate();
-          setPhase('complete');
+          // re-entrant calls during the hold/celebration window.
+          if (completingRef.current) return;
+          completingRef.current = true;
+          // Hold the celebration for the Toy's declared win-animation beat so
+          // its critter finishes the dance before the dialogue lands; the
+          // sound and the overlay arrive together at the end of the hold.
+          const celebrate = () => {
+            sound.celebrate();
+            setPhase('complete');
+          };
+          const delay = toy.winDelayMs ?? 0;
+          if (delay > 0) {
+            winTimerRef.current = setTimeout(celebrate, delay);
+          } else {
+            celebrate();
+          }
         }}
         sound={sound}
         haptics={haptics}
@@ -66,6 +87,7 @@ export function ToyHost({
       {phase === 'complete' && (
         <Completion
           onPlayAgain={() => {
+            completingRef.current = false;
             setPlayId((id) => id + 1);
             setPhase('playing');
           }}
