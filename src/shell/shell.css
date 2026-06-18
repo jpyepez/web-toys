@@ -41,6 +41,23 @@ body {
    * sit at the *inside* of the safe-area inset rather than at the viewport
    * edge, so the notch / home indicator never overlap them. */
   position: relative;
+
+  /* Kill the iOS long-press text-selection callout + magnifier and the
+   * tap-highlight flash across every Shell surface. A sustained press is the
+   * core gesture of the hold/drag Toys (Balloons' inflate, Muddy Puddle's
+   * wipe), so the browser must never reinterpret it as "select text":
+   * `touch-action: none` on a Toy surface stops scroll/zoom but NOT the
+   * callout/magnifier, which fired on a long hold across toys. There is no
+   * selectable copy anywhere in the app, so disabling selection app-wide is
+   * safe and removes the gesture conflict everywhere at once (the fish already
+   * carried a local `-webkit-touch-callout: none`; this generalises it to the
+   * whole Shell). Real-device behaviour — jsdom can neither apply nor validate
+   * these, so it's on-device-validated per the same precedent as this file's
+   * env() rules. */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Chrome pill positioning.

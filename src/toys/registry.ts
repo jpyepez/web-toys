@@ -8,6 +8,9 @@ import { Preview as PufferFishPreview } from './puffer-fish/Preview';
 import { MuddyPuddle } from './muddy-puddle/MuddyPuddle';
 import { palette as barnyardPalette } from './muddy-puddle/palette';
 import { Preview as MuddyPuddlePreview } from './muddy-puddle/Preview';
+import { Balloons } from './balloons/Balloons';
+import { palette as skyPalette } from './balloons/palette';
+import { Preview as BalloonsPreview } from './balloons/Preview';
 
 /**
  * The registered Toys. Adding a Toy is adding an entry here — the Shell renders
@@ -56,5 +59,22 @@ export const registry: ToyEntry[] = [
     component: MuddyPuddle,
     tint: barnyardPalette.sky,
     preview: MuddyPuddlePreview,
+  },
+  // Up & Away — the fourth Toy (slug `balloons`), and the first to break the
+  // sequential conveyor: a free-order bunch the child fills and floats. A
+  // clearly different *activity* (hold-to-inflate) from the tap toys and the
+  // wipe toy. Display title chosen at slice #08 (HITL); the slug stays
+  // `balloons`. Like the others its `tint` is a concrete color string the Toy
+  // supplies from its OWN world — the sky `palette.sky`, the tall open sky the
+  // live scene rises into (ADR-0004 / the tint→color-string contract) — and its
+  // `preview` is its own miniature sky vignette (a happy balloon floating up),
+  // drawn from inside the Toy so the Card art coheres with the live scene.
+  // Additive only: nothing else in the Shell changes.
+  {
+    id: 'balloons',
+    title: 'Up & Away',
+    component: Balloons,
+    tint: skyPalette.sky,
+    preview: BalloonsPreview,
   },
 ];

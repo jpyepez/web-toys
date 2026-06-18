@@ -40,10 +40,12 @@ The single hook a Toy exposes to the Shell. A Toy renders its own world and call
 contract between Shell and Toy.
 
 **Critter**:
-A character in a Toy (fish, sheep, piglet, etc.) the child interacts with, drawn from code
+A character in a Toy (fish, sheep, piglet, or a faced balloon, etc.) the child interacts with — an
+animal or an anthropomorphised object — drawn from code
 SVG primitives — never an image. The interaction is interaction-agnostic: it may be a tap
-(Counting Sheep, Puffer Fish) or a sustained **Wipe** (Muddy Puddle) or some future gesture.
-Engaging the Critter is the core interaction; the specific gesture is per-Toy.
+(Counting Sheep, Puffer Fish), a sustained **Wipe** (Muddy Puddle), a sustained **Hold**
+(Balloons), or some future gesture. Engaging the Critter is the core interaction; the
+specific gesture is per-Toy.
 
 **Wipe**:
 The core gesture of the Muddy Puddle Toy: a sustained finger drag across a muddy **Critter**
@@ -51,6 +53,18 @@ that removes the mud it passes over. One cleaning stroke is "a Wipe"; the verb i
 Distinct from a tap — it is continuous and accumulative (mud removed by earlier strokes stays
 removed when the finger lifts), so it is the first non-tap core interaction in the collection.
 _Avoid_: scrub, wash, swipe (reserve "swipe" for a fast directional flick, which this is not)
+
+**Hold**:
+The core gesture of the Balloon Toy: a sustained, stationary finger-press that fills a
+**Critter** over time (a balloon swelling 0→100%). Distinct from a **Wipe** (sustained but
+*moving*, accumulating coverage) and from a tap (discrete) — a Hold accumulates *fill* by
+duration, in place. It is **self-capping**: fill stops at full and the balloon auto-releases,
+so holding past full does nothing and there is no over-inflate or pop. The fill is
+**asymmetric** — it rises quickly while held and, on an early finger-lift, leaks back down
+slowly (a soft "pfffft"), so lifting is forgiving rather than a reset. The second non-tap core
+interaction in the collection.
+_Avoid_: long-press, press-and-hold, charge; reserve "inflate" for the balloon-specific
+effect, not the gesture name.
 
 **Outro**:
 A Toy's choreographed end-beat after its Goal is met — the Toy keeps rendering its

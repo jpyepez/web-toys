@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { RouterProvider, createMemoryHistory } from '@tanstack/react-router';
 import { createAppRouter } from './createAppRouter';
@@ -8,6 +8,7 @@ import { ink } from './tokens';
 import { palette } from '../toys/counting-sheep/palette';
 import { palette as oceanPalette } from '../toys/puffer-fish/palette';
 import { palette as barnyardPalette } from '../toys/muddy-puddle/palette';
+import { palette as skyPalette } from '../toys/balloons/palette';
 import { registry } from '../toys/registry';
 
 function renderApp(toys: ToyEntry[], initialPath = '/') {
@@ -160,21 +161,22 @@ describe('home launcher', () => {
 });
 
 describe('registered toys', () => {
-  it('registers Counting Sheep, Puffer Fish and Muddy Puddle as the three launchable Cards', async () => {
-    // Muddy Puddle slice #08 (AC #1/#2): the registry now declares a third real
-    // Toy, so the Home reads as a small *collection* of three Cards. This test
-    // supersedes the earlier "two launchable Cards" assertion: adding the
-    // muddy-puddle entry is the behaviour change the slice ships, so the
-    // launcher's expected Card count moves from 2 → 3 here (the same way slice
-    // #09 moved it 1 → 2 when the fish landed). Each Card carries its title and
-    // routes to its own Toy; the per-Card tint + preview wiring is asserted in
-    // the focused tests below.
+  it('registers Counting Sheep, Puffer Fish, Muddy Puddle and Up & Away as the four launchable Cards', async () => {
+    // Balloons slice #08 (AC #1/#2): the registry now declares a fourth real Toy
+    // — "Up & Away" — so the Home reads as a small *collection* of four Cards.
+    // This test supersedes the earlier "three launchable Cards" assertion: adding
+    // the balloons entry is the behaviour change the slice ships, so the
+    // launcher's expected Card count moves from 3 → 4 here (the same way prior
+    // slices moved it 1 → 2 → 3 as the fish and the puddle landed). Each Card
+    // carries its title and routes to its own Toy; the per-Card tint + preview
+    // wiring is asserted in the focused tests below.
     renderApp(registry);
 
     expect(await screen.findByText('Counting Sheep')).toBeInTheDocument();
     expect(screen.getByText('Puffer Fish')).toBeInTheDocument();
     expect(screen.getByText('Muddy Puddle')).toBeInTheDocument();
-    expect(screen.getAllByRole('link')).toHaveLength(3);
+    expect(screen.getByText('Up & Away')).toBeInTheDocument();
+    expect(screen.getAllByRole('link')).toHaveLength(4);
 
     // The Counting Sheep Card still backs its preview cover with the cream tint,
     // sourced from the Sheep-local palette (`palette.sheepWool`, ADR-0004 —
@@ -278,6 +280,58 @@ describe('registered toys', () => {
     await user.click(await screen.findByText('Muddy Puddle'));
 
     expect(await screen.findByRole('img')).toBeInTheDocument();
+    expect(screen.queryByRole('link')).toBeNull();
+  });
+
+  it("backs the Up & Away preview cover from its own sky-palette tint", async () => {
+    // AC #2 (tint surface): the Up & Away Card's tint is a concrete CSS color
+    // string the Toy supplies from its OWN world — `skyPalette.sky`, the tall
+    // open sky the live scene rises into — not a key into a shared palette
+    // grab-bag (ADR-0004 / the tint→color-string contract). It backs the Card's
+    // preview cover. Pinned to the same sky-palette token the registry entry
+    // reads from so it stays a single source of truth; round-tripped through
+    // jsdom's parser (which normalises hsl() → rgb()) exactly as the
+    // sheep/fish/puddle tint checks do.
+    renderApp(registry);
+
+    const card = await screen.findByRole('link', { name: /Up & Away/ });
+    const cover = card.querySelector('[data-card-cover]') as HTMLElement;
+    const probe = document.createElement('div');
+    probe.style.backgroundColor = skyPalette.sky;
+    expect(cover.style.backgroundColor).toBe(probe.style.backgroundColor);
+  });
+
+  it("hosts the Up & Away's own preview-scene inside its Card", async () => {
+    // AC #3 (preview): the balloons entry declares a `preview`, and the Card
+    // mounts it. We assert the REAL balloons preview is wired (not just any
+    // sentinel) by finding the balloon body it draws — the same
+    // `data-balloon-part="body"` hook the live `BalloonDrawing` carries — inside
+    // the Up & Away Card. The live Toy isn't mounted on Home, so this hook can
+    // only come from the Card's preview, proving the entry's `preview` resolves
+    // to the balloons' own scene.
+    renderApp(registry);
+
+    const card = await screen.findByRole('link', { name: /Up & Away/ });
+    expect(card.querySelector('[data-balloon-part="body"]')).not.toBeNull();
+  });
+
+  it('routes to the Up & Away Toy when its Card is tapped', async () => {
+    // AC #3 (launch): tapping the Up & Away Card mounts the playable Toy through
+    // the standard contract. The bunch bootstraps with every balloon present from
+    // the start — each a `HoldableBalloon` tagged `data-holdable-balloon`, the
+    // Toy's own public structural hook (the balloons carry no ARIA role, like the
+    // live `div`s they are). We wait for one to appear after the tap; the live Toy
+    // isn't on Home, so its presence proves the route mounted. After the tap the
+    // launcher is gone — the Toy is mounted in its place, not alongside it
+    // (mirrors the fish/puddle routing checks).
+    const user = userEvent.setup();
+    renderApp(registry);
+
+    await user.click(await screen.findByText('Up & Away'));
+
+    await waitFor(() =>
+      expect(document.querySelector('[data-holdable-balloon]')).not.toBeNull(),
+    );
     expect(screen.queryByRole('link')).toBeNull();
   });
 });
