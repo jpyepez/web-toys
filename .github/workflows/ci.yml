@@ -24,3 +24,28 @@ jobs:
 
       - name: Test
         run: bun run test
+
+  # Auto-merge low-risk Dependabot PRs (patch + minor) — runs only after
+  # build-and-test passes (via `needs`), which substitutes for a required-status
+  # branch-protection rule (unavailable on private repos without GitHub Pro).
+  # Major bumps fall through and wait for manual review.
+  dependabot-auto-merge:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.actor == 'dependabot[bot]'
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Fetch Dependabot metadata
+        id: meta
+        uses: dependabot/fetch-metadata@v2
+
+      - name: Merge patch & minor updates
+        if: >-
+          steps.meta.outputs.update-type == 'version-update:semver-patch' ||
+          steps.meta.outputs.update-type == 'version-update:semver-minor'
+        run: gh pr merge --squash --delete-branch "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
