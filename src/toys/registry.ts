@@ -12,6 +12,10 @@ import { Balloons } from './balloons/Balloons';
 import { palette as skyPalette } from './balloons/palette';
 import { Preview as BalloonsPreview } from './balloons/Preview';
 import { FLOAT_AWAY_MS } from './balloons/HoldableBalloon';
+import { Nestlings } from './nestlings/Nestlings';
+import { palette as duskPalette } from './nestlings/palette';
+import { Preview as NestlingsPreview } from './nestlings/Preview';
+import { SETTLE_MS } from './nestlings/DuskBackdrop';
 
 /**
  * The registered Toys. Adding a Toy is adding an entry here — the Shell renders
@@ -88,5 +92,28 @@ export const registry: ToyEntry[] = [
     // (`FLOAT_AWAY_MS`) — `onComplete` fires on the final detach, at the START
     // of that rise, so without this the dialogue lands on a balloon mid-flight.
     winDelayMs: FLOAT_AWAY_MS,
+  },
+  // Tuck-In — the fifth Toy (slug `nestlings`), a dusk bedtime scene: the child
+  // carries fledglings home to the nest one by one until the whole cast is
+  // asleep. A free-order activity like Balloons (no sequential conveyor), but a
+  // distinct *gesture* — drag-to-carry, settle-to-rest. Display title chosen at
+  // slice #08 (HITL: "Tuck-In"); the slug stays `nestlings`. Like the others its
+  // `tint` is a concrete color string the Toy supplies from its OWN world — the
+  // dusk `palette.sky`, the representative dusk-sky tone the live scene sits in
+  // (ADR-0004 / the tint→color-string contract) — and its `preview` is its own
+  // miniature dusk vignette (a songbird nestled asleep), drawn from inside the
+  // Toy so the Card art coheres with the live scene. Additive only: nothing else
+  // in the Shell changes.
+  {
+    id: 'nestlings',
+    title: 'Tuck-In',
+    component: Nestlings,
+    tint: duskPalette.sky,
+    preview: NestlingsPreview,
+    // Hold the Completion until the last bird finishes settling into the nest —
+    // `onComplete` fires at the START of that settle, so without this the
+    // dialogue would land on a mid-settle frame (the analog of Balloons'
+    // `FLOAT_AWAY_MS`).
+    winDelayMs: SETTLE_MS,
   },
 ];

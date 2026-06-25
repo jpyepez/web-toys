@@ -66,6 +66,19 @@ interaction in the collection.
 _Avoid_: long-press, press-and-hold, charge; reserve "inflate" for the balloon-specific
 effect, not the gesture name.
 
+**Drag**:
+The core gesture of the drag-to-place Toy: a sustained finger-press that *attaches* a
+**Critter** to the finger and *transports* it across the scene to a target, completing on
+release within a forgiving snap-radius of that target. Distinct from a **Wipe** (sustained
+and moving, but accumulating coverage with no destination) and from a **Hold** (sustained
+but stationary, accumulating fill by duration) — a Drag is about *carrying and positioning*,
+not accumulating. Forgiving and never-fail: an early finger-lift mid-carry neither resets
+nor penalizes — the Critter simply rests wherever it is left and can be picked up again, so
+every Drag makes visible progress toward the Goal and nothing is ever undone. The third
+non-tap core interaction in the collection.
+_Avoid_: swipe, fling, throw (those are velocity gestures); reserve "drop" for the release
+event, not the gesture name.
+
 **Outro**:
 A Toy's choreographed end-beat after its Goal is met — the Toy keeps rendering its
 world during the Shell's celebration overlay (confetti, sound) and plays a brief
