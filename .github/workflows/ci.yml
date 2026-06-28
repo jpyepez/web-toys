@@ -11,7 +11,7 @@ jobs:
     permissions:
       contents: write # allow committing a synced bun.lock back to Dependabot PRs
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # Check out the PR head branch (not the detached merge ref) so the
           # lockfile-sync step below can push back to it.
@@ -64,7 +64,7 @@ jobs:
     steps:
       - name: Fetch Dependabot metadata
         id: meta
-        uses: dependabot/fetch-metadata@v2
+        uses: dependabot/fetch-metadata@v3
 
       - name: Merge patch & minor updates
         if: >-
