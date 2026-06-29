@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { CountingSheep } from './CountingSheep';
 import { baa } from './sounds';
 import { palette } from './palette';
@@ -56,7 +56,7 @@ describe('Counting Sheep — sequential mechanic', () => {
 
     expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'arriving');
 
-    await vi.runOnlyPendingTimersAsync();
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); });
 
     expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'waiting');
   });
@@ -74,7 +74,7 @@ describe('Counting Sheep — sequential mechanic', () => {
 
     // Drive the loop to the `waiting` beat — the only state in which a tap
     // advances the machine.
-    await vi.runOnlyPendingTimersAsync();
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); });
     expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'waiting');
 
     fireEvent.click(screen.getByRole('button', { name: 'Sheep' }));
@@ -92,12 +92,12 @@ describe('Counting Sheep — sequential mechanic', () => {
     render(<CountingSheep onComplete={vi.fn()} />);
 
     // Drive to `dismissing`.
-    await vi.runOnlyPendingTimersAsync(); // arriving → waiting (entrance)
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); }); // arriving → waiting (entrance)
     fireEvent.click(screen.getByRole('button', { name: 'Sheep' }));
     expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'dismissing');
 
     // Drain the dismiss timer.
-    await vi.runOnlyPendingTimersAsync();
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); });
 
     expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'idle');
     expect(screen.queryByRole('button', { name: 'Sheep' })).toBeNull();
@@ -114,13 +114,13 @@ describe('Counting Sheep — sequential mechanic', () => {
     // idle. Each `runOnlyPendingTimersAsync` drains the currently-queued
     // transition timer (and only that one), so the test walks the machine
     // beat by beat.
-    await vi.runOnlyPendingTimersAsync(); // entrance → waiting
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); }); // entrance → waiting
     fireEvent.click(screen.getByRole('button', { name: 'Sheep' })); // → dismissing
-    await vi.runOnlyPendingTimersAsync(); // dismiss → idle
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); }); // dismiss → idle
     expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'idle');
 
     // Drain the intermission timer.
-    await vi.runOnlyPendingTimersAsync();
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); });
 
     expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'arriving');
     expect(screen.getByRole('button', { name: 'Sheep' })).toBeInTheDocument();
@@ -133,9 +133,9 @@ describe('Counting Sheep — sequential mechanic', () => {
    * because the 5-Sheep tests below repeat the pattern.
    */
   async function dismissOneSheep() {
-    await vi.runOnlyPendingTimersAsync(); // arriving → waiting (entrance)
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); }); // arriving → waiting (entrance)
     fireEvent.click(screen.getByRole('button', { name: 'Sheep' })); // → dismissing
-    await vi.runOnlyPendingTimersAsync(); // → idle (dismiss beat)
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); }); // → idle (dismiss beat)
   }
 
   it('ignores taps during arriving and dismissing — only waiting accepts the tap', async () => {
@@ -154,7 +154,7 @@ describe('Counting Sheep — sequential mechanic', () => {
     expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'arriving');
 
     // After the entrance beat, `waiting` accepts the tap.
-    await vi.runOnlyPendingTimersAsync();
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); });
     expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'waiting');
     fireEvent.click(screen.getByRole('button', { name: 'Sheep' }));
     expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'dismissing');
@@ -184,19 +184,19 @@ describe('Counting Sheep — sequential mechanic', () => {
     // Four full loops — kid taps Sheep 1..4. Goal isn't met yet.
     for (let i = 0; i < 4; i += 1) {
       await dismissOneSheep();
-      await vi.runOnlyPendingTimersAsync(); // idle → arriving (next Sheep)
+      await act(async () => { await vi.runOnlyPendingTimersAsync(); }); // idle → arriving (next Sheep)
     }
     expect(onComplete).not.toHaveBeenCalled();
 
     // 5th Sheep arrives, kid taps — Goal met.
-    await vi.runOnlyPendingTimersAsync(); // arriving → waiting
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); }); // arriving → waiting
     fireEvent.click(screen.getByRole('button', { name: 'Sheep' })); // → dismissing + onComplete
 
     expect(onComplete).toHaveBeenCalledTimes(1);
 
     // A generously long settle (covers the 5th-Sheep dismiss beat + several
     // intermissions' worth of stale-timer risk). No spurious second call.
-    await vi.advanceTimersByTimeAsync(10_000);
+    await act(async () => { await vi.advanceTimersByTimeAsync(10_000); });
     expect(onComplete).toHaveBeenCalledTimes(1);
   });
 
@@ -211,13 +211,13 @@ describe('Counting Sheep — sequential mechanic', () => {
     // Drive 4 full loops, then the 5th tap.
     for (let i = 0; i < 4; i += 1) {
       await dismissOneSheep();
-      await vi.runOnlyPendingTimersAsync(); // idle → arriving
+      await act(async () => { await vi.runOnlyPendingTimersAsync(); }); // idle → arriving
     }
-    await vi.runOnlyPendingTimersAsync(); // arriving → waiting
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); }); // arriving → waiting
     fireEvent.click(screen.getByRole('button', { name: 'Sheep' })); // 5th tap
 
     // Drain everything time could possibly fire — many cycles worth.
-    await vi.advanceTimersByTimeAsync(10_000);
+    await act(async () => { await vi.advanceTimersByTimeAsync(10_000); });
 
     expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'completed');
     expect(screen.queryByRole('button', { name: 'Sheep' })).toBeNull();
@@ -244,7 +244,7 @@ describe('Counting Sheep — sequential mechanic', () => {
     assertAtMostOneSheep();
 
     // waiting — same Sheep, centred.
-    await vi.runOnlyPendingTimersAsync();
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); });
     expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'waiting');
     assertAtMostOneSheep();
 
@@ -254,7 +254,7 @@ describe('Counting Sheep — sequential mechanic', () => {
     assertAtMostOneSheep();
 
     // idle — no Sheep on stage, intermission gap.
-    await vi.runOnlyPendingTimersAsync();
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); });
     expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'idle');
     assertAtMostOneSheep();
   });
@@ -290,7 +290,7 @@ describe('Counting Sheep — sequential mechanic', () => {
     expect(haptics.tick).toHaveBeenCalledTimes(1);
 
     // After the entrance beat, the waiting-tap also plays it.
-    await vi.runOnlyPendingTimersAsync();
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); });
     fireEvent.click(screen.getByRole('button', { name: 'Sheep' }));
     expect(sound.play).toHaveBeenCalledTimes(2);
     expect(haptics.tick).toHaveBeenCalledTimes(2);
@@ -310,7 +310,7 @@ describe('Counting Sheep — sequential mechanic', () => {
 
     // Arriving / waiting — no glow.
     expect(document.querySelector('[data-sheep-part="glow"]')).toBeNull();
-    await vi.runOnlyPendingTimersAsync();
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); });
     expect(document.querySelector('[data-sheep-part="glow"]')).toBeNull();
 
     // Tap → dismissing — glow blooms inside the wool, painted with the

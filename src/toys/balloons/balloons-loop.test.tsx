@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { MotionConfig } from 'motion/react';
 import { Balloons } from './Balloons';
 
@@ -41,7 +41,7 @@ const balloons = (container: HTMLElement) =>
  */
 async function floatBalloon(surface: HTMLElement) {
   fireEvent.pointerDown(surface);
-  await vi.advanceTimersByTimeAsync(10_000);
+  await act(async () => { await vi.advanceTimersByTimeAsync(10_000); });
 }
 
 /**
@@ -54,7 +54,7 @@ async function floatBalloon(surface: HTMLElement) {
 async function holdUntilDetached(surface: HTMLElement) {
   fireEvent.pointerDown(surface);
   for (let i = 0; i < 400 && surface.getAttribute('data-balloon-state') !== 'floating'; i++) {
-    await vi.advanceTimersByTimeAsync(50);
+    await act(async () => { await vi.advanceTimersByTimeAsync(50); });
   }
 }
 
@@ -127,7 +127,7 @@ describe('Balloons — free-order bunch loop + onComplete', () => {
     expect(onComplete).toHaveBeenCalledTimes(1);
 
     // A generously long settle — no spurious 2nd call from any stale timer.
-    await vi.advanceTimersByTimeAsync(10_000);
+    await act(async () => { await vi.advanceTimersByTimeAsync(10_000); });
     expect(onComplete).toHaveBeenCalledTimes(1);
 
     // The Shell hands the Toy a fresh onComplete reference on re-render at
@@ -202,7 +202,7 @@ describe('Balloons — free-order bunch loop + onComplete', () => {
 
     fireEvent.pointerDown(first);
     fireEvent.pointerDown(second);
-    await vi.advanceTimersByTimeAsync(300);
+    await act(async () => { await vi.advanceTimersByTimeAsync(300); });
 
     expect(fillOf(first)).toBeGreaterThan(0);
     expect(fillOf(second)).toBeGreaterThan(0);
@@ -225,7 +225,7 @@ describe('Balloons — free-order bunch loop + onComplete', () => {
 
     // Press the gone balloon again and hold — nothing changes.
     fireEvent.pointerDown(target);
-    await vi.advanceTimersByTimeAsync(10_000);
+    await act(async () => { await vi.advanceTimersByTimeAsync(10_000); });
 
     expect(target.getAttribute('data-balloon-state')).toBe('floating');
     expect(Number(target.getAttribute('data-balloon-fill'))).toBe(1);
@@ -276,7 +276,7 @@ describe('Balloons — free-order bunch loop + onComplete', () => {
     expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'completed');
 
     // Drain everything time could possibly fire — many ramps' worth.
-    await vi.advanceTimersByTimeAsync(30_000);
+    await act(async () => { await vi.advanceTimersByTimeAsync(30_000); });
 
     expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'completed');
     const after = balloons(container);

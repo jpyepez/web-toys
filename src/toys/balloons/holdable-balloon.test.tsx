@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { fireEvent, render } from '@testing-library/react';
+import { act, fireEvent, render } from '@testing-library/react';
 import { HoldableBalloon } from './HoldableBalloon';
 
 /**
@@ -41,7 +41,7 @@ describe('Balloons — HoldableBalloon hold/fill/leak/self-cap mechanic', () => 
     expect(balloonFill(container)).toBe(0);
 
     fireEvent.pointerDown(surface);
-    await vi.advanceTimersByTimeAsync(300);
+    await act(async () => { await vi.advanceTimersByTimeAsync(300); });
 
     expect(balloonFill(container)).toBeGreaterThan(0);
   });
@@ -55,12 +55,12 @@ describe('Balloons — HoldableBalloon hold/fill/leak/self-cap mechanic', () => 
     const surface = container.querySelector('[data-holdable-balloon]')!;
 
     fireEvent.pointerDown(surface);
-    await vi.advanceTimersByTimeAsync(500);
+    await act(async () => { await vi.advanceTimersByTimeAsync(500); });
     const heldFill = balloonFill(container);
     expect(heldFill).toBeGreaterThan(0);
 
     fireEvent.pointerUp(surface);
-    await vi.advanceTimersByTimeAsync(500);
+    await act(async () => { await vi.advanceTimersByTimeAsync(500); });
 
     expect(balloonFill(container)).toBeLessThan(heldFill);
     expect(surface.getAttribute('data-balloon-state')).toBe('limp');
@@ -78,14 +78,14 @@ describe('Balloons — HoldableBalloon hold/fill/leak/self-cap mechanic', () => 
     const surface = container.querySelector('[data-holdable-balloon]')!;
 
     fireEvent.pointerDown(surface);
-    await vi.advanceTimersByTimeAsync(10_000);
+    await act(async () => { await vi.advanceTimersByTimeAsync(10_000); });
 
     expect(balloonFill(container)).toBe(1);
     expect(surface.getAttribute('data-balloon-state')).toBe('floating');
 
     // Still pressing after the cap changes nothing — no over-inflate, no reset,
     // and `floating` is terminal so the gone balloon never re-appears.
-    await vi.advanceTimersByTimeAsync(10_000);
+    await act(async () => { await vi.advanceTimersByTimeAsync(10_000); });
     expect(balloonFill(container)).toBe(1);
     expect(surface.getAttribute('data-balloon-state')).toBe('floating');
   });
@@ -101,9 +101,9 @@ describe('Balloons — HoldableBalloon hold/fill/leak/self-cap mechanic', () => 
     const surface = container.querySelector('[data-holdable-balloon]')!;
 
     fireEvent.pointerDown(surface);
-    await vi.advanceTimersByTimeAsync(10_000);
+    await act(async () => { await vi.advanceTimersByTimeAsync(10_000); });
     fireEvent.pointerUp(surface);
-    await vi.advanceTimersByTimeAsync(10_000);
+    await act(async () => { await vi.advanceTimersByTimeAsync(10_000); });
 
     expect(surface.getAttribute('data-balloon-state')).toBe('floating');
   });
@@ -118,11 +118,11 @@ describe('Balloons — HoldableBalloon hold/fill/leak/self-cap mechanic', () => 
     const surface = container.querySelector('[data-holdable-balloon]')!;
 
     fireEvent.pointerDown(surface);
-    await vi.advanceTimersByTimeAsync(500);
+    await act(async () => { await vi.advanceTimersByTimeAsync(500); });
     fireEvent.pointerUp(surface);
 
     // One short slice after lifting: still inflated, still attached — not reset.
-    await vi.advanceTimersByTimeAsync(50);
+    await act(async () => { await vi.advanceTimersByTimeAsync(50); });
     const fillJustAfterLift = balloonFill(container);
     expect(fillJustAfterLift).toBeGreaterThan(0);
     expect(fillJustAfterLift).toBeLessThan(1);
@@ -199,13 +199,13 @@ describe('Balloons — HoldableBalloon hold/fill/leak/self-cap mechanic', () => 
     const WINDOW_MS = 400;
 
     fireEvent.pointerDown(surface);
-    await vi.advanceTimersByTimeAsync(WINDOW_MS);
+    await act(async () => { await vi.advanceTimersByTimeAsync(WINDOW_MS); });
     const rise = balloonFill(container); // from 0, still below the cap
     expect(rise).toBeGreaterThan(0);
     expect(rise).toBeLessThan(1);
 
     fireEvent.pointerUp(surface);
-    await vi.advanceTimersByTimeAsync(WINDOW_MS);
+    await act(async () => { await vi.advanceTimersByTimeAsync(WINDOW_MS); });
     const drop = rise - balloonFill(container); // leaked over the same window
     expect(drop).toBeGreaterThan(0);
 

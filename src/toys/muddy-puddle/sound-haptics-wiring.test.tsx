@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { MuddyPuddle } from './MuddyPuddle';
 import { sparkle, REVEAL_VOICES } from './sounds';
 
@@ -80,7 +80,7 @@ describe('Muddy Puddle — sound + haptics wiring', () => {
     const sound = fakeSound();
     const { container } = render(<MuddyPuddle onComplete={vi.fn()} sound={sound} />);
 
-    await vi.runOnlyPendingTimersAsync(); // arriving → wiping
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); }); // arriving → wiping
     wipeOneBlob(container);
 
     expect(squelchCalls(sound)).toHaveLength(1);
@@ -93,7 +93,7 @@ describe('Muddy Puddle — sound + haptics wiring', () => {
     const haptics = { tick: vi.fn() };
     const { container } = render(<MuddyPuddle onComplete={vi.fn()} haptics={haptics} />);
 
-    await vi.runOnlyPendingTimersAsync(); // arriving → wiping
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); }); // arriving → wiping
     wipeOneBlob(container);
 
     expect(haptics.tick).toHaveBeenCalledTimes(1);
@@ -110,14 +110,14 @@ describe('Muddy Puddle — sound + haptics wiring', () => {
     const sound = fakeSound();
     const { container } = render(<MuddyPuddle onComplete={vi.fn()} sound={sound} />);
 
-    await vi.runOnlyPendingTimersAsync(); // arriving → wiping
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); }); // arriving → wiping
 
     wipeNBlobs(container, 5);
     expect(squelchCalls(sound)).toHaveLength(1);
 
     // Advance the clock past the throttle window (1s dwarfs the ~60–80ms gate,
     // and stays under the ~2.5s idle-demo timer so nothing else stirs).
-    await vi.advanceTimersByTimeAsync(1000);
+    await act(async () => { await vi.advanceTimersByTimeAsync(1000); });
     wipeOneBlob(container);
     expect(squelchCalls(sound)).toHaveLength(2);
   });
@@ -133,7 +133,7 @@ describe('Muddy Puddle — sound + haptics wiring', () => {
     const sound = fakeSound();
     const { container } = render(<MuddyPuddle onComplete={vi.fn()} sound={sound} />);
 
-    await vi.runOnlyPendingTimersAsync(); // arriving → wiping
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); }); // arriving → wiping
     const id = container.querySelector('[data-critter]')!.getAttribute('data-critter')!;
 
     wipeUntilClean(container);
@@ -155,7 +155,7 @@ describe('Muddy Puddle — sound + haptics wiring', () => {
     const haptics = { tick: vi.fn() };
     const { container } = render(<MuddyPuddle onComplete={vi.fn()} haptics={haptics} />);
 
-    await vi.runOnlyPendingTimersAsync(); // arriving → wiping
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); }); // arriving → wiping
     // One wipe tick fires here (first crossing, gate open).
     wipeOneBlob(container);
     const afterFirstWipe = haptics.tick.mock.calls.length;
@@ -177,7 +177,7 @@ describe('Muddy Puddle — sound + haptics wiring', () => {
     // the optional `sound?.`/`haptics?.` calls no-op'd).
     const { container } = render(<MuddyPuddle onComplete={vi.fn()} />);
 
-    await vi.runOnlyPendingTimersAsync(); // arriving → wiping
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); }); // arriving → wiping
     expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'wiping');
 
     expect(() => wipeUntilClean(container)).not.toThrow();

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { WipeableCritter } from './WipeableCritter';
 import { MuddyPuddle } from './MuddyPuddle';
 import { CAST } from './cast';
@@ -60,11 +60,11 @@ describe('Muddy Puddle — surprise cast in the Wipe', () => {
 
       const seen: (string | null)[] = [];
       for (let round = 0; round < CAST.length; round += 1) {
-        await vi.runOnlyPendingTimersAsync(); // arriving → wiping
+        await act(async () => { await vi.runOnlyPendingTimersAsync(); }); // arriving → wiping
         seen.push(screen.getByRole('img').getAttribute('data-critter'));
         wipeUntilClean(container); // wiping → dismissing (clean-snap)
-        await vi.runOnlyPendingTimersAsync(); // dismissing → idle | completed
-        await vi.runOnlyPendingTimersAsync(); // idle → arriving (no-op past the 5th)
+        await act(async () => { await vi.runOnlyPendingTimersAsync(); }); // dismissing → idle | completed
+        await act(async () => { await vi.runOnlyPendingTimersAsync(); }); // idle → arriving (no-op past the 5th)
       }
 
       expect(seen).toHaveLength(5);

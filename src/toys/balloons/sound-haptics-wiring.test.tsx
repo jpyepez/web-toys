@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { fireEvent, render } from '@testing-library/react';
+import { act, fireEvent, render } from '@testing-library/react';
 import { Balloons } from './Balloons';
 import { pop, raspberry } from './sounds';
 
@@ -48,7 +48,7 @@ const balloons = (container: HTMLElement) =>
  */
 async function floatBalloon(surface: HTMLElement) {
   fireEvent.pointerDown(surface);
-  await vi.advanceTimersByTimeAsync(10_000);
+  await act(async () => { await vi.advanceTimersByTimeAsync(10_000); });
 }
 
 describe('Balloons — sound + haptics wiring', () => {
@@ -67,7 +67,7 @@ describe('Balloons — sound + haptics wiring', () => {
     const { container } = render(<Balloons onComplete={vi.fn()} sound={sound} />);
 
     fireEvent.pointerDown(balloons(container)[0]);
-    await vi.advanceTimersByTimeAsync(120);
+    await act(async () => { await vi.advanceTimersByTimeAsync(120); });
 
     expect(pipCalls(sound).length).toBeGreaterThan(0);
   });
@@ -87,12 +87,12 @@ describe('Balloons — sound + haptics wiring', () => {
 
     // A 50ms dwell is several 16ms-ish fill frames but well inside one throttle
     // window — un-throttled this would be one pip per frame.
-    await vi.advanceTimersByTimeAsync(50);
+    await act(async () => { await vi.advanceTimersByTimeAsync(50); });
     expect(pipCalls(sound)).toHaveLength(1);
 
     // 1s dwarfs the ~tens-of-ms gate (and keeps the balloon mid-fill, short of
     // the ~2.5s cap), so the gate reopens and pips resume.
-    await vi.advanceTimersByTimeAsync(1000);
+    await act(async () => { await vi.advanceTimersByTimeAsync(1000); });
     expect(pipCalls(sound).length).toBeGreaterThan(1);
   });
 
@@ -104,7 +104,7 @@ describe('Balloons — sound + haptics wiring', () => {
     const { container } = render(<Balloons onComplete={vi.fn()} haptics={haptics} />);
 
     fireEvent.pointerDown(balloons(container)[0]);
-    await vi.advanceTimersByTimeAsync(120);
+    await act(async () => { await vi.advanceTimersByTimeAsync(120); });
 
     expect(haptics.tick).toHaveBeenCalled();
   });
@@ -136,7 +136,7 @@ describe('Balloons — sound + haptics wiring', () => {
 
     const target = balloons(container)[0];
     fireEvent.pointerDown(target);
-    await vi.advanceTimersByTimeAsync(200); // part-filled, far below the cap
+    await act(async () => { await vi.advanceTimersByTimeAsync(200); }); // part-filled, far below the cap
     fireEvent.pointerUp(target);
 
     expect(sound.play).toHaveBeenCalledWith(raspberry);

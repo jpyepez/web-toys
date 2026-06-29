@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { MuddyPuddle } from './MuddyPuddle';
 
 /**
@@ -72,7 +72,7 @@ describe('Muddy Puddle — sequential loop mechanic', () => {
 
     expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'arriving');
 
-    await vi.runOnlyPendingTimersAsync();
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); });
 
     expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'wiping');
   });
@@ -89,7 +89,7 @@ describe('Muddy Puddle — sequential loop mechanic', () => {
     const { container } = render(<MuddyPuddle onComplete={vi.fn()} />);
 
     // Drive to `wiping` — the only state in which a Wipe advances the loop.
-    await vi.runOnlyPendingTimersAsync();
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); });
     expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'wiping');
 
     wipeCurrentCritterClean(container);
@@ -108,12 +108,12 @@ describe('Muddy Puddle — sequential loop mechanic', () => {
     const { container } = render(<MuddyPuddle onComplete={vi.fn()} />);
 
     // Drive to `dismissing`.
-    await vi.runOnlyPendingTimersAsync(); // arriving → wiping (trot-in)
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); }); // arriving → wiping (trot-in)
     wipeCurrentCritterClean(container); // wiping → dismissing (clean-snap)
     expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'dismissing');
 
     // Drain the trot-off timer.
-    await vi.runOnlyPendingTimersAsync();
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); });
 
     expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'idle');
     expect(screen.queryByRole('img')).toBeNull();
@@ -134,13 +134,13 @@ describe('Muddy Puddle — sequential loop mechanic', () => {
     const { container } = render(<MuddyPuddle onComplete={vi.fn()} />);
 
     // One full iteration: arriving → wiping → dismissing → idle.
-    await vi.runOnlyPendingTimersAsync(); // trot-in → wiping
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); }); // trot-in → wiping
     wipeCurrentCritterClean(container); // clean-snap → dismissing
-    await vi.runOnlyPendingTimersAsync(); // trot-off → idle
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); }); // trot-off → idle
     expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'idle');
 
     // Drain the intermission timer.
-    await vi.runOnlyPendingTimersAsync();
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); });
 
     expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'arriving');
     expect(screen.getByRole('img')).toBeInTheDocument();
@@ -180,7 +180,7 @@ describe('Muddy Puddle — sequential loop mechanic', () => {
     const { container } = render(<MuddyPuddle onComplete={onComplete} />);
 
     // Drive to `dismissing` via a legitimate Wipe.
-    await vi.runOnlyPendingTimersAsync(); // trot-in → wiping
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); }); // trot-in → wiping
     wipeCurrentCritterClean(container); // clean-snap → dismissing
     expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'dismissing');
 
@@ -200,9 +200,9 @@ describe('Muddy Puddle — sequential loop mechanic', () => {
    * because the 5-piglet tests below repeat the pattern.
    */
   async function cleanOneCritter(container: HTMLElement) {
-    await vi.runOnlyPendingTimersAsync(); // arriving → wiping (trot-in)
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); }); // arriving → wiping (trot-in)
     wipeCurrentCritterClean(container); // → dismissing (clean-snap)
-    await vi.runOnlyPendingTimersAsync(); // → idle | completed (trot-off beat)
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); }); // → idle | completed (trot-off beat)
   }
 
   it('terminates the loop after the fifth clean — state is completed and no further Critter mounts', async () => {
@@ -217,13 +217,13 @@ describe('Muddy Puddle — sequential loop mechanic', () => {
     // Clean 4 piglets, returning to a fresh arriving piglet each time.
     for (let i = 0; i < 4; i += 1) {
       await cleanOneCritter(container);
-      await vi.runOnlyPendingTimersAsync(); // idle → arriving (next piglet)
+      await act(async () => { await vi.runOnlyPendingTimersAsync(); }); // idle → arriving (next piglet)
     }
     // The 5th piglet — clean it; this meets the Goal.
     await cleanOneCritter(container);
 
     // Drain everything time could possibly fire — many cycles' worth.
-    await vi.advanceTimersByTimeAsync(10_000);
+    await act(async () => { await vi.advanceTimersByTimeAsync(10_000); });
 
     expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'completed');
     expect(screen.queryByRole('img')).toBeNull();
@@ -247,19 +247,19 @@ describe('Muddy Puddle — sequential loop mechanic', () => {
     // Clean 4 piglets — Goal isn't met yet.
     for (let i = 0; i < 4; i += 1) {
       await cleanOneCritter(container);
-      await vi.runOnlyPendingTimersAsync(); // idle → arriving (next piglet)
+      await act(async () => { await vi.runOnlyPendingTimersAsync(); }); // idle → arriving (next piglet)
     }
     expect(onComplete).not.toHaveBeenCalled();
 
     // 5th piglet trots in, kid Wipes it clean — Goal met at the clean-snap.
-    await vi.runOnlyPendingTimersAsync(); // arriving → wiping
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); }); // arriving → wiping
     wipeCurrentCritterClean(container); // → dismissing + onComplete
 
     expect(onComplete).toHaveBeenCalledTimes(1);
 
     // A generously long settle (covers the 5th piglet's trot-off plus several
     // intermissions' worth of stale-timer risk). No spurious 2nd call.
-    await vi.advanceTimersByTimeAsync(10_000);
+    await act(async () => { await vi.advanceTimersByTimeAsync(10_000); });
     expect(onComplete).toHaveBeenCalledTimes(1);
 
     // The Shell hands the Toy a fresh `onComplete` reference on re-render at
@@ -289,7 +289,7 @@ describe('Muddy Puddle — sequential loop mechanic', () => {
     assertAtMostOneCritter();
 
     // wiping — same Critter, centred awaiting the Wipe.
-    await vi.runOnlyPendingTimersAsync();
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); });
     expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'wiping');
     assertAtMostOneCritter();
 
@@ -299,7 +299,7 @@ describe('Muddy Puddle — sequential loop mechanic', () => {
     assertAtMostOneCritter();
 
     // idle — no Critter on stage, intermission gap.
-    await vi.runOnlyPendingTimersAsync();
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); });
     expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'idle');
     expect(screen.queryAllByRole('img')).toHaveLength(0);
   });

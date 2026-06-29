@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { Nestlings } from './Nestlings';
 
 /**
@@ -67,7 +67,7 @@ describe('Nestlings — idle DRAG demo (ghost-hand carry)', () => {
 
     expect(screen.getByRole('main')).toHaveAttribute('data-demo-active', 'false');
 
-    await vi.advanceTimersByTimeAsync(PAST_IDLE_DELAY_MS);
+    await act(async () => { await vi.advanceTimersByTimeAsync(PAST_IDLE_DELAY_MS); });
 
     expect(screen.getByRole('main')).toHaveAttribute('data-demo-active', 'true');
   });
@@ -82,7 +82,7 @@ describe('Nestlings — idle DRAG demo (ghost-hand carry)', () => {
     // poke.
     const { container } = render(<Nestlings onComplete={vi.fn()} />);
 
-    await vi.advanceTimersByTimeAsync(PAST_IDLE_DELAY_MS);
+    await act(async () => { await vi.advanceTimersByTimeAsync(PAST_IDLE_DELAY_MS); });
     expect(screen.getByRole('main')).toHaveAttribute('data-demo-active', 'true');
 
     // The child finally carries a bird for real — pick up, move, release. Released
@@ -96,7 +96,7 @@ describe('Nestlings — idle DRAG demo (ghost-hand carry)', () => {
 
     // SUPPRESSED: a fresh stall does not bring the demo back — the child has shown
     // they can carry, so it never re-teaches.
-    await vi.advanceTimersByTimeAsync(PAST_IDLE_DELAY_MS);
+    await act(async () => { await vi.advanceTimersByTimeAsync(PAST_IDLE_DELAY_MS); });
     expect(screen.getByRole('main')).toHaveAttribute('data-demo-active', 'false');
   });
 
@@ -117,7 +117,7 @@ describe('Nestlings — idle DRAG demo (ghost-hand carry)', () => {
     fireEvent.pointerUp(bird, { clientX: 300, clientY: 300 });
 
     // The stall still teaches — the tap didn't suppress it.
-    await vi.advanceTimersByTimeAsync(PAST_IDLE_DELAY_MS);
+    await act(async () => { await vi.advanceTimersByTimeAsync(PAST_IDLE_DELAY_MS); });
     expect(screen.getByRole('main')).toHaveAttribute('data-demo-active', 'true');
   });
 
@@ -137,12 +137,12 @@ describe('Nestlings — idle DRAG demo (ghost-hand carry)', () => {
     const castSize = birds(container).length;
     expect(castSize).toBeGreaterThan(1);
 
-    await vi.advanceTimersByTimeAsync(PAST_IDLE_DELAY_MS);
+    await act(async () => { await vi.advanceTimersByTimeAsync(PAST_IDLE_DELAY_MS); });
     expect(screen.getByRole('main')).toHaveAttribute('data-demo-active', 'true');
 
     // Let the demo run on — its ghost-hand carries a faint demo bird, placing no
     // real one.
-    await vi.advanceTimersByTimeAsync(10_000);
+    await act(async () => { await vi.advanceTimersByTimeAsync(10_000); });
 
     expect(birds(container)).toHaveLength(castSize);
     expect(placedBirds(container)).toHaveLength(0);

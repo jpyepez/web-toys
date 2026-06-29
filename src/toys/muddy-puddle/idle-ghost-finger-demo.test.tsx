@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { MuddyPuddle } from './MuddyPuddle';
 
 /**
@@ -50,12 +50,12 @@ describe('Muddy Puddle — idle ghost-finger demo', () => {
     render(<MuddyPuddle onComplete={vi.fn()} />);
 
     // Drive to `wiping` — the settled beat where the idle timer arms.
-    await vi.runOnlyPendingTimersAsync();
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); });
     expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'wiping');
     expect(screen.getByRole('main')).toHaveAttribute('data-demo-active', 'false');
 
     // Stall past the idle delay with no Wipe.
-    await vi.advanceTimersByTimeAsync(PAST_IDLE_DELAY_MS);
+    await act(async () => { await vi.advanceTimersByTimeAsync(PAST_IDLE_DELAY_MS); });
 
     expect(screen.getByRole('main')).toHaveAttribute('data-demo-active', 'true');
   });
@@ -70,8 +70,8 @@ describe('Muddy Puddle — idle ghost-finger demo', () => {
     const { container } = render(<MuddyPuddle onComplete={vi.fn()} />);
 
     // Settle in `wiping` and stall until the demo activates.
-    await vi.runOnlyPendingTimersAsync();
-    await vi.advanceTimersByTimeAsync(PAST_IDLE_DELAY_MS);
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(PAST_IDLE_DELAY_MS); });
     expect(screen.getByRole('main')).toHaveAttribute('data-demo-active', 'true');
     expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'wiping');
 
@@ -97,14 +97,14 @@ describe('Muddy Puddle — idle ghost-finger demo', () => {
     const onComplete = vi.fn();
     const { container } = render(<MuddyPuddle onComplete={onComplete} />);
 
-    await vi.runOnlyPendingTimersAsync();
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); });
     const before = [...container.querySelectorAll('[data-mud-blob]')]
       .map((b) => Number(b.getAttribute('data-blob-index')))
       .sort((a, b) => a - b);
     expect(before.length).toBeGreaterThan(1);
 
     // Let the demo activate (the child stalls, no Wipe).
-    await vi.advanceTimersByTimeAsync(PAST_IDLE_DELAY_MS);
+    await act(async () => { await vi.advanceTimersByTimeAsync(PAST_IDLE_DELAY_MS); });
     expect(screen.getByRole('main')).toHaveAttribute('data-demo-active', 'true');
 
     // The full mud blanket is intact — the demo lifted nothing for real.
@@ -127,16 +127,16 @@ describe('Muddy Puddle — idle ghost-finger demo', () => {
     const { container } = render(<MuddyPuddle onComplete={vi.fn()} />);
 
     // Critter #1: settle, Wipe clean, trot off — no stall, so no demo.
-    await vi.runOnlyPendingTimersAsync(); // arriving → wiping
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); }); // arriving → wiping
     wipeCurrentCritterClean(container); //   wiping → dismissing (clean-snap)
-    await vi.runOnlyPendingTimersAsync(); // dismissing → idle
-    await vi.runOnlyPendingTimersAsync(); // idle → arriving (Critter #2)
-    await vi.runOnlyPendingTimersAsync(); // arriving → wiping (Critter #2)
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); }); // dismissing → idle
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); }); // idle → arriving (Critter #2)
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); }); // arriving → wiping (Critter #2)
     expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'wiping');
     expect(screen.getByRole('main')).toHaveAttribute('data-demo-active', 'false');
 
     // The child stalls on Critter #2 — the demo re-arms and re-prompts.
-    await vi.advanceTimersByTimeAsync(PAST_IDLE_DELAY_MS);
+    await act(async () => { await vi.advanceTimersByTimeAsync(PAST_IDLE_DELAY_MS); });
 
     expect(screen.getByRole('main')).toHaveAttribute('data-demo-active', 'true');
   });

@@ -48,7 +48,7 @@ export function ToyHost({
   // Play again (ToyHost itself doesn't remount — only the Toy does, via the
   // `playId` key — so the guard must be cleared by hand).
   const completingRef = useRef(false);
-  const winTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const winTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   useEffect(() => () => clearTimeout(winTimerRef.current), []);
 
   return (

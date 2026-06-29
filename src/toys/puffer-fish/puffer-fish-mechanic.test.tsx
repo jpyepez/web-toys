@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { PufferFish } from './PufferFish';
 import { puff } from './sounds';
 
@@ -53,7 +53,7 @@ describe('Puffer Fish — sequential loop mechanic', () => {
 
     expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'arriving');
 
-    await vi.runOnlyPendingTimersAsync();
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); });
 
     expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'waiting');
   });
@@ -67,7 +67,7 @@ describe('Puffer Fish — sequential loop mechanic', () => {
     render(<PufferFish onComplete={vi.fn()} />);
 
     // Drive the loop to `waiting` — the only state in which a tap advances.
-    await vi.runOnlyPendingTimersAsync();
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); });
     expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'waiting');
 
     fireEvent.click(screen.getByRole('button', { name: 'Fish' }));
@@ -85,12 +85,12 @@ describe('Puffer Fish — sequential loop mechanic', () => {
     render(<PufferFish onComplete={vi.fn()} />);
 
     // Drive to `dismissing`.
-    await vi.runOnlyPendingTimersAsync(); // arriving → waiting (swim-in)
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); }); // arriving → waiting (swim-in)
     fireEvent.click(screen.getByRole('button', { name: 'Fish' }));
     expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'dismissing');
 
     // Drain the float-away timer.
-    await vi.runOnlyPendingTimersAsync();
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); });
 
     expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'idle');
     expect(screen.queryByRole('button', { name: 'Fish' })).toBeNull();
@@ -104,13 +104,13 @@ describe('Puffer Fish — sequential loop mechanic', () => {
     render(<PufferFish onComplete={vi.fn()} />);
 
     // Drive through the first iteration: arriving → waiting → dismissing → idle.
-    await vi.runOnlyPendingTimersAsync(); // swim-in → waiting
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); }); // swim-in → waiting
     fireEvent.click(screen.getByRole('button', { name: 'Fish' })); // → dismissing
-    await vi.runOnlyPendingTimersAsync(); // float-away → idle
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); }); // float-away → idle
     expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'idle');
 
     // Drain the intermission timer.
-    await vi.runOnlyPendingTimersAsync();
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); });
 
     expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'arriving');
     expect(screen.getByRole('button', { name: 'Fish' })).toBeInTheDocument();
@@ -132,7 +132,7 @@ describe('Puffer Fish — sequential loop mechanic', () => {
     expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'arriving');
 
     // After the swim-in beat, `waiting` accepts the tap.
-    await vi.runOnlyPendingTimersAsync();
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); });
     expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'waiting');
     fireEvent.click(screen.getByRole('button', { name: 'Fish' }));
     expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'dismissing');
@@ -150,9 +150,9 @@ describe('Puffer Fish — sequential loop mechanic', () => {
    * 5-fish tests below repeat the pattern.
    */
   async function dismissOneFish() {
-    await vi.runOnlyPendingTimersAsync(); // arriving → waiting (swim-in)
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); }); // arriving → waiting (swim-in)
     fireEvent.click(screen.getByRole('button', { name: 'Fish' })); // → dismissing
-    await vi.runOnlyPendingTimersAsync(); // → idle (float-away beat)
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); }); // → idle (float-away beat)
   }
 
   it('fires onComplete exactly once after the 5th tap, holding through a long settle', async () => {
@@ -171,19 +171,19 @@ describe('Puffer Fish — sequential loop mechanic', () => {
     // Four full loops — kid pops fish 1..4. Goal isn't met yet.
     for (let i = 0; i < 4; i += 1) {
       await dismissOneFish();
-      await vi.runOnlyPendingTimersAsync(); // idle → arriving (next fish)
+      await act(async () => { await vi.runOnlyPendingTimersAsync(); }); // idle → arriving (next fish)
     }
     expect(onComplete).not.toHaveBeenCalled();
 
     // 5th fish swims in, kid taps — Goal met.
-    await vi.runOnlyPendingTimersAsync(); // arriving → waiting
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); }); // arriving → waiting
     fireEvent.click(screen.getByRole('button', { name: 'Fish' })); // → dismissing + onComplete
 
     expect(onComplete).toHaveBeenCalledTimes(1);
 
     // A generously long settle (covers the 5th fish's float-away beat plus
     // several intermissions' worth of stale-timer risk). No spurious 2nd call.
-    await vi.advanceTimersByTimeAsync(10_000);
+    await act(async () => { await vi.advanceTimersByTimeAsync(10_000); });
     expect(onComplete).toHaveBeenCalledTimes(1);
   });
 
@@ -197,13 +197,13 @@ describe('Puffer Fish — sequential loop mechanic', () => {
     // Drive 4 full loops, then the 5th tap.
     for (let i = 0; i < 4; i += 1) {
       await dismissOneFish();
-      await vi.runOnlyPendingTimersAsync(); // idle → arriving
+      await act(async () => { await vi.runOnlyPendingTimersAsync(); }); // idle → arriving
     }
-    await vi.runOnlyPendingTimersAsync(); // arriving → waiting
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); }); // arriving → waiting
     fireEvent.click(screen.getByRole('button', { name: 'Fish' })); // 5th tap
 
     // Drain everything time could possibly fire — many cycles' worth.
-    await vi.advanceTimersByTimeAsync(10_000);
+    await act(async () => { await vi.advanceTimersByTimeAsync(10_000); });
 
     expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'completed');
     expect(screen.queryByRole('button', { name: 'Fish' })).toBeNull();
@@ -229,7 +229,7 @@ describe('Puffer Fish — sequential loop mechanic', () => {
     assertAtMostOneFish();
 
     // waiting — same fish, centred.
-    await vi.runOnlyPendingTimersAsync();
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); });
     expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'waiting');
     assertAtMostOneFish();
 
@@ -239,7 +239,7 @@ describe('Puffer Fish — sequential loop mechanic', () => {
     assertAtMostOneFish();
 
     // idle — no fish on stage, intermission gap.
-    await vi.runOnlyPendingTimersAsync();
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); });
     expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'idle');
     assertAtMostOneFish();
   });
@@ -258,7 +258,7 @@ describe('Puffer Fish — sequential loop mechanic', () => {
     // Arriving / waiting — resting art: round eyes, no squint.
     expect(document.querySelector('[data-fish-part="eye-squint"]')).toBeNull();
     expect(document.querySelector('[data-fish-part="eye"]')).not.toBeNull();
-    await vi.runOnlyPendingTimersAsync();
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); });
     expect(document.querySelector('[data-fish-part="eye-squint"]')).toBeNull();
 
     // Tap → dismissing — the fish puffs: the happy squint replaces the round
@@ -296,7 +296,7 @@ describe('Puffer Fish — sequential loop mechanic', () => {
     expect(haptics.tick).toHaveBeenCalledTimes(1);
 
     // After the swim-in beat, the load-bearing `waiting` tap plays it too.
-    await vi.runOnlyPendingTimersAsync();
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); });
     fireEvent.click(screen.getByRole('button', { name: 'Fish' }));
     expect(sound.play).toHaveBeenCalledTimes(2);
     expect(sound.play).toHaveBeenLastCalledWith(puff);
@@ -312,7 +312,7 @@ describe('Puffer Fish — sequential loop mechanic', () => {
     // proving execution ran past the (absent) feedback calls.
     render(<PufferFish onComplete={vi.fn()} />);
 
-    await vi.runOnlyPendingTimersAsync();
+    await act(async () => { await vi.runOnlyPendingTimersAsync(); });
     expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'waiting');
 
     expect(() => fireEvent.click(screen.getByRole('button', { name: 'Fish' }))).not.toThrow();

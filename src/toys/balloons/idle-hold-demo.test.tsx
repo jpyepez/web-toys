@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { Balloons } from './Balloons';
 
 /**
@@ -52,7 +52,7 @@ describe('Balloons — idle HOLD demo (ghost-finger dwell)', () => {
 
     expect(screen.getByRole('main')).toHaveAttribute('data-demo-active', 'false');
 
-    await vi.advanceTimersByTimeAsync(PAST_IDLE_DELAY_MS);
+    await act(async () => { await vi.advanceTimersByTimeAsync(PAST_IDLE_DELAY_MS); });
 
     expect(screen.getByRole('main')).toHaveAttribute('data-demo-active', 'true');
   });
@@ -68,7 +68,7 @@ describe('Balloons — idle HOLD demo (ghost-finger dwell)', () => {
     // synthetic flag poke.
     const { container } = render(<Balloons onComplete={vi.fn()} />);
 
-    await vi.advanceTimersByTimeAsync(PAST_IDLE_DELAY_MS);
+    await act(async () => { await vi.advanceTimersByTimeAsync(PAST_IDLE_DELAY_MS); });
     expect(screen.getByRole('main')).toHaveAttribute('data-demo-active', 'true');
 
     // The child finally Holds for real — press and dwell so the fill climbs past
@@ -76,7 +76,7 @@ describe('Balloons — idle HOLD demo (ghost-finger dwell)', () => {
     // without floating the balloon.
     const balloon = balloons(container)[0];
     fireEvent.pointerDown(balloon);
-    await vi.advanceTimersByTimeAsync(800);
+    await act(async () => { await vi.advanceTimersByTimeAsync(800); });
     fireEvent.pointerUp(balloon);
 
     expect(screen.getByRole('main')).toHaveAttribute('data-demo-active', 'false');
@@ -87,7 +87,7 @@ describe('Balloons — idle HOLD demo (ghost-finger dwell)', () => {
 
     // SUPPRESSED: a fresh stall does not bring the demo back — the child has
     // shown they can Hold, so it never re-teaches.
-    await vi.advanceTimersByTimeAsync(PAST_IDLE_DELAY_MS);
+    await act(async () => { await vi.advanceTimersByTimeAsync(PAST_IDLE_DELAY_MS); });
     expect(screen.getByRole('main')).toHaveAttribute('data-demo-active', 'false');
   });
 
@@ -108,7 +108,7 @@ describe('Balloons — idle HOLD demo (ghost-finger dwell)', () => {
     fireEvent.pointerUp(balloon);
 
     // The stall still teaches — the tap didn't suppress it.
-    await vi.advanceTimersByTimeAsync(PAST_IDLE_DELAY_MS);
+    await act(async () => { await vi.advanceTimersByTimeAsync(PAST_IDLE_DELAY_MS); });
     expect(screen.getByRole('main')).toHaveAttribute('data-demo-active', 'true');
   });
 
@@ -128,11 +128,11 @@ describe('Balloons — idle HOLD demo (ghost-finger dwell)', () => {
     const bunch = balloons(container);
     expect(bunch.length).toBeGreaterThan(1);
 
-    await vi.advanceTimersByTimeAsync(PAST_IDLE_DELAY_MS);
+    await act(async () => { await vi.advanceTimersByTimeAsync(PAST_IDLE_DELAY_MS); });
     expect(screen.getByRole('main')).toHaveAttribute('data-demo-active', 'true');
 
     // Let the demo run on — its fill reforms, lifting no real balloon.
-    await vi.advanceTimersByTimeAsync(10_000);
+    await act(async () => { await vi.advanceTimersByTimeAsync(10_000); });
 
     expect(bunch.every((b) => b.getAttribute('data-balloon-state') === 'limp')).toBe(true);
     expect(screen.getByRole('main')).toHaveAttribute('data-toy-state', 'playing');
