@@ -180,15 +180,18 @@ describe('registered toys', () => {
     expect(screen.getByText('Tuck-In')).toBeInTheDocument();
     expect(screen.getAllByRole('link')).toHaveLength(5);
 
-    // The Counting Sheep Card still backs its preview cover with the cream tint,
-    // sourced from the Sheep-local palette (`palette.sheepWool`, ADR-0004 —
-    // slice #04). Pinned to the same palette the registry entry reads from so it
-    // stays a single source of truth; round-tripped through jsdom's parser as
-    // the generic tint test does.
+    // The Counting Sheep Card backs its preview cover with the meadow's own sky,
+    // sourced from the Toy-local palette (ADR-0004 — slice #04). It moved from
+    // `sheepWool` when the fleece came down to the house cast lightness: a tint
+    // is the Card's SURFACE, and a surface at the Critter's own lightness is a
+    // dark card rather than an atmosphere. Every Toy now tints from the field
+    // its scene sits in. Pinned to the same palette the registry entry reads
+    // from so it stays a single source of truth; round-tripped through jsdom's
+    // parser as the generic tint test does.
     const sheepCard = screen.getByRole('link', { name: /Counting Sheep/ });
     const sheepCover = sheepCard.querySelector('[data-card-cover]') as HTMLElement;
     const sheepProbe = document.createElement('div');
-    sheepProbe.style.backgroundColor = palette.sheepWool;
+    sheepProbe.style.backgroundColor = palette.sky;
     expect(sheepCover.style.backgroundColor).toBe(sheepProbe.style.backgroundColor);
   });
 

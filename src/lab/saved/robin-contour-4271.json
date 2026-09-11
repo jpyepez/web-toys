@@ -1,0 +1,163 @@
+{
+  "seed": 4271,
+  "mode": {
+    "line": "contour",
+    "inks": 3,
+    "species": "robin",
+    "silhouetteTest": false,
+    "showBackdrop": true,
+    "showCritter": true,
+    "sceneryLine": "contour",
+    "background": "canopy",
+    "ground": "light",
+    "aspect": "phone"
+  },
+  "paper": {
+    "l": 0.94,
+    "c": 0.018,
+    "h": 85
+  },
+  "ink": {
+    "l": 0.24,
+    "c": 0.03,
+    "h": 40
+  },
+  "scene": {
+    "sky": {
+      "l": 0.84,
+      "c": 0.045,
+      "h": 250
+    },
+    "groundDl": 0.14,
+    "groundHueRotate": -110
+  },
+  "critter": {
+    "hueAnchor": 40,
+    "hueSpread": 165,
+    "l": 0.5,
+    "c": 0.135,
+    "headBodyRatio": 1.55,
+    "bodyWidth": 25,
+    "eyeRadius": 6.2,
+    "eyeBelowMidline": 3.5,
+    "eyeSpread": 8.5,
+    "cheekScale": 0.62,
+    "cheekChroma": 0.075,
+    "beakLength": 9,
+    "bellyRise": 0.55,
+    "crownFlatten": 0.78
+  },
+  "line": {
+    "width": 2.6,
+    "taper": 0.42,
+    "wobble": 0.14,
+    "detailWidth": 1.05
+  },
+  "shading": {
+    "occlusionDl": 0.12,
+    "occlusionHueRotate": 24,
+    "occlusionDc": 0.02,
+    "contactStrength": 0.5
+  },
+  "disorder": {
+    "blobAmp": 0.035,
+    "instanceRotate": 3,
+    "instanceScale": 0.05,
+    "instanceHue": 5,
+    "asymmetry": 1
+  },
+  "scenery": {
+    "contourRatio": 0.62,
+    "chromaRatio": 0.7,
+    "fieldLightness": 0.9,
+    "horizon": 96,
+    "handCutFrequency": 0.05,
+    "handCutScale": 1.1,
+    "halftone": {
+      "cell": 1.9,
+      "angle": 45,
+      "extent": 0.62,
+      "bands": 10,
+      "inkDl": 0.09
+    },
+    "motif": {
+      "show": false,
+      "size": 26,
+      "x": 74,
+      "y": 26
+    },
+    "canopy": {
+      "ceilingDepth": 0.22,
+      "ceilingRelief": 0.55,
+      "lobeRatio": 0.075,
+      "lobeVariance": 0.55,
+      "massCount": 4,
+      "massDepth": 0.15,
+      "limbDensity": 1,
+      "limbThickness": 0.115,
+      "limbReach": 3.4,
+      "limbRake": 0.1,
+      "twigCount": 3,
+      "leafDepth": 4.2,
+      "perchesPerLimb": 2,
+      "boughThickness": 0.46,
+      "understoryDepth": 0.2,
+      "moonScale": 3,
+      "moonX": 76,
+      "moonY": 0.44,
+      "moteCount": 3
+    },
+    "meadow": {
+      "groundY": 0.72,
+      "groundRelief": 0.09,
+      "bankCount": 2,
+      "bankSpread": 2.8,
+      "bankRise": 0.1,
+      "tuftDensity": 2.6,
+      "tuftHeight": 0.34,
+      "tuftWidth": 0.2,
+      "bladesPerTuft": 5,
+      "flowerDensity": 1.4,
+      "flowerLobe": 0.045,
+      "foreDepth": 0.14,
+      "foreHeight": 0.5,
+      "sunScale": 2.6,
+      "sunX": 88,
+      "sunY": 0.05,
+      "boughThickness": 0.3,
+      "boughReach": 2.2,
+      "boughDrop": 0.1,
+      "lobeRatio": 0.09,
+      "lobeVariance": 0.55,
+      "leafDepth": 3.4,
+      "moteCount": 3
+    },
+    "foliage": {
+      "hue": 152,
+      "chroma": 0.06,
+      "depthDc": 0.028,
+      "depthDl": 0.035
+    },
+    "branch": {
+      "thickness": 4.4,
+      "sag": 2.6,
+      "drop": 8
+    },
+    "nest": {
+      "x": 74,
+      "width": 34,
+      "height": 21,
+      "weaveCount": 4,
+      "weaveWeight": 1.9,
+      "twigCount": 7,
+      "twigLength": 9,
+      "twigWeight": 0.85
+    }
+  },
+  "print": {
+    "grainFrequency": 0.72,
+    "grainOpacity": 0.14,
+    "misregistration": 0.55,
+    "plateOpacity": 0.93
+  }
+}

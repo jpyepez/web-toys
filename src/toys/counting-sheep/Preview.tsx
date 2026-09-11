@@ -1,130 +1,119 @@
+import { buildMeadow, type Frame } from './meadow';
+import { MEADOW, MEADOW_SEED } from './meadow-config';
+import { SheepFigure, SHEEP_ASPECT, FOOT_FRACTION } from './SheepDrawing';
 import { palette } from './palette';
 
 /**
- * Counting Sheep's tiny SVG preview-scene — the miniature meadow a Home Card
- * carries above its title. Drawn from inside the Toy so its composition stays
- * coherent with the live meadow (`MeadowBackdrop`) — visual coherence between
- * the preview and the live Toy is on-device per the PRD's Testing Decisions,
- * which is exactly why the preview lives next to the Toy that owns its
- * palette and silhouettes.
+ * Counting Sheep's Card preview — the miniature meadow the Home Card carries
+ * above its title.
  *
- * Same composition family as the post-pivot live meadow: bright cyan sky,
- * a couple of cloud clusters in the upper sky, two layered hills, one
- * stylised tree, one centred miniature Sheep on the foreground hill.
- * Mirrors the live scene's "sunny daytime meadow" register at Card scale.
- * No moon, no stars, no cottage, no fir cluster — those retired with the
- * dusk → day pivot recorded in polish PRD slice #03/#07 Notes + mobile-
- * rethink PRD slice #02 Notes.
+ * IT IS THE REAL SCENE, DRAWN BY THE REAL COMPONENTS. The scene comes from
+ * `buildMeadow` — the same generator, config and seed the live Toy runs —
+ * evaluated into a Card-shaped frame, and the Sheep is `SheepFigure`, the very
+ * component the Toy mounts. Nothing here is a miniature *of* the Toy; it is the
+ * Toy's own art at a smaller size.
  *
- * Scale is heavily reduced — primitives (cloud clusters, the tree, the
- * `MiniSheep`) are simplified for a Card-sized vignette so the preview
- * reads as a believable miniature, not a full inspection of the Toy.
+ * WHY THAT MATTERS MORE THAN IT LOOKS. This file was a hand-drawn vignette, and
+ * within a single afternoon of tuning it had drifted off the Toy it advertises:
+ * the Card showed a fat plank of a bough with three lumpy leaf blobs and a sun
+ * floating clear of every edge, while the live scene had a thin tapered limb
+ * with a fine fringe and a sun cropped hard into the corner. Two hand-maintained
+ * drawings of one scene cannot be kept in agreement — the same reason the Sheep
+ * once floated above a hill it was positioned beside rather than on. One
+ * generator read by both cannot fall out of step, and now a lab harvest updates
+ * the Card for free.
+ *
+ * The frame is 100x60 and a Sheep is 20 units of it, so the Card composes as a
+ * WIDE viewport — about five Sheep across, which is roughly the desktop
+ * proportion. That is deliberate: at a phone's 2.2 Sheep the generator correctly
+ * refuses to draw any far bank at all, and a Card is a landscape window.
  *
  * Decorative for accessibility — the Card's title and `<Link>` carry the
  * semantic load; the SVG is `aria-hidden` so screen readers skim past it.
  */
+
+const CARD: Frame = { w: 100, h: 60 };
+/** A Sheep's width in Card units — five Sheep across, a landscape proportion. */
+const CARD_SHEEP = 20;
+/** Computed once at module scope: the generator is pure, so this never changes. */
+const ART = buildMeadow(MEADOW, CARD, CARD_SHEEP, MEADOW_SEED);
+
 export function Preview() {
   return (
     <svg
-      viewBox="0 0 100 60"
+      viewBox={`0 0 ${CARD.w} ${CARD.h}`}
       preserveAspectRatio="xMidYMid meet"
       width="100%"
       height="100%"
       aria-hidden="true"
       style={{ display: 'block' }}
     >
-      {/* Sky band — bright cyan-blue daytime fill, same `palette.skyUpper`
-       * as the live meadow. */}
-      <rect x="0" y="0" width="100" height="60" fill={palette.skyUpper} />
-      {/* Two small cloud clusters in the upper sky — miniature echo of the
-       * live meadow's four-cloud scatter. Same palette.clouds cool white. */}
-      <MiniCloud cx={22} cy={12} />
-      <MiniCloud cx={64} cy={8} />
-      {/* Distant hill silhouette — teal-green from `palette.hillDistant`. */}
-      <path
-        d="M 0 36 Q 25 30 50 34 T 100 32 L 100 60 L 0 60 Z"
-        fill={palette.hillDistant}
-      />
-      {/* Foreground hill silhouette — vibrant lime from `palette.hillNear`. */}
-      <path
-        d="M 0 46 Q 30 40 60 44 T 100 43 L 100 60 L 0 60 Z"
-        fill={palette.hillNear}
-      />
-      {/* Single stylised tree on the right side, mirroring the live
-       * meadow's tree composition at preview scale. Canopy circle in
-       * `palette.hillNear`, trunk rect in `palette.scenery` warm-brown. */}
-      <rect x="80" y="40" width="1.5" height="4" fill={palette.scenery} />
-      <circle cx="80.5" cy="37" r="3.5" fill={palette.hillNear} />
-      {/* One centred miniature Sheep on the foreground hill line — the
-       * mobile-rethink mechanic's one-Sheep-at-a-time grammar, previewed. */}
-      <MiniSheep cx={46} cy={41} />
+      {/* Paint order IS depth order, exactly as in `MeadowBackdrop`: sky, the
+          cropped sun, the bough that crops it, the far banks, the walking line,
+          what stands on it, the Sheep, then the corner grass in front. */}
+      <linearGradient id="counting-sheep-preview-sky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stopColor={palette.skyHigh} />
+        <stop offset="1" stopColor={palette.sky} />
+      </linearGradient>
+      <rect x="0" y="0" width={CARD.w} height={CARD.h} fill="url(#counting-sheep-preview-sky)" />
+
+      {ART.sun && <circle cx={ART.sun.cx} cy={ART.sun.cy} r={ART.sun.r} fill={palette.sun} />}
+
+      {ART.bough && (
+        <g>
+          {ART.bough.leaves && <path d={ART.bough.leaves} fill={palette.boughLeaf} />}
+          <path d={ART.bough.ink} fill={palette.contour} />
+          <path d={ART.bough.body} fill={palette.bough} />
+        </g>
+      )}
+
+      {ART.banks.map((b, i) => (
+        <g key={`bank-${i}`}>
+          <path d={b.fill} fill={palette.bankFar} />
+          <path d={b.relief} fill={palette.bankShade} opacity={0.4} />
+        </g>
+      ))}
+
+      <path d={ART.ground.fill} fill={palette.bankNear} />
+      <path d={ART.ground.relief} fill={palette.bankShade} opacity={0.3} />
+
+      {ART.tufts.map((t, i) => (
+        <g key={`tuft-${i}`} fill={i % 2 === 0 ? palette.tuft : palette.tuftShade}>
+          {t.blades.map((d, k) => (
+            <path key={k} d={d} />
+          ))}
+        </g>
+      ))}
+
+      {ART.flowers.map((f, i) => (
+        <g key={`flower-${i}`}>
+          <path d={f.stem} fill={palette.tuftShade} />
+          {f.lobes.map((l, k) => (
+            <circle key={k} cx={l.cx} cy={l.cy} r={l.r} fill={palette.flower} />
+          ))}
+          <circle cx={f.heart[0]} cy={f.heart[1]} r={f.lobes[0].r * 0.5} fill={palette.flowerHeart} />
+        </g>
+      ))}
+
+      {/* The Sheep, standing on the line the generator emitted — the same
+          `stand` point the live Toy anchors its hooves to, and the same figure
+          it draws there. Its own box is 100 wide with the hooves at
+          `FOOT_FRACTION` of its height, so the placement is derived rather than
+          nudged into looking right. */}
+      <g
+        transform={`translate(${ART.stand[0] - CARD_SHEEP / 2} ${ART.stand[1] - CARD_SHEEP * SHEEP_ASPECT * FOOT_FRACTION}) scale(${CARD_SHEEP / 100})`}
+      >
+        <SheepFigure fleece="terracotta" />
+      </g>
+
+      {ART.fore && (
+        <g>
+          <path d={ART.fore.base} fill={palette.foreGrass} />
+          {ART.fore.blades.map((d, i) => (
+            <path key={i} d={d} fill={i % 3 === 0 ? palette.foreGrassShade : palette.foreGrass} />
+          ))}
+        </g>
+      )}
     </svg>
-  );
-}
-
-/**
- * One miniature cloud — three overlapping circles + a flat-bottom ellipse,
- * scaled for Card vignette. Same `<Cloud>` primitive as the live meadow
- * but with the radii inlined at preview scale rather than parameterised.
- */
-function MiniCloud({ cx, cy }: { cx: number; cy: number }) {
-  return (
-    <g>
-      <ellipse cx={cx} cy={cy + 0.8} rx={3} ry={0.9} fill={palette.clouds} />
-      <circle cx={cx - 1.8} cy={cy} r={1.5} fill={palette.clouds} />
-      <circle cx={cx + 1.8} cy={cy} r={1.5} fill={palette.clouds} />
-      <circle cx={cx} cy={cy - 1} r={1.8} fill={palette.clouds} />
-    </g>
-  );
-}
-
-/**
- * One miniature Sheep — a fluffy wool body and a silhouette head wearing the
- * same cute face the live Critter now carries (big bright eyes with a catchlight,
- * a cream muzzle, rosy cheeks, a gentle smile), scaled down for a Card-sized
- * vignette. Structural recognition (it's a friendly Sheep) wins over anatomical
- * detail at this scale, but the face is the recognisable hook — a faceless dark
- * blob no longer matches the live meadow. Every fill sources a palette token.
- */
-function MiniSheep({ cx, cy }: { cx: number; cy: number }) {
-  // Head centre, off to the right of the wool body — same facing as the live
-  // Sheep (head right, fleece left).
-  const hx = cx + 8;
-  const hy = cy - 1.5;
-  return (
-    <g>
-      {/* tiny legs — drawn behind the fleece and extended low enough that the
-       * stub feet poke out below the wool (the bottom wool circle reaches
-       * cy + 6.6, so the legs must run past that to be seen) */}
-      <rect x={cx - 4} y={cy + 4} width="1.6" height="5.5" rx="0.6" fill={palette.sheepSilhouette} />
-      <rect x={cx + 1.5} y={cy + 4} width="1.6" height="5.5" rx="0.6" fill={palette.sheepSilhouette} />
-      {/* ears flanking the top of the head */}
-      <ellipse cx={hx - 2.8} cy={hy - 3.2} rx="1.5" ry="0.95" fill={palette.sheepSilhouette} />
-      <ellipse cx={hx + 2.8} cy={hy - 3.2} rx="1.5" ry="0.95" fill={palette.sheepSilhouette} />
-      {/* fluffy wool body — four overlapping circles */}
-      <circle cx={cx - 5} cy={cy} r="5" fill={palette.sheepWool} />
-      <circle cx={cx + 3} cy={cy} r="5" fill={palette.sheepWool} />
-      <circle cx={cx - 1} cy={cy - 4} r="5.4" fill={palette.sheepWool} />
-      <circle cx={cx - 1} cy={cy + 1} r="5.6" fill={palette.sheepWool} />
-      {/* head */}
-      <ellipse cx={hx} cy={hy} rx="4" ry="4.2" fill={palette.sheepSilhouette} />
-      {/* cream muzzle snout */}
-      <ellipse cx={hx} cy={hy + 1.8} rx="2.3" ry="1.8" fill={palette.muzzle} />
-      {/* big bright eyes, pupils converged inward, both catchlights same side */}
-      <ellipse cx={hx - 1.5} cy={hy - 0.5} rx="1.05" ry="1.25" fill={palette.eyeWhite} />
-      <ellipse cx={hx + 1.5} cy={hy - 0.5} rx="1.05" ry="1.25" fill={palette.eyeWhite} />
-      <circle cx={hx - 1.2} cy={hy - 0.2} r="0.7" fill={palette.eyePupil} />
-      <circle cx={hx + 1.2} cy={hy - 0.2} r="0.7" fill={palette.eyePupil} />
-      <circle cx={hx - 0.95} cy={hy - 0.55} r="0.28" fill={palette.eyeShine} />
-      <circle cx={hx + 1.45} cy={hy - 0.55} r="0.28" fill={palette.eyeShine} />
-      {/* gentle smile under the muzzle */}
-      <path
-        d={`M ${hx - 1.2} ${hy + 1.6} Q ${hx} ${hy + 2.7} ${hx + 1.2} ${hy + 1.6}`}
-        fill="none"
-        stroke={palette.eyePupil}
-        strokeWidth="0.5"
-        strokeLinecap="round"
-      />
-    </g>
   );
 }

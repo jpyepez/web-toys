@@ -4,23 +4,27 @@ import { SkyBackdrop } from './SkyBackdrop';
 import { HoldableBalloon } from './HoldableBalloon';
 import { GhostHoldFinger } from './GhostHoldFinger';
 import { pip, pop, raspberry } from './sounds';
-import { palette } from './palette';
+import { BALLOONS } from './palette';
+import { useSkyScene } from './useSkyScene';
+import { BALLOON_WIDTH, KNOT_OFFSET, VB_W } from './balloon-metrics';
 
 /**
- * The bunch — each balloon's body colour (slice #1's palette) plus where it sits
- * in the scene. The bunch SIZE is `BUNCH.length`, the on-device-tuned duration
- * lever (like the sheep / fish / cast counts), deliberately NOT a unit-asserted
- * magic number (slice Notes). Five distinct colours for variety; there is no
- * hidden identity/reveal (PRD), so they are indexed, not named for a hue.
+ * The bunch — the five balloon body colours, in the order the scene lays them
+ * out. The bunch SIZE is `BUNCH.length`, the on-device-tuned duration lever
+ * (like the sheep / fish / cast counts), deliberately NOT a unit-asserted magic
+ * number (slice Notes). Five distinct colours for variety; there is no hidden
+ * identity/reveal (PRD), so they are indexed, not named for a hue.
  *
- * `left`/`top` (percent of the Toy's `<main>`) fan the balloons into a loose
- * bunch over the peg — a gentle arch across the reachable MID-ZONE: high enough
- * to clear the bottom palm-rest dead zone where a thumb rests, low enough to
- * clear the top safe-area. They overlap as a believable cluster (the PRD's "bunch
- * tied to a low peg"), each still presenting its own tappable crown. The exact
- * tuples are on-device-tuned per AC #7 — this fan is the starting point for the
- * on-device reachability pass on a 390×844 phone, not a unit-asserted contract.
+ * WHERE EACH ONE SITS IS NO LONGER HERE. It used to be a hand-tuned
+ * `{ left, top }` percentage per balloon, sitting beside a peg drawn at x 50 of
+ * a band that STRETCHED with the viewport — two hand-maintained sets of
+ * coordinates for one relationship, which agreed on a 390x844 phone and nowhere
+ * else. The scene emits the anchors now (`sky.ts`), fanned off the peg's own
+ * tether point, so the strings land on the stake at every aspect ratio because
+ * they are drawn TO it rather than toward where it used to be.
  */
+const BUNCH = BALLOONS;
+
 /**
  * Idle delay before the wordless ghost-finger HOLD demo arms (ms). With no real
  * Hold yet, the stall flips the demo active and SHOWS the child the sustained
@@ -40,14 +44,6 @@ const IDLE_DEMO_DELAY_MS = 2500;
  */
 const PIP_THROTTLE_MS = 80;
 
-const BUNCH = [
-  { color: palette.balloon1, left: 22, top: 26 },
-  { color: palette.balloon2, left: 50, top: 20 },
-  { color: palette.balloon3, left: 78, top: 26 },
-  { color: palette.balloon4, left: 36, top: 50 },
-  { color: palette.balloon5, left: 64, top: 50 },
-] as const;
-
 /**
  * Balloons — the free-order bunch (balloons PRD, slice #04). The first Toy to
  * break the sequential one-at-a-time conveyor: every balloon is present from the
@@ -61,6 +57,29 @@ const BUNCH = [
  * dismissing conveyor, so there is nothing to share.
  */
 export function Balloons({ onComplete, sound, haptics }: ToyProps) {
+  /**
+   * The scene geometry, shared with the backdrop. Every balloon hangs off an
+   * anchor the generator emitted from the peg it draws, so the bunch and the
+   * stake cannot drift apart across aspect ratios — see `useSkyScene`. Rebuilt
+   * only when the viewport crosses an aspect bucket.
+   */
+  const scene = useSkyScene(BUNCH.length);
+
+  /**
+   * The slot the wordless demo points at — the middle balloon of the upper row,
+   * which is the one furthest from a thumb and so the one a stalling child is
+   * least likely to have found. Read off the SCENE rather than pinned at a
+   * percentage of its own: a hint that presses empty sky teaches nothing, and a
+   * hand-tuned position beside a generated bunch is exactly the drift this
+   * migration removed everywhere else.
+   */
+  const demoIndex = Math.min(BUNCH.length - 1, Math.floor((Math.ceil(BUNCH.length / 2) - 1) / 2));
+  const demoAnchor = scene.art.anchors[demoIndex] ?? scene.art.tether;
+  const demoSlot = {
+    left: `${((demoAnchor[0] / scene.frame.w) * 100).toFixed(3)}%`,
+    top: `calc(${((demoAnchor[1] / scene.frame.h) * 100).toFixed(3)}% - ${BALLOON_WIDTH} * ${KNOT_OFFSET.toFixed(4)})`,
+    color: BUNCH[demoIndex],
+  };
   // Floats counted toward the Goal — incremented as each balloon detaches (its
   // `onFloat`). The bunch runs N concurrent lifecycles rather than one conveyor,
   // so this is a simple tally, not a state machine: the order balloons float in
@@ -139,77 +158,89 @@ export function Balloons({ onComplete, sound, haptics }: ToyProps) {
     <main
       data-toy-state={goalMet ? 'completed' : 'playing'}
       data-demo-active={demoActive}
-      style={{
-        position: 'relative',
-        minHeight: '100dvh',
-        // The grassy-rise + peg band height, shared with SkyBackdrop's
-        // bottom-anchored ground layer (which reads `var(--balloons-ground)`).
-        // Defined on the common ancestor so the horizon sits at a fixed fraction
-        // of the viewport across aspect ratios (ADR-0005). On-device-tuned; the
-        // name is the contract. Deliberately a thin lower band — the tall sky
-        // above is the load-bearing play space the balloons rise into.
-        ['--balloons-ground' as string]: 'clamp(120px, 22dvh, 280px)',
-      }}
+      style={{ position: 'relative', minHeight: '100dvh' }}
     >
-      <SkyBackdrop />
-      {BUNCH.map(({ color, left, top }, i) => (
-        // Static positioning wrapper — places the balloon in the mid-zone and
-        // owns the centring `translateX(-50%)`. The float-up's `x`/`y` deltas live
-        // on the `motion.div` INSIDE HoldableBalloon, so Motion fully owns that
-        // transform while this wrapper owns the layout one (the
-        // `motion-transform-ownership` gotcha — never let both write `transform`
-        // on the same element).
-        //
-        // `pointer-events: none` is load-bearing: this slot's rectangle is far
-        // larger than the round balloon and the slots OVERLAP across the bunch, so
-        // an opaque slot would steal a tap meant for the balloon visible beneath
-        // it (the on-device "wrong balloon inflates" bug). With every slot
-        // transparent, the only hit-targets in the bunch are the balloon shapes
-        // themselves (HoldableBalloon's `interactive` hit-target), so a press
-        // always routes to the balloon under the finger; it still reaches the
-        // balloon's own handlers by bubbling up through this transparent slot.
-        <div
-          key={i}
-          data-balloon-slot=""
-          style={{
-            position: 'absolute',
-            left: `${left}%`,
-            top: `${top}%`,
-            transform: 'translateX(-50%)',
-            pointerEvents: 'none',
-          }}
-        >
-          <HoldableBalloon
-            color={color}
-            onFloat={() => {
-              // The detach reward beat (slice #07): a pop/"boing" + a haptic
-              // pulse as the balloon snaps off the peg and leaps free. Through the
-              // injected utilities (ADR-0003); optional, so a bare mount is silent.
-              sound?.play(pop);
-              haptics?.tick();
-              setFloated((n) => n + 1);
+      <SkyBackdrop scene={scene} />
+      {BUNCH.map((color, i) => {
+        // The knot the scene hung this balloon from, and the vector from it to
+        // the peg. Both are frame units; the tail is converted into the
+        // DRAWING's own box units (its viewBox is `VB_W` wide and rendered
+        // `balloonW` frame units across) because that is the space the string is
+        // drawn in.
+        const [ax, ay] = scene.art.anchors[i] ?? scene.art.tether;
+        const unit = VB_W / scene.balloonW;
+        const tail = {
+          dx: (scene.art.tether[0] - ax) * unit,
+          dy: (scene.art.tether[1] - ay) * unit,
+        };
+        return (
+          // Static positioning wrapper — places the balloon's KNOT on its anchor
+          // and owns the centring `translateX(-50%)`. The float-up's `x`/`y`
+          // deltas live on the `motion.div` INSIDE HoldableBalloon, so Motion
+          // fully owns that transform while this wrapper owns the layout one
+          // (the `motion-transform-ownership` gotcha — never let both write
+          // `transform` on the same element).
+          //
+          // The `top` is the anchor MINUS how far the knot sits below the
+          // drawing's own top edge (`KNOT_OFFSET` balloon-widths), so the
+          // placement is derived from the drawing's box rather than nudged into
+          // looking right — the same arithmetic that stands the Sheep on the
+          // meadow's walking line.
+          //
+          // `pointer-events: none` is load-bearing: this slot's rectangle is far
+          // larger than the round balloon and the slots OVERLAP across the
+          // bunch, so an opaque slot would steal a tap meant for the balloon
+          // visible beneath it (the on-device "wrong balloon inflates" bug).
+          // With every slot transparent, the only hit-targets in the bunch are
+          // the balloon shapes themselves (HoldableBalloon's `interactive`
+          // hit-target), so a press always routes to the balloon under the
+          // finger; it still reaches the balloon's own handlers by bubbling up
+          // through this transparent slot.
+          <div
+            key={i}
+            data-balloon-slot=""
+            style={{
+              position: 'absolute',
+              left: `${((ax / scene.frame.w) * 100).toFixed(3)}%`,
+              top: `calc(${((ay / scene.frame.h) * 100).toFixed(3)}% - ${BALLOON_WIDTH} * ${KNOT_OFFSET.toFixed(4)})`,
+              transform: 'translateX(-50%)',
+              pointerEvents: 'none',
             }}
-            onHold={() => {
-              // A real, sustained Hold — cancel the teaching demo at once and
-              // suppress it for the rest of play (AC #2).
-              heldForRealRef.current = true;
-              setDemoActive(false);
-            }}
-            onFillProgress={onFillProgress}
-            onLeak={() => {
-              // An early lift before the cap — voice the funny descending
-              // raspberry as the balloon deflates (slice #07). Through the
-              // injected Sound (ADR-0003); optional, so a bare mount is silent.
-              sound?.play(raspberry);
-            }}
-          />
-        </div>
-      ))}
+          >
+            <HoldableBalloon
+              color={color}
+              tail={tail}
+              onFloat={() => {
+                // The detach reward beat (slice #07): a pop/"boing" + a haptic
+                // pulse as the balloon snaps off the peg and leaps free. Through
+                // the injected utilities (ADR-0003); optional, so a bare mount is
+                // silent.
+                sound?.play(pop);
+                haptics?.tick();
+                setFloated((n) => n + 1);
+              }}
+              onHold={() => {
+                // A real, sustained Hold — cancel the teaching demo at once and
+                // suppress it for the rest of play (AC #2).
+                heldForRealRef.current = true;
+                setDemoActive(false);
+              }}
+              onFillProgress={onFillProgress}
+              onLeak={() => {
+                // An early lift before the cap — voice the funny descending
+                // raspberry as the balloon deflates (slice #07). Through the
+                // injected Sound (ADR-0003); optional, so a bare mount is silent.
+                sound?.play(raspberry);
+              }}
+            />
+          </div>
+        );
+      })}
       {/* The wordless HOLD demo's ghost finger (slice #06), overlaid while the
        * child stalls. Rendered only when `demoActive` and the Goal isn't yet met,
        * `pointer-events: none` so a real Hold underneath is untouched, and drawn
        * over its OWN faint demo balloon so it never advances the real bunch. */}
-      {demoActive && !goalMet && <GhostHoldFinger />}
+      {demoActive && !goalMet && <GhostHoldFinger {...demoSlot} />}
     </main>
   );
 }

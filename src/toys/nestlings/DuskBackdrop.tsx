@@ -1,5 +1,105 @@
+import { memo, useId } from 'react';
 import { motion } from 'motion/react';
+import { blob, contourRing, crescent, quadPts, taperedOutline } from '../../shell/art/geometry';
+import { disorder, line as houseLine } from '../../shell/art/house';
+import { stream } from '../../shell/art/rng';
 import { palette } from './palette';
+import type { CanopyScene } from './useCanopyScene';
+
+/**
+ * The nest, built from the same primitives as the Critters.
+ *
+ * It used to be uniform `stroke`s and un-jittered arcs — the original
+ * construction, left untouched while the cast was rebuilt around it. That is
+ * what made the scene read as two different styles: the birds had a
+ * variable-width contour, jittered silhouettes and derived occlusion, and the
+ * nest three feet away had none of it.
+ *
+ * Its own branch is GONE. The nest used to carry a limb of its own, drawn inside
+ * its aspect-locked layer, while the scene drew another one across the full
+ * width — two branches at two scales in the same picture. The nest is now
+ * cradled in the canopy's bough, which is a real limb crossing the frame, so it
+ * needs no branch of its own.
+ *
+ * Computed once at module scope. Nothing here may recompute while a bird is
+ * being dragged.
+ */
+const NEST = (() => {
+  const rnd = stream(4271, 'nestlings-scene');
+  const branchY = 96;
+  const cx = 100;
+  const cy = 68;
+  const w = 92;
+  const h = 46;
+  const contour = houseLine.contour * 1.05;
+
+  const bowl = blob(cx, cy, w / 2, h / 2, disorder.blobAmp * 0.8, rnd, 24);
+  const rim = blob(cx, cy - h * 0.42, w / 2.45, h * 0.17, disorder.blobAmp, rnd, 18);
+
+  /*
+   * The weave CROSSES. Parallel strands spanning the bowl at even heights read
+   * as a stack of discs no matter how they are coloured — which is exactly what
+   * the first two attempts produced. Real woven twigs lie at opposing angles and
+   * do not each span the full width, so each strand here is shorter than the
+   * bowl, offset along it, and tilted against its neighbour.
+   */
+  const weaves: Array<{ d: string; light: boolean }> = [];
+  for (let i = 0; i < 7; i++) {
+    const t = (i + 0.5) / 7;
+    const y = cy - h * 0.2 + t * h * 0.6;
+    const norm = (y - cy) / (h * 0.6);
+    const span = w * 0.44 * Math.sqrt(Math.max(0.06, 1 - norm * norm));
+    const dir = i % 2 === 0 ? 1 : -1;
+    const tilt = dir * (2.5 + rnd() * 3.5);
+    // Each strand covers 55-80% of the available span, placed off-centre, so no
+    // two terminate on the same vertical.
+    const frac = 0.55 + rnd() * 0.25;
+    const mid = cx + (rnd() - 0.5) * span * 0.5;
+    const x0 = mid - span * frac;
+    const x1 = mid + span * frac;
+    weaves.push({
+      d: taperedOutline(
+        quadPts([x0, y + tilt], [mid, y + tilt * 0.2 + h * 0.05], [x1, y - tilt], 12),
+        3.4,
+        0.5,
+      ),
+      light: i % 2 === 0,
+    });
+  }
+
+  const twigs: string[] = [];
+  for (let i = 0; i < 9; i++) {
+    const t = i / 8;
+    const ang = -Math.PI * (0.08 + t * 0.84) + (rnd() - 0.5) * 0.22;
+    const len = 15 * (0.55 + rnd() * 0.9);
+    const ox = cx + Math.cos(ang) * w * 0.44;
+    const oy = cy - h * 0.1 + Math.sin(ang) * h * 0.3;
+    twigs.push(
+      taperedOutline(
+        quadPts([ox, oy], [ox + Math.cos(ang) * len * 0.5, oy + Math.sin(ang) * len * 0.5 - 2], [ox + Math.cos(ang) * len, oy + Math.sin(ang) * len], 8),
+        2.4,
+        0.28,
+      ),
+    );
+  }
+
+  return {
+    bowl,
+    bowlInk: contourRing(bowl.pts, contour, houseLine.taper, houseLine.wobble, stream(4271, 'bowl')),
+    rim,
+    rimInk: contourRing(rim.pts, contour * 0.8, houseLine.taper, houseLine.wobble, stream(4271, 'rim')),
+    weaves,
+    twigs,
+    seat: crescent(cx, branchY - 7, w * 0.36, 0.8, 0.2),
+    /** Where the bowl's underside sits in this viewBox, so the layer can be
+     *  placed with its nest ON the bough rather than near it. */
+    bottom: cy + h / 2 + contour,
+    /** The opening's centre height, so a bird can be sat IN the bowl. */
+    rimCy: cy - h * 0.42,
+    inner: crescent(cx, cy - h * 0.18, w * 0.5, 0.62, 0.5),
+    lip: crescent(cx, cy - h * 0.44, w * 0.47, 0.78, 0.3),
+  };
+})();
 
 /**
  * The first stars of the settle Outro (slice #5) — a scatter of glints twinkled
@@ -32,57 +132,220 @@ const STARS = [
  */
 export const SETTLE_MS = 2400;
 
+
+
 /**
- * The Nestlings dusk backdrop — the analog of `SkyBackdrop` /
- * `UnderwaterBackdrop` / `BarnyardBackdrop`: the code-drawn world behind the
- * fledgling Critters (ADR-0002, all SVG; ADR-0004, the Toy owns its scene
- * assets locally). Every colour sources the local dusk `palette`, so there are
- * no hardcoded HSLs here.
+ * The nest's width in bird-widths. The scene's unit is a bird, not the viewport
+ * — a nest sized in `vw` is two and a half fledglings wide on a phone and a
+ * saucer on a desktop.
+ */
+const NEST_BIRDS = 2.6;
+
+/**
+ * The canopy plates — everything that depends only on the scene geometry.
  *
- * Bottom-anchored layered architecture (ADR-0005): the scene is layers that each
- * stay locked across aspect ratios rather than one sliced portrait viewBox the
- * Critter is positioned over independently. The ground band's height is a shared
- * CSS length (`--nestlings-ground`, a `dvh` clamp set on the Toy's `<main>` in a
- * later slice) so the horizon sits at a fixed fraction of the viewport at every
- * aspect ratio.
+ * Memoized on the scene object, which the shared hook only replaces when the
+ * viewport crosses an aspect bucket. `hovered` and `placedCount` change on the
+ * exact frames a child is moving a bird, and re-running several hundred lobe
+ * arcs through the reconciler on those frames is the one thing this backdrop
+ * must never do.
+ */
+const CanopyPlates = memo(function CanopyPlates({ scene }: { scene: CanopyScene }) {
+  const { art } = scene;
+  return (
+    <>
+      {/* The moon — BEHIND the foliage, so the canopy crops it. A disc laid on
+          top of the sky is a sticker; a disc the leaves cut into is a distance.
+          It is the "single oversized cropped motif" direction, absorbed into the
+          canopy rather than competing with it. */}
+      {art.moon && (
+        <circle cx={art.moon.cx} cy={art.moon.cy} r={art.moon.r} fill={palette.moon} />
+      )}
+
+      {/* The ceiling, then its shaded rim ON TOP — the rim is a band following
+          the scalloped underside, so it only reads if it is painted after the
+          mass it sits on. Light comes from the moon and every element obeys
+          that one direction; the scene this replaces had no occlusion at all. */}
+      <path d={art.ceiling.fill} fill={palette.foliage} />
+      <path d={art.ceiling.relief} fill={palette.foliageShade} opacity={0.55} />
+
+      {/* Hanging masses — the nearer plane, overlapping the ceiling and each
+          other. That overlap IS the depth; there is no horizon anywhere in this
+          scene, which is what stops it reading as stripes. */}
+      {art.masses.map((m, i) => (
+        <g key={i}>
+          <path d={m.fill} fill={palette.foliageNear} />
+          <path d={m.relief} fill={palette.foliageShade} opacity={0.5} />
+        </g>
+      ))}
+
+      {/* Perch limbs. Foliage first so the limb sits INSIDE its own leaves
+          rather than on top of them, then ink, then fill — the same
+          grow-and-cover order the nest uses, so a contour can never
+          self-intersect. */}
+      {art.limbs.map((l, i) => (
+        <g key={i}>
+          {l.leaves && <path d={l.leaves} fill={palette.foliageNear} />}
+          <path d={l.ink} fill={palette.contour} />
+          {l.twigs.map((d, k) => (
+            <path key={k} d={d} fill={palette.branch} />
+          ))}
+          <path d={l.body} fill={palette.limb} />
+        </g>
+      ))}
+
+      {/* The bough the nest is cradled in — cropped by both side edges, so it
+          continues past the frame and is never an object to count. It carries
+          the `branch` hook: it IS the branch, and the pinstripe that used to
+          span the frame at a fixed height is gone. */}
+      {art.bough.leaves && <path d={art.bough.leaves} fill={palette.foliageNear} />}
+      <path d={art.bough.ink} fill={palette.contour} />
+      <path data-dusk-layer="branch" d={art.bough.body} fill={palette.branch} />
+
+      {/* The understory: the cropped near foliage in the two bottom corners, and
+          the bottom-anchored band this scene stands on (ADR-0005). It is the
+          third plane — the single strongest "this is a place" cue — and it is
+          corner-weighted precisely so it frames the nest's drop zone and never
+          covers it. */}
+      {art.understory && (
+        <path data-dusk-layer="ground" d={art.understory.fill} fill={palette.understory} />
+      )}
+    </>
+  );
+});
+
+/**
+ * The nest, as bare SVG content in its own 200x120 box — no `<svg>` wrapper, no
+ * sizing — so it can be dropped into any viewBox at any scale.
  *
- * Emphasis split (slice notes): the deepening dusk SKY above is the mood space
- * the carry happens through; the nest + ground band is the reachable lower
- * anchor the birds are tucked into (clear of the bottom palm-rest dead zone).
+ * Extracted so the Home Card can draw the REAL nest. The Card used to carry a
+ * hand-simplified stand-in built from `<ellipse>`s and a dozen `stroke`d arcs,
+ * which is both constructions this file was rebuilt away from, sitting on a Card
+ * whose scene is now generated and contoured. Two hand-maintained drawings of one
+ * object cannot be kept in agreement; one figure rendered at two sizes cannot
+ * fall out of step.
+ */
+export function NestFigure() {
+  // Per-instance, so a Card and a live scene on one page never share a clip.
+  const uid = useId().replace(/:/g, '');
+  return (
+    <>
+      <path d={NEST.seat} fill={palette.nestShadow} opacity={0.6} />
+
+      <path d={NEST.bowlInk} fill={palette.contour} fillRule="evenodd" />
+      <path d={NEST.bowl.d} fill={palette.nest} />
+
+      <clipPath id={`nestlings-bowl-clip-${uid}`}>
+        <path d={NEST.bowl.d} />
+      </clipPath>
+      <g clipPath={`url(#nestlings-bowl-clip-${uid})`}>
+        <path d={NEST.inner} fill={palette.nestShadow} opacity={0.55} />
+        {/* Alternating light and shadow strands, so the crossing reads as depth
+            rather than as a pattern of stripes. */}
+        {NEST.weaves.map((strand, i) => (
+          <path
+            key={i}
+            d={strand.d}
+            fill={strand.light ? palette.nestRim : palette.nestShadow}
+            opacity={strand.light ? 0.9 : 0.5}
+          />
+        ))}
+      </g>
+
+      <g fill={palette.branch}>
+        {NEST.twigs.map((d, i) => (
+          <path key={i} d={d} />
+        ))}
+      </g>
+
+      <path d={NEST.rimInk} fill={palette.contour} fillRule="evenodd" />
+      {/* The opening carries the `data-dusk-layer="nest"` hook — slice #3 reads
+          its rect for the measured drop zone. Filled with the SHADOW colour: a
+          bowl seen from slightly above shows a dark interior, and filling it
+          light turns the nest into a covered dish. */}
+      <path data-dusk-layer="nest" d={NEST.rim.d} fill={palette.nestShadow} />
+      <path d={NEST.lip} fill={palette.nestRim} opacity={0.9} />
+    </>
+  );
+}
+
+/** Where the bowl's underside and its opening sit in the 200x120 nest box, so a
+ *  consumer can place the nest on a bough and a bird inside the bowl without
+ *  re-deriving either. */
+export const NEST_BOX = { w: 200, h: 120, bottom: NEST.bottom, rimCx: 100, rimCy: NEST.rimCy };
+
+/**
+ * The Nestlings dusk backdrop — the code-drawn world behind the fledgling
+ * Critters (ADR-0002, all SVG; ADR-0004, the Toy owns its scene assets
+ * locally). Every colour sources the local dusk `palette`, so there are no
+ * hardcoded HSLs here.
  *
- * Layers are identified by `data-dusk-layer` so tests address the composition
+ * WHAT THIS IS NOW, AND WHY. It used to be three horizontal stripes — a flat
+ * sky, a halftone dome, a grass band — plus a full-width pinstripe branch.
+ * Nothing overlapped anything, nothing was cropped by the frame, every edge was
+ * horizontal; that is the most inert composition available and no amount of
+ * texture rescues it. Worse, it contradicted itself: a nest on a branch directly
+ * above a flat field, both at the same depth, so the picture could not say
+ * whether you were up a tree or standing in a meadow.
+ *
+ * The camera is now INSIDE the canopy, and the scene is built only from shape
+ * classes that cannot be mistaken for a fledgling — limbs, boughs and foliage
+ * mass, with no crowns anywhere. `canopy.ts` carries that argument in full.
+ *
+ * ONE VIEWBOX, MATCHED TO THE VIEWPORT. The scene is composed into a
+ * `0 0 100 h` box whose aspect equals the viewport's, so `preserveAspectRatio`
+ * has nothing to correct and nothing is stretched or sliced. That replaces the
+ * old stack of separately-positioned layers (a `none`-stretched ground band, a
+ * screen-space halftone, an aspect-locked nest floated over a CSS length), which
+ * agreed with each other on a phone and came apart at 16:10.
+ *
+ * Layers keep their `data-dusk-layer` hooks so tests address the composition
  * without coupling to which primitive draws each one. Decorative: every SVG is
  * `aria-hidden` and `pointer-events: none` so screen readers and presses fall
  * straight through to the Critters above.
  */
-export function DuskBackdrop({ night = false, hovered = false, placedCount = 0 }: {
+export function DuskBackdrop({
+  scene,
+  night = false,
+  hovered = false,
+  placedCount = 0,
+}: {
+  /** The shared canopy geometry — the same object the cast reads its perches
+   *  from, so the birds stand on the limbs that are actually drawn. */
+  scene: CanopyScene;
   /**
    * The settle & sleep Outro flag (slice #5). Off during play; flipped true on
    * the terminal placement so the whole nestful goes to sleep — the dusk deepens
    * toward night and the first stars twinkle in. Reflected to `data-dusk-night`
-   * so the Outro state is observable at the value boundary. The deepen / star
-   * choreography it drives is on-device-tuned, not unit-asserted (slice Notes).
+   * so the Outro state is observable at the value boundary.
    */
   night?: boolean;
   /**
    * Whether a carried bird is currently hovering over the nest's drop zone. While
    * true the nest swells a touch — a "yes, drop it here" nudge for the child. A
-   * transform cue, so the root `reducedMotion="user"` gate softens it for
-   * motion-sensitive users. Decorative; not unit-asserted.
+   * transform cue, so the root `reducedMotion="user"` gate softens it.
    */
   hovered?: boolean;
   /**
    * How many birds have been tucked in so far. Each increment plays a subtle
-   * one-shot glow pulse around the rim — the nest's own quiet "caught it" beat,
-   * alongside the bird closing its eyes. Drives a keyed replay, so the value (not
-   * the animation) is the signal. Decorative; not unit-asserted.
+   * one-shot glow pulse around the rim — the nest's own quiet "caught it" beat.
    */
   placedCount?: number;
 }) {
+  const { frame, art, birdW } = scene;
+  // The nest is drawn in its own 200x120 box; `NEST.bottom` is where the bowl's
+  // underside sits in it. Sizing the layer as a multiple of a BIRD (rather than
+  // as a `vw` clamp) is what keeps "a nest is about two and a half fledglings
+  // wide" true at every aspect, and placing it from the bough's own top edge is
+  // what makes it read as cradled rather than as balanced on a line.
+  const nestW = birdW * NEST_BIRDS;
+  const nestH = nestW * (120 / 200);
+  const nestTop = art.bough.top - nestH * (NEST.bottom / 120);
+
   return (
-    // Full-viewport positioning shell — fixed so the scene reads as the world
-    // behind the birds and bleeds under the safe-area insets; `overflow: hidden`
-    // clips the layers' bled edges, `zIndex: -1` parks it behind the Critters.
+    // Full-viewport shell — fixed so the scene reads as the world behind the
+    // birds and bleeds under the safe-area insets; `overflow: hidden` clips the
+    // bled edges, `zIndex: -1` parks it behind the Critters.
     <div
       className="dusk-backdrop"
       data-dusk-night={night}
@@ -95,61 +358,77 @@ export function DuskBackdrop({ night = false, hovered = false, placedCount = 0 }
         zIndex: -1,
       }}
     >
-      {/* Layer 1 — dusk sky: a square viewBox + `slice` fills the viewport at any
-       * aspect with the deepening dusk gradient. A vertical `<linearGradient>`
-       * runs `skyDeep` (deeper indigo up high) → `sky` (the warmer dusk tone
-       * lower down) so the sky reads as evening settling in; the slice #5 Outro
-       * deepens the whole thing toward night. Both stops are palette tokens. */}
       <svg
-        viewBox="0 0 100 100"
-        preserveAspectRatio="xMidYMid slice"
+        viewBox={`0 0 ${frame.w} ${frame.h}`}
+        // The viewBox aspect IS the viewport aspect, so `none` has nothing to
+        // distort — it only guarantees an exact fill with no letterboxing.
+        preserveAspectRatio="none"
         aria-hidden="true"
         style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}
       >
-        {/* The sky layer carries its own gradient so its `stop-color` stops are
-         * descendants of the `data-dusk-layer="sky"` hook — the palette trace
-         * follows the gradient (the rect's own `url(...)` fill is a structural
-         * paint-server reference, not a colour). */}
+        {/* The dusk sky — what is LEFT OVER between the foliage, not a field
+            with things standing on it. That inversion is why the frame stops
+            reading as empty: the sky is now glimpsed through sky-holes. Both
+            stops are palette tokens, and they are descendants of the layer hook
+            so the palette trace follows the gradient. */}
         <g data-dusk-layer="sky">
           <linearGradient id="nestlings-dusk-sky" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0" stopColor={palette.skyDeep} />
             <stop offset="1" stopColor={palette.sky} />
           </linearGradient>
-          <rect x="0" y="0" width="100" height="100" fill="url(#nestlings-dusk-sky)" />
+          <rect x="0" y="0" width={frame.w} height={frame.h} fill="url(#nestlings-dusk-sky)" />
         </g>
 
-        {/* The settle Outro's night deepen (slice #5) — a `skyDeep` wash that
-         * fades in over the whole sky once `night` falls, sinking the dusk toward
-         * night beneath the Shell's confetti. Opacity-only, so it SURVIVES the
-         * app-root `reducedMotion="user"` gate (which drops transforms): under
-         * reduced motion the sky still arrives deepened — the scene reads as
-         * finished, not broken. The fade duration tracks `SETTLE_MS`; the target
-         * opacity is on-device-tuned. Only mounted at settle, so it never touches
-         * the daytime palette sweep (which renders the backdrop without `night`). */}
+        <CanopyPlates scene={scene} />
+
+        {/* Seed fluff. The only moving thing in the background, tiny by rule (a
+            mote at bird scale would be a sixth character) and slow — the
+            cheapest literal "alive" the scene can buy. Opacity and transform
+            only, so the app-root reduced-motion gate softens it. */}
+        {art.motes.map((m, i) => (
+          <motion.circle
+            key={i}
+            cx={m.cx}
+            cy={m.cy}
+            r={m.r}
+            fill={palette.moon}
+            opacity={0.7}
+            animate={{ y: [0, m.amp, 0], x: [0, m.amp * 0.4, 0] }}
+            transition={{
+              duration: 9 + m.delay,
+              delay: m.delay,
+              repeat: Infinity,
+              ease: 'easeInOut',
+            }}
+          />
+        ))}
+
+        {/* The settle Outro's night deepen (slice #5) — a wash over the whole
+            scene once `night` falls. Opacity-only, so it SURVIVES the app-root
+            `reducedMotion="user"` gate: under reduced motion the sky still
+            arrives deepened and the scene reads as finished, not broken. */}
         {night && (
           <motion.rect
             x="0"
             y="0"
-            width="100"
-            height="100"
-            fill={palette.skyDeep}
+            width={frame.w}
+            height={frame.h}
+            fill={palette.night}
             initial={{ opacity: 0 }}
             animate={{ opacity: 0.82 }}
             transition={{ duration: SETTLE_MS / 1000, ease: 'easeInOut' }}
           />
         )}
 
-        {/* The first stars (slice #5) — `sparkle` glints twinkled into the
-         * deepened sky once `night` falls, drawn AFTER the wash so they glint on
-         * top of it. Opacity twinkle (per-star staggered), so they survive the
-         * reduced-motion gate and still come out — gently — when transforms are
-         * disabled. Positions/sizes/timings are on-device-tuned (slice Notes). */}
+        {/* The first stars — drawn AFTER the wash so they glint on top of it.
+            Authored in the old 0..100 square, so they are scaled onto the
+            current frame's upper band rather than assuming its height. */}
         {night &&
           STARS.map(({ cx, cy, r, delay }, i) => (
             <motion.circle
               key={i}
               cx={cx}
-              cy={cy}
+              cy={(cy / 100) * frame.h}
               r={r}
               fill={palette.sparkle}
               initial={{ opacity: 0 }}
@@ -165,168 +444,42 @@ export function DuskBackdrop({ night = false, hovered = false, placedCount = 0 }
           ))}
       </svg>
 
-      {/* Layer 2 — ground: a bottom-anchored band whose height is the shared
-       * `--nestlings-ground` length, so the dusk horizon sits at a fixed
-       * fraction of the viewport at every aspect ratio (ADR-0005 — the analog of
-       * the meadow's ground / balloons' grassy rise). `preserveAspectRatio="none"`
-       * maps the viewBox straight onto the band so the gentle rise stretches
-       * horizontally, which reads fine for a flat ground band. The branch + nest
-       * are NOT in this stretched layer (they used to be, which squashed the nest
-       * on wide/desktop viewports) — they live in their own aspect-locked layer
-       * below. The tall dusk sky above is the mood space. */}
-      <svg
-        viewBox="0 0 100 100"
-        preserveAspectRatio="none"
-        aria-hidden="true"
-        style={{
-          position: 'absolute',
-          left: 0,
-          right: 0,
-          bottom: 0,
-          width: '100%',
-          height: 'var(--nestlings-ground)',
-          pointerEvents: 'none',
-        }}
-      >
-        <path
-          data-dusk-layer="ground"
-          d="M 0 32 Q 25 24 50 28 T 100 26 L 100 100 L 0 100 Z"
-          fill={palette.ground}
-        />
-      </svg>
-
-      {/* Layer 3 — the branch + nest, aspect-LOCKED so they never stretch. The
-       * SVG keeps its viewBox aspect (`width` capped, `height: auto`) and is
-       * centred over the horizon, so the nest reads as the same round bowl on a
-       * phone and a wide desktop alike (the previous version drew them inside the
-       * `none`-stretched ground band, which smeared them sideways on desktop and
-       * threw off the measured drop-zone). It's the reachable lower anchor; the
-       * snap target's rect is read from the `data-dusk-layer="nest"` hook here. */}
+      {/* The nest — aspect-LOCKED in its own SVG so it never stretches, and
+          placed from the bough's measured top edge. Percentages of the frame, so
+          it tracks the same geometry everything else is built from. */}
       <svg
         viewBox="0 0 200 120"
-        preserveAspectRatio="xMidYMax meet"
+        preserveAspectRatio="xMidYMid meet"
         aria-hidden="true"
         style={{
           position: 'absolute',
-          left: '50%',
-          bottom: 'calc(var(--nestlings-ground) - 92px)',
-          transform: 'translateX(-50%)',
-          width: 'min(380px, 88vw)',
+          left: `${50 - nestW / 2}%`,
+          top: `${(nestTop / frame.h) * 100}%`,
+          width: `${nestW}%`,
           height: 'auto',
           pointerEvents: 'none',
           overflow: 'visible',
         }}
       >
-        {/* The branch the nest is built on — a natural limb crossing under the
-         * nest with a small offshoot twig, NOT a vertical pole. Drawn behind the
-         * nest so the bowl sits cradled on it. Keeps the `data-dusk-layer="branch"`
-         * hook; exact limb shape is on-device-tuned. */}
-        <path
-          data-dusk-layer="branch"
-          d="M0 96 Q60 88 100 92 Q150 95 200 90"
-          fill="none"
-          stroke={palette.branch}
-          strokeWidth="9"
-          strokeLinecap="round"
-        />
-        <path
-          d="M148 92 Q162 82 176 77"
-          fill="none"
-          stroke={palette.branch}
-          strokeWidth="5"
-          strokeLinecap="round"
-        />
-
-        {/* The nest bobs once the nestful is asleep (slice #5) — a small, slow
-         * up-and-down that reads as the cozy breathing of a full nest. A TRANSFORM
-         * bob, so the app-root `reducedMotion="user"` gate drops it to near-static
-         * (the deepened sky + stars still read as "everyone's asleep" — finished,
-         * not broken). Only animates at settle; the bob is a wrapper transform, so
-         * the once-measured nest rect (slice #3's snap target) is untouched. */}
+        {/* Every line here is a filled tapered path. There is no `stroke` in
+            this layer — a uniform vector stroke is the loudest clip-art tell,
+            and it was the thing that made the nest read as a different style
+            from the birds standing next to it. */}
         <motion.g
-          animate={night ? { y: [0, -1.4, 0] } : undefined}
-          transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
+          animate={{ scale: hovered ? 1.06 : 1 }}
+          transition={{ duration: 0.18, ease: 'easeOut' }}
+          style={{ transformBox: 'fill-box', transformOrigin: 'center bottom' }}
         >
-          {/* The nest swells a touch while a carried bird hovers over the drop zone
-           * — the wordless "yes, drop it here" nudge. A spring so it feels soft and
-           * alive; scaled from the nest's own centre (`fill-box`) so the bowl grows
-           * in place without shifting sideways. */}
-          <motion.g
-            animate={{ scale: hovered ? 1.07 : 1 }}
-            transition={{ type: 'spring', stiffness: 260, damping: 18 }}
-            style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
-          >
-          {/* The woven bowl, built back-to-front to read unmistakably as a NEST: a
-           * deep cup, a ring of twig-ends radiating out past the rim, a dark
-           * opening, woven rows down the front, and a bumpy woven lip. The dark
-           * opening carries the `data-dusk-layer="nest"` hook and is FIRST, because
-           * Nestlings reads the first nest rect as the drop-zone centre (slice #3)
-           * — and the opening IS where a bird drops in, so it's the right centre. */}
-          {/* 1 — twig-ends radiating out past the rim (drawn first, behind the
-           * bowl) — the single clearest "this is a nest" cue */}
-          <g fill="none" strokeLinecap="round" strokeWidth="2">
-            <path d="M50 60 L38 56" stroke={palette.branch} />
-            <path d="M48 68 L36 68" stroke={palette.nestRim} />
-            <path d="M50 76 L39 81" stroke={palette.branch} />
-            <path d="M58 84 L50 92" stroke={palette.nestRim} />
-            <path d="M70 52 L65 42" stroke={palette.branch} />
-            <path d="M90 48 L87 38" stroke={palette.nestRim} />
-            <path d="M110 48 L113 38" stroke={palette.branch} />
-            <path d="M130 52 L135 42" stroke={palette.nestRim} />
-            <path d="M150 60 L162 56" stroke={palette.branch} />
-            <path d="M152 68 L164 68" stroke={palette.nestRim} />
-            <path d="M150 76 L161 81" stroke={palette.branch} />
-            <path d="M142 84 L150 92" stroke={palette.nestRim} />
-          </g>
-          {/* 2 — bowl body: a deep rounded cup */}
-          <path d="M46 58 Q54 92 100 93 Q146 92 154 58 Z" fill={palette.nest} />
-          {/* 3 — woven rows sagging down the front wall, lit + dark alternating */}
-          <g fill="none" strokeLinecap="round">
-            <path d="M52 64 Q100 80 148 64" stroke={palette.nestRim} strokeWidth="2.4" />
-            <path d="M56 71 Q100 85 144 71" stroke={palette.branch} strokeWidth="2.2" />
-            <path d="M64 78 Q100 88 136 78" stroke={palette.nestRim} strokeWidth="2" />
-          </g>
-          {/* 4 — cross-weave verticals tying the rows (the basket over-under) */}
-          <g fill="none" stroke={palette.nestShadow} strokeWidth="1.4" strokeLinecap="round">
-            <path d="M74 62 L72 80" />
-            <path d="M100 63 L100 84" />
-            <path d="M126 62 L128 80" />
-          </g>
-          {/* 5 — the dark opening (snap anchor) + a dusk-lit back rim, so the mouth
-           * of the cup reads as round and open */}
-          <ellipse data-dusk-layer="nest" cx="100" cy="56" rx="46" ry="13" fill={palette.nestShadow} />
-          <path d="M56 53 Q100 36 144 53" fill="none" stroke={palette.nestRim} strokeWidth="3" strokeLinecap="round" />
-          {/* 6 — bumpy woven lip along the near rim — little twig loops */}
-          <g fill="none" stroke={palette.nestRim} strokeWidth="2.2" strokeLinecap="round">
-            <path d="M58 60 Q64 53 70 60" />
-            <path d="M72 62 Q79 55 86 62" />
-            <path d="M90 63 Q97 56 104 63" />
-            <path d="M108 62 Q115 55 122 62" />
-            <path d="M126 60 Q132 53 138 60" />
-          </g>
-          </motion.g>
-
-          {/* A subtle one-shot glow ring on each placement — the nest's own quiet
-           * "caught it" beat, alongside the bird closing its eyes. Keyed on the
-           * placement count so it REPLAYS each time a bird is tucked in; opacity-led
-           * so it still reads (gently) under reduced motion. A sibling of the swell
-           * group so it never shifts that group's measured box. */}
-          {placedCount > 0 && (
-            <motion.ellipse
-              key={placedCount}
-              cx="100"
-              cy="56"
-              rx="54"
-              ry="17"
-              fill="none"
-              stroke={palette.sparkle}
-              strokeWidth="2.5"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: [0, 0.5, 0], scale: [0.9, 1.2] }}
-              transition={{ duration: 0.6, ease: 'easeOut' }}
-              style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
-            />
-          )}
+          <NestFigure />
+          {/* One-shot rim pulse, keyed on the tally so each placement replays it. */}
+          <motion.path
+            key={placedCount}
+            d={NEST.rimInk}
+            fill={palette.sparkle}
+            initial={{ opacity: placedCount > 0 ? 0.85 : 0 }}
+            animate={{ opacity: 0 }}
+            transition={{ duration: 0.7, ease: 'easeOut' }}
+          />
         </motion.g>
       </svg>
     </div>

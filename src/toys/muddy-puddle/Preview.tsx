@@ -1,106 +1,177 @@
+import { buildBarnyard, type Frame } from './barnyard';
+import { BARNYARD, BARNYARD_SEED } from './barnyard-config';
+import { PigletFigure, MUD_BLOBS } from './PigletDrawing';
+import { CRITTER_ASPECT, FOOT_FRACTION } from './critter-metrics';
 import { palette } from './palette';
 
 /**
- * Muddy Puddle's tiny SVG preview-scene — the miniature barnyard vignette a
- * Home Card carries above its title. Drawn from inside the Toy so its
- * composition stays coherent with the live scene (`BarnyardBackdrop`) and cast
- * (`WipeableCritter`) — visual coherence between the preview and the live Toy
- * is on-device per this slice's Notes, which is exactly why the preview lives
- * next to the Toy that owns its palette and silhouettes.
+ * Muddy Puddle's Card preview — the miniature barnyard the Home Card carries
+ * above its title.
  *
- * The vignette teases the *activity* this Toy is about (a clearly different
- * activity from the two tap toys): a muddy critter caked in mud, with a single
- * diagonal **wiped streak** swept clear to reveal a sliver of the clean pink
- * animal underneath plus a sparkle — so the Card reads "wipe me clean" at a
- * glance. A barnyard world (sky, distant barn + fence, grass, a mud puddle) so
- * the Home reads as a varied collection next to the meadow and the ocean.
+ * IT IS THE REAL SCENE, DRAWN BY THE REAL COMPONENTS. The yard comes from
+ * `buildBarnyard` — the same generator, config and seed the live Toy runs —
+ * evaluated into a Card-shaped frame, and the piglet is `PigletFigure`, the very
+ * component the Toy mounts. Nothing here is a miniature *of* the Toy; it is the
+ * Toy's own art at a smaller size.
  *
- * Scale is heavily reduced — primitives are simplified for a Card-sized
- * vignette so the preview reads as a believable miniature, not a full
- * inspection of the live Critter (same posture as the Sheep/Fish previews).
- * The exact composition + colour tuples are on-device-tuned per this slice's
- * Notes and deliberately not unit-asserted; the contract the test pins is that
- * it's a decorative SVG sourcing every fill from this Toy's own palette.
+ * WHY THAT MATTERS MORE THAN IT LOOKS. This file was a hand-drawn vignette, and
+ * it had already drifted off the Toy it advertises: the Card showed a gable barn
+ * with a fence beside it and a tidy oval pool, none of which the live scene had
+ * any longer, plus a piglet built from plain `<circle>`s — the exact clip-art
+ * construction the cast was rebuilt away from, sitting on the Card that
+ * advertises the rebuild. Two hand-maintained drawings of one scene cannot be
+ * kept in agreement. One generator read by both cannot fall out of step, and now
+ * a lab harvest updates the Card for free.
+ *
+ * IT SHOWS THE ACTIVITY, NOT JUST THE PLACE. The piglet is rendered MID-WIPE —
+ * most of its mud still on, a diagonal band of it cleared — so the Card reads
+ * "wipe me clean" at a glance rather than "here is a farm". That is what
+ * distinguishes this Card from the two tap Toys on the same Home screen, and it
+ * costs nothing but a filter on the blob indices, because the drawing already
+ * takes exactly that as a prop.
+ *
+ * The frame is 100x60 and a Critter is 22 units of it, so the Card composes as a
+ * WIDE viewport — about four and a half Critters across, roughly the desktop
+ * proportion. That is deliberate: at a phone's 2.0 Critters the generator
+ * correctly refuses to draw any far bank at all, and a Card is a landscape
+ * window.
  *
  * Decorative for accessibility — the Card's title and `<Link>` carry the
  * semantic load; the SVG is `aria-hidden` so screen readers skim past it.
  */
+
+const CARD: Frame = { w: 100, h: 60 };
+/** A Critter's width in Card units — a landscape proportion. */
+const CARD_CRITTER = 22;
+/** Computed once at module scope: the generator is pure, so this never changes. */
+const ART = buildBarnyard(BARNYARD, CARD, CARD_CRITTER, BARNYARD_SEED);
+
+/**
+ * The mud still caked on in the preview: everything outside a diagonal band
+ * swept from the lower left to the upper right. Derived from the blob
+ * coordinates rather than hand-listed, so it stays a believable wipe stroke if
+ * the blanket is ever re-authored.
+ */
+const WIPED_BAND = MUD_BLOBS.map((_, i) => i).filter((i) => {
+  const b = MUD_BLOBS[i];
+  return Math.abs(b.cx - b.cy - 6) > 17;
+});
+
 export function Preview() {
   return (
     <svg
-      viewBox="0 0 100 60"
+      viewBox={`0 0 ${CARD.w} ${CARD.h}`}
       preserveAspectRatio="xMidYMid meet"
       width="100%"
       height="100%"
       aria-hidden="true"
       style={{ display: 'block' }}
     >
-      {/* Open barnyard sky — the field the whole scene sits in (also the Card's
-       * own surface tint, so the preview blends into its cover). */}
-      <rect x="0" y="0" width="100" height="60" fill={palette.sky} />
-      {/* Distant barn on the horizon — a little gable-roofed silhouette. */}
-      <path d="M 10 44 L 10 32 L 18 26 L 26 32 L 26 44 Z" fill={palette.barn} />
-      {/* A short run of fence flanking the barn. */}
-      <rect x="30" y="36" width="2" height="8" fill={palette.fence} />
-      <rect x="36" y="36" width="2" height="8" fill={palette.fence} />
-      <rect x="29" y="38" width="10" height="1.6" fill={palette.fence} />
-      {/* Grass ground band across the bottom — the floor the critters trot on. */}
-      <path d="M 0 46 Q 30 43 50 45 T 100 45 L 100 60 L 0 60 Z" fill={palette.grass} />
-      {/* The mud puddle pooled at the critter's feet, with a lighter wet sheen. */}
-      <ellipse cx={50} cy={55} rx={30} ry={5} fill={palette.mud} />
-      <ellipse cx={50} cy={54} rx={19} ry={2.6} fill={palette.puddle} />
+      {/* Paint order IS depth order, exactly as in `BarnyardBackdrop`: sky, the
+          cropped barn, the far banks, the trotting line, the fence and straw
+          standing on it, the pool, the Critter, then the corner clay in front. */}
+      <linearGradient id="muddy-puddle-preview-sky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stopColor={palette.skyHigh} />
+        <stop offset="1" stopColor={palette.sky} />
+      </linearGradient>
+      <rect x="0" y="0" width={CARD.w} height={CARD.h} fill="url(#muddy-puddle-preview-sky)" />
 
-      {/* The muddy critter, mid-wipe. The clean pink piglet is drawn first; the
-       * mud layer cakes over it, all but a diagonal wiped streak. */}
-      <MuddyCritter />
-    </svg>
-  );
-}
+      {ART.barn && (
+        <g>
+          <path d={ART.barn.ink} fill={palette.contour} />
+          <path d={ART.barn.wall} fill={palette.barn} />
+          {/* The eave's own shadow, following the roofline it falls from. */}
+          <path d={ART.barn.shade} fill={palette.barnShade} opacity={0.45} />
+          {/* Board seams — the evidence a hand drew the wall rather than filled
+              a rectangle. Held well under the cast's contour weight. */}
+          <g fill={palette.barnShade} opacity={0.55}>
+            {ART.barn.boards.map((d, i) => (
+              <path key={i} d={d} />
+            ))}
+          </g>
+          <path d={ART.barn.roof} fill={palette.barnRoof} />
+        </g>
+      )}
 
-/**
- * One miniature piglet, mostly caked in mud with a single wiped streak swept
- * clear. The clean piglet is drawn first (its round body tagged
- * `data-piglet-part="body"`, the same structural hook the live `PigletDrawing`
- * uses, so the Home wiring test can find the Critter without coupling to the
- * tuned geometry). Mud blobs sit on top everywhere EXCEPT a diagonal band, so
- * the clean pink shows through that streak — the "wipe me clean" tease — with a
- * sparkle glint on the freshly cleared sliver.
- */
-function MuddyCritter() {
-  const cx = 50;
-  const cy = 32;
-  return (
-    <g>
-      {/* clean piglet underneath — ears, round body, snout, eye, blush */}
-      <path d={`M ${cx - 12} ${cy - 7} L ${cx - 15} ${cy - 17} L ${cx - 5} ${cy - 12} Z`} fill={palette.pigletBody} />
-      <path d={`M ${cx + 12} ${cy - 7} L ${cx + 15} ${cy - 17} L ${cx + 5} ${cy - 12} Z`} fill={palette.pigletBody} />
-      <circle data-piglet-part="body" cx={cx} cy={cy} r={13} fill={palette.pigletBody} />
-      <circle cx={cx - 6} cy={cy + 2} r={3} fill={palette.pigletCheek} />
-      <circle cx={cx + 6} cy={cy + 2} r={3} fill={palette.pigletCheek} />
-      <ellipse cx={cx} cy={cy + 4} rx={6} ry={4} fill={palette.pigletSnout} />
-      <circle cx={cx - 2} cy={cy + 4} r={0.9} fill={palette.pigletEye} />
-      <circle cx={cx + 2} cy={cy + 4} r={0.9} fill={palette.pigletEye} />
-      <circle cx={cx - 4} cy={cy - 3} r={2} fill={palette.pigletEye} />
-      <circle cx={cx + 4} cy={cy - 3} r={2} fill={palette.pigletEye} />
-      <circle cx={cx - 3.2} cy={cy - 3.8} r={0.7} fill={palette.pigletEyeShine} />
-      <circle cx={cx + 4.8} cy={cy - 3.8} r={0.7} fill={palette.pigletEyeShine} />
+      {ART.banks.map((b, i) => (
+        <g key={`bank-${i}`}>
+          <path d={b.fill} fill={palette.fieldFar} />
+          <path d={b.relief} fill={palette.fieldShade} opacity={0.4} />
+        </g>
+      ))}
 
-      {/* mud layer — discrete smudges caked over the piglet, placed to leave a
-       * diagonal streak (lower-left → upper-right) swept clear so the clean pink
-       * sliver shows through it. */}
-      <circle cx={cx - 8} cy={cy - 6} r={6} fill={palette.mud} />
-      <circle cx={cx - 9} cy={cy + 3} r={6} fill={palette.mud} />
-      <circle cx={cx - 3} cy={cy + 8} r={5} fill={palette.mud} />
-      <circle cx={cx + 9} cy={cy - 2} r={6} fill={palette.mud} />
-      <circle cx={cx + 8} cy={cy + 6} r={5} fill={palette.mud} />
-      <circle cx={cx + 2} cy={cy - 9} r={5} fill={palette.mud} />
+      <path d={ART.ground.fill} fill={palette.field} />
+      <path d={ART.ground.relief} fill={palette.fieldShade} opacity={0.3} />
 
-      {/* the wiped streak's sparkle — a little four-point glint sitting on the
-       * freshly cleared sliver, signalling the wipe just happened. */}
+      {ART.fence && (
+        <g>
+          {ART.fence.railInk.map((d, i) => (
+            <path key={`rail-ink-${i}`} d={d} fill={palette.contour} />
+          ))}
+          {ART.fence.rails.map((d, i) => (
+            <path key={`rail-${i}`} d={d} fill={i === 0 ? palette.fence : palette.fenceShade} />
+          ))}
+          {ART.fence.ink.map((d, i) => (
+            <path key={`ink-${i}`} d={d} fill={palette.contour} />
+          ))}
+          {ART.fence.posts.map((d, i) => (
+            <path key={`post-${i}`} d={d} fill={i % 3 === 0 ? palette.fenceShade : palette.fence} />
+          ))}
+        </g>
+      )}
+
+      {ART.straw.map((t, i) => (
+        <g key={`straw-${i}`} fill={i % 2 === 0 ? palette.straw : palette.strawShade}>
+          {t.blades.map((d, k) => (
+            <path key={k} d={d} />
+          ))}
+        </g>
+      ))}
+
+      {ART.puddle && (
+        <g>
+          <path d={ART.puddle.fill} fill={palette.puddle} />
+          <path d={ART.puddle.rim} fill={palette.puddleShade} opacity={0.45} />
+          <path d={ART.puddle.sheen} fill={palette.puddleSheen} opacity={0.75} />
+          {ART.puddle.ripples.map((d, i) => (
+            <path key={i} d={d} fill={palette.puddleShade} opacity={0.5} />
+          ))}
+        </g>
+      )}
+
+      {/* The piglet, standing on the line the generator emitted — the same
+          `stand` point the live Toy anchors its feet to, and the same figure it
+          draws there. Its own box is 100 wide with the feet at `FOOT_FRACTION`
+          of its height, so the placement is derived rather than nudged into
+          looking right. Mid-wipe, so the Card advertises the activity. */}
+      <g
+        transform={`translate(${ART.stand[0] - CARD_CRITTER / 2} ${ART.stand[1] - CARD_CRITTER * CRITTER_ASPECT * FOOT_FRACTION}) scale(${CARD_CRITTER / 100})`}
+      >
+        <PigletFigure remainingBlobIndices={WIPED_BAND} />
+      </g>
+
+      {/* the wiped streak's glint — the same `sparkle` the clean-snap fires,
+          sitting on the freshly cleared band so the Card says a wipe just
+          happened rather than that a pig is dirty */}
       <path
-        d={`M ${cx + 3} ${cy - 4} l 1.3 3 l 3 1.3 l -3 1.3 l -1.3 3 l -1.3 -3 l -3 -1.3 l 3 -1.3 Z`}
+        d={`M ${ART.stand[0] + 3} ${ART.stand[1] - 14} l 1.1 2.6 l 2.6 1.1 l -2.6 1.1 l -1.1 2.6 l -1.1 -2.6 l -2.6 -1.1 l 2.6 -1.1 Z`}
         fill={palette.sparkle}
       />
-    </g>
+
+      {ART.fore && (
+        <g>
+          <path d={ART.fore.base} fill={palette.foreClay} />
+          {ART.fore.clods.map((c, i) => (
+            <circle
+              key={i}
+              cx={c.cx}
+              cy={c.cy}
+              r={c.r}
+              fill={i % 3 === 0 ? palette.foreClayShade : palette.foreClay}
+            />
+          ))}
+        </g>
+      )}
+    </svg>
   );
 }

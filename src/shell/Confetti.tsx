@@ -1,4 +1,5 @@
 import { motion } from 'motion/react';
+import { vogelSpiral } from './art/rng';
 import { completion } from './tokens';
 
 /**
@@ -14,63 +15,85 @@ const PARTICLE_FILLS = completion.spark;
 const PIECES = 8;
 
 /**
+ * Golden-angle placement. The particles used to spread on a linear ramp
+ * (`(i / (PIECES - 1) - 0.5) * 240`), which puts them at even horizontal
+ * intervals — so the burst read as a FAN rather than a bloom. A Vogel spiral is
+ * the most even radial packing there is, and the arrangement phyllotaxis uses;
+ * it is deterministic by index, so renders stay stable across React's
+ * reconciliation passes exactly as the linear ramp did.
+ */
+const SPREAD = vogelSpiral(PIECES, 118);
+
+/**
  * The Shell's celebratory burst — code-drawn SVG, no image assets (ADR-0002).
- * Slice #06 restyle: ~8 soft warm-light particles drifting upward over a
- * generous beat, fills sourced from the Shell `completion.spark` tokens, soft blur glow
- * via an SVG filter. Decorative (`aria-hidden`); shared across every Toy's
- * Completion so every future Toy inherits the same aesthetic family.
+ * ~8 soft warm-light particles drifting upward over a generous beat, fills
+ * sourced from the Shell `completion.spark` tokens. Decorative (`aria-hidden`);
+ * shared across every Toy's Completion so every Toy inherits the same family.
+ *
+ * PERFORMANCE — the reason this looks the way it does. The halo used to be a
+ * live `feGaussianBlur` applied via `filter: url(#celebration-glow)` on each
+ * `motion.svg`. A filter on an element whose geometry moves is re-rasterised
+ * EVERY FRAME, and there were eight of them animating at once — the single most
+ * expensive shape an SVG animation can take on a phone. The halo is now a
+ * `<radialGradient>` fill: an actually soft-edged circle, computed once, which
+ * the compositor then moves around for free. Same look, no per-frame raster.
  *
  * Tuning notes (on-device-validated):
- * - Vertical drift > outward radial — reads as "warm light rising" not "pop".
- * - The blur filter softens the particles into halos rather than hard shapes.
- * - Per-particle horizontal jitter is deterministic via the index so renders
- *   are stable across React's reconciliation passes.
+ * - Vertical drift > outward radial — reads as "warm light rising", not "pop".
+ * - The gradient's mid-stop is what gives the particle its bloom; without it the
+ *   falloff is linear and the particle reads as a hard disc with a fuzzy rim.
  */
 export function Confetti() {
-  const pieces = Array.from({ length: PIECES }, (_, i) => i);
   return (
     <div
       data-testid="confetti"
       aria-hidden="true"
       style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}
     >
-      <svg
-        width="0"
-        height="0"
-        style={{ position: 'absolute' }}
-        aria-hidden="true"
-      >
+      <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden="true">
         <defs>
-          {/* Soft blur halo — wide stdDeviation gives the particles their
-           * warm-bloom edge rather than hard SVG silhouettes. */}
-          <filter id="celebration-glow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="3" />
-          </filter>
+          {PARTICLE_FILLS.map((fill, i) => (
+            <radialGradient key={i} id={`celebration-spark-${i}`}>
+              {/* A solid core with the falloff pushed to the outer third. A
+                  gradient that starts fading at the centre spreads the same
+                  colour over more area at lower alpha than the old blurred disc
+                  did, and the particle goes weak. */}
+              <stop offset="0%" stopColor={fill} stopOpacity={1} />
+              <stop offset="42%" stopColor={fill} stopOpacity={0.96} />
+              <stop offset="72%" stopColor={fill} stopOpacity={0.45} />
+              <stop offset="100%" stopColor={fill} stopOpacity={0} />
+            </radialGradient>
+          ))}
         </defs>
       </svg>
-      {pieces.map((i) => {
-        // Deterministic horizontal spread across the burst origin, ±~120px.
-        const dx = ((i / (PIECES - 1)) - 0.5) * 240;
-        const fill = PARTICLE_FILLS[i % PARTICLE_FILLS.length];
-        return (
-          <motion.svg
-            key={i}
-            width="22"
-            height="22"
-            viewBox="0 0 22 22"
-            style={{ position: 'absolute', left: '50%', top: '55%', filter: 'url(#celebration-glow)' }}
-            initial={{ x: 0, y: 0, opacity: 0 }}
-            animate={{
-              x: dx,
-              y: -180 - (i % 3) * 40,
-              opacity: [0, 0.95, 0],
-            }}
-            transition={{ duration: 2.6, ease: 'easeOut', times: [0, 0.25, 1] }}
-          >
-            <circle cx="11" cy="11" r="7" fill={fill} />
-          </motion.svg>
-        );
-      })}
+      {SPREAD.map(([sx, sy], i) => (
+        <motion.svg
+          key={i}
+          width="34"
+          height="34"
+          viewBox="0 0 34 34"
+          style={{
+            position: 'absolute',
+            left: '50%',
+            top: '55%',
+            // Promote the layer up front rather than mid-burst. Safe here because
+            // the count is fixed and small; never blanket-apply it.
+            willChange: 'transform, opacity',
+          }}
+          initial={{ x: 0, y: 0, opacity: 0 }}
+          animate={{
+            x: sx,
+            // The spiral's second axis becomes vertical variance, so particles
+            // do not arrive in a rank. Every value stays negative — the bloom
+            // rises, it does not scatter.
+            y: -170 + sy * 0.5,
+            opacity: [0, 0.95, 0],
+          }}
+          transition={{ duration: 2.6, ease: 'easeOut', times: [0, 0.25, 1] }}
+        >
+          <circle cx="17" cy="17" r="17" fill={`url(#celebration-spark-${i % PARTICLE_FILLS.length})`} />
+        </motion.svg>
+      ))}
     </div>
   );
 }

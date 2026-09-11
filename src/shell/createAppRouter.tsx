@@ -12,6 +12,7 @@ import { ToyHost } from './ToyHost';
 import { createSound, type Sound } from './sound';
 import { createHaptics, type Haptics } from './haptics';
 import { MuteToggle } from './MuteToggle';
+import { PaperGrain } from './PaperGrain';
 
 type AppRouterOptions = {
   /** Injectable history — tests pass a memory history; the app uses the default. */
@@ -43,6 +44,10 @@ export function createAppRouter(toys: ToyEntry[], options: AppRouterOptions = {}
       <div className="shell-frame">
         <MuteToggle sound={sound} />
         <Outlet />
+        {/* The paper grain sits above every Toy and the chrome alike — it is the
+            surface the whole collection is printed on, not a per-Toy decoration.
+            Static and pointer-transparent, so it never intercepts a tap. */}
+        <PaperGrain />
       </div>
     ),
   });

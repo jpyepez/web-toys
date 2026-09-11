@@ -30,6 +30,14 @@ type Point = { x: number; y: number };
  * placed) and the carry offset as `data-carry-x/y` so tests observe the value
  * boundary, never pixels.
  */
+/**
+ * How far the bird's BODY sits below the centre of its own box, as a fraction of
+ * the box height. `BirdDrawing` puts the body at y 66 of its 100-unit viewBox,
+ * because the head occupies the top — so aiming a seat at the box centre leaves
+ * the bird hanging above the bowl it is supposed to be sitting in.
+ */
+export const BODY_CENTRE_DROP = 0.16;
+
 export function CarriableBird({
   species = 'robin',
   nestCenter,
@@ -41,6 +49,7 @@ export function CarriableBird({
   onRest,
   onCarryStep,
   onHoverNest,
+  seat,
 }: {
   /** Which fledgling — passed through to `BirdDrawing` (slice #2). */
   species?: BirdSpecies;
@@ -109,6 +118,19 @@ export function CarriableBird({
    * move. Optional, so a bare single-bird mount needs no parent.
    */
   onHoverNest?: (over: boolean) => void;
+  /**
+   * Where in the nest THIS bird settles once it is placed, as a fraction of the
+   * nest's own size — its seat in the huddle.
+   *
+   * Without it every placed bird simply stayed where the finger let go, and the
+   * forgiving snap radius meant five fledglings landed on top of one another: a
+   * full nest looked exactly like a nest with one bird in it. That is the Goal
+   * of the whole Toy rendered invisible — a child gets no accumulating reward
+   * for the four carries they already made.
+   *
+   * Optional, so a bare single-bird mount still rests where it was dropped.
+   */
+  seat?: { x: number; y: number; scale: number };
 }) {
   // The bird's lifecycle through the Drag:
   //  - `loose`   — at rest, pickup-able (the start state, and where an
@@ -140,6 +162,9 @@ export function CarriableBird({
   // `onHoverNest` fires only on the enter/leave transitions (not every move), and
   // so the carry-end paths can clear a lingering hover. Reset per grab.
   const hoveringRef = useRef(false);
+  // The positioning wrapper, measured once at placement so the bird can be
+  // settled into its seat from wherever the finger happened to let go.
+  const rootRef = useRef<HTMLDivElement>(null);
 
   // Report a hover transition once, keeping `hoveringRef` in sync. Clearing on
   // pointer-up/cancel makes the nest settle back the instant the carry ends.
@@ -213,12 +238,46 @@ export function CarriableBird({
     // beat below is the nest's own, separate reaction).
     setHovering(false);
     setPhase(placed ? 'placed' : 'loose');
+    if (placed && seat) settleIntoSeat();
     // Tally the placement for the cast's Goal (slice #4) — once only, since
     // `placed` is terminal and a placed bird's pointers are no-ops above. A drop
     // outside the radius is a deliberate loose set-down (slice #07): the parent
     // voices the gentle plip on it.
     if (placed) onPlaced?.();
     else onRest?.();
+  };
+
+  /**
+   * Settle a just-placed bird into its seat in the nest.
+   *
+   * The carry offset is measured from the bird's REST position, not from its
+   * current one, so the seat is an absolute assignment rather than a nudge:
+   * `carry = seat - restCentre`. Adding to the existing offset instead — the
+   * obvious-looking version — double-counts the whole journey the bird just
+   * made, and flings a tucked-in fledgling somewhere off in the canopy.
+   *
+   * `getBoundingClientRect` on this wrapper gives exactly the rest box: CSS
+   * transforms on the INNER element do not move a parent's border box, and the
+   * wrapper's own `translateX(-50%)` is already folded in.
+   *
+   * The vertical term is the bird's own anatomy. Its body sits low in its box
+   * (the head takes the top), so centring the BOX on the nest hangs the bird
+   * above the bowl; the seat is aimed at the body instead.
+   *
+   * In jsdom every rect is zero, so this is skipped and the bird keeps the carry
+   * offset it was dropped with — which is what the placement tests assert.
+   */
+  const settleIntoSeat = () => {
+    const rect = rootRef.current?.getBoundingClientRect();
+    if (!rect || rect.width === 0 || !seat) return;
+    const restCentre = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+    setCarry({
+      x: nestCenter.x + seat.x - restCentre.x,
+      // Scaled by the seat's own scale: the bird shrinks about its box centre,
+      // so its body rides UP toward that centre as it nestles down, and a
+      // correction computed at full size overshoots.
+      y: nestCenter.y + seat.y - restCentre.y - rect.height * BODY_CENTRE_DROP * seat.scale,
+    });
   };
 
   // A cancelled or lost pointer ENDS the carry (ADR-0007): the bird can never get
@@ -236,6 +295,7 @@ export function CarriableBird({
 
   return (
     <div
+      ref={rootRef}
       data-carriable-bird=""
       data-bird-state={phase}
       // The static positioning wrapper owns LAYOUT only (ADR-0007 transform-
@@ -270,7 +330,18 @@ export function CarriableBird({
        * above owns layout (ADR-0007 transform-ownership split). The carry offset is
        * mirrored to `data-carry-x/y` so the Drag is observable at the value
        * boundary. */}
-      <motion.div data-carry-x={carry.x} data-carry-y={carry.y} style={{ x: carry.x, y: carry.y }}>
+      {/* A placed bird tucks DOWN as well as in — the huddle only fits five
+          fledglings in a bowl a couple of birds wide if they settle into it
+          rather than stand on it, and shrinking as they nestle is how the
+          tradition draws a bird bedding down. Transform-only, so the app-root
+          reduced-motion gate softens it. */}
+      <motion.div
+        data-carry-x={carry.x}
+        data-carry-y={carry.y}
+        style={{ x: carry.x, y: carry.y }}
+        animate={{ scale: phase === 'placed' && seat ? seat.scale : 1 }}
+        transition={{ type: 'spring', stiffness: 260, damping: 24 }}
+      >
         <BirdDrawing
           species={species}
           carried={phase === 'carried'}

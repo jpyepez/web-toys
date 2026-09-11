@@ -4,23 +4,19 @@ import { Preview } from './Preview';
 import { palette } from './palette';
 
 /**
- * Puffer Fish — Card preview-scene tests. `Preview` is the analog of Counting
- * Sheep's `Preview`: a tiny inline SVG miniature the Home Card carries above its
- * title — a small window onto the live Toy. Drawn from SVG primitives only
- * (ADR-0002), every fill sourced from the local ocean palette (slice #05), so
- * the Card art coheres with the live underwater scene + Critter.
+ * Puffer Fish — Card preview-scene tests. `Preview` is the tiny inline SVG
+ * miniature the Home Card carries above its title: a small window onto the live
+ * Toy, drawn from SVG primitives only (ADR-0002) with every fill sourced from
+ * the local reef `palette` (ADR-0004).
  *
- * Visual coherence against the live Toy is on-device per the PRD's Testing
- * Decisions — what's jsdom-testable is the contract: it's a decorative
- * miniature underwater scene, it carries the round fish, and every colour
- * traces to the ocean palette (no hardcoded HSL, no meadow-palette leak). We
- * assert those, never the on-device-tuned geometry.
+ * The composition itself is deliberately NOT asserted: it is no longer authored
+ * here at all, it comes out of `buildReef`, so pinning it would be pinning the
+ * generator twice. What is asserted is the contract — decorative, drawn from
+ * this Toy's own palette, carrying the real cast, and free of `stroke`.
  */
 
-/** Every concrete colour an element paints — its own `fill`/`stroke` when a
- * literal colour. The structural `none` (stroked-outline sentinel) and
- * `url(...)` paint-server references are not colours, so they're excluded.
- * Mirrors the helper in `underwater-backdrop.test.tsx`. */
+/** Every concrete colour an element paints. The structural `none` and `url(...)`
+ * paint-server references are not colours, so they are excluded. */
 function paletteColoursOf(el: Element): string[] {
   const colours: string[] = [];
   for (const attr of ['fill', 'stroke'] as const) {
@@ -33,11 +29,9 @@ function paletteColoursOf(el: Element): string[] {
 
 describe('Puffer Fish — Preview', () => {
   it('renders a decorative miniature SVG scene, hidden from screen readers', () => {
-    // AC #3 (tracer): the Card preview is a tiny inline SVG vignette, not an
-    // interactive element. Like the Sheep preview it carries no semantic load
-    // (the Card's title + Link do) so it's `aria-hidden`, letting screen
-    // readers skim straight past it. We assert the root SVG is present and
-    // marked decorative; the on-device-tuned composition is not asserted here.
+    // The Card preview is a vignette, not an interactive element: the Card's
+    // title and Link carry the semantic load, so it is `aria-hidden` and screen
+    // readers skim straight past it.
     const { container } = render(<Preview />);
 
     const svg = container.querySelector('svg');
@@ -45,47 +39,46 @@ describe('Puffer Fish — Preview', () => {
     expect(svg!.getAttribute('aria-hidden')).toBe('true');
   });
 
-  it('carries the round fish — a circular body painted from the fish-body token', () => {
-    // AC #3: the preview shows "the round fish". The Critter is addressed
-    // structurally via the same `data-fish-part="body"` hook the live
-    // `FishDrawing` uses, so the test stays decoupled from the miniature's
-    // exact geometry. "Round" is the load-bearing silhouette contract (the
-    // puffer is smooth and round in every state, never spiky), so we assert
-    // the body is a `<circle>`, filled from the ocean palette's `fishBody`
-    // token — the white round body, sourced from the Toy's own palette.
+  it('draws the real Fish, not a simplified stand-in', () => {
+    /*
+     * The Card used to carry a hand-drawn `MiniFish` built from four
+     * `<ellipse>`s and a `stroke`d smile — the exact construction the live
+     * Critter was rebuilt away from, sitting on the Card that advertises it.
+     * Simplifying the cast for a thumbnail is not a saving; it is the defect,
+     * shrunk. It is now `FishFigure` itself, so the Card cannot drift.
+     */
     const { container } = render(<Preview />);
 
-    const body = container.querySelector('[data-fish-part="body"]');
-    expect(body).not.toBeNull();
-    expect(body!.tagName.toLowerCase()).toBe('circle');
-    expect(body!.getAttribute('fill')).toBe(palette.fishBody);
+    expect(container.querySelector('[data-fish-part="body"]')).not.toBeNull();
+    expect(container.querySelector('[data-fish-part="eye"]')).not.toBeNull();
+    expect(container.querySelectorAll('ellipse')).toHaveLength(0);
   });
 
-  it('is a miniature underwater scene — paints the water field from the ocean palette', () => {
-    // AC #3: the vignette is a "miniature underwater scene", a *different
-    // world* from the Sheep's meadow. The load-bearing trace is that it paints
-    // the underwater water field from the ocean palette's `water` token — the
-    // deep field the whole scene sits in. We assert the water colour is present
-    // somewhere in the scene (set membership over every fill), mechanism-
-    // agnostic: a flat water rect or a top-lit gradient both keep this green,
-    // and either way the Card reads as water, not meadow.
+  it('draws the scene the Toy actually paints, not a second drawing of it', () => {
+    /*
+     * THE REGRESSION THIS FILE EXISTS FOR.
+     *
+     * The Card is computed from `buildReef` with the shipped config and seed, so
+     * it cannot contradict the live scene — it used to carry its own hand-placed
+     * sand curve, its own single coral clump and its own ray, all maintained
+     * beside the live scene by nobody.
+     *
+     * The cheapest honest proxy is path complexity. A hand-drawn miniature is a
+     * handful of short `d` strings; a generated one carries hundreds of sampled
+     * points per mass. If someone replaces this with a sketch again, this fails.
+     */
     const { container } = render(<Preview />);
 
-    const fills = new Set<string>();
-    for (const el of container.querySelectorAll('svg *')) {
-      for (const colour of paletteColoursOf(el)) fills.add(colour);
-    }
-    expect(fills).toContain(palette.water);
+    const paths = [...container.querySelectorAll('path')];
+    expect(paths.length).toBeGreaterThan(12);
+    const longest = Math.max(...paths.map((p) => (p.getAttribute('d') ?? '').length));
+    expect(longest, 'no generated geometry — the Card looks hand-drawn again').toBeGreaterThan(400);
   });
 
-  it('sources every fill from the ocean palette — no hardcoded HSL, no meadow-palette leak', () => {
-    // AC #3: the preview is drawn "from SVG primitives, sourced from the ocean
-    // palette" — so every colour-bearing attribute across the whole vignette
-    // must route through the local ocean `palette`, no raw HSL strings and no
-    // borrowed meadow colour. This is the scene-wide guard that generalises the
-    // per-element traces above, mirroring the `UnderwaterBackdrop`'s same rule.
-    // It keeps the Card art coherent with the Toy's own world and guards a
-    // hardcoded colour slipping in when the miniature is tuned on-device.
+  it('sources every fill from the reef palette — no hardcoded colour, no foreign-palette leak', () => {
+    // Every colour-bearing attribute across the whole vignette routes through
+    // the local `palette`: no raw literals, no colour borrowed from another Toy.
+    // A set-membership guard, so it survives tuning.
     const paletteValues = new Set<string>(Object.values(palette));
     const { container } = render(<Preview />);
 
@@ -96,5 +89,21 @@ describe('Puffer Fish — Preview', () => {
         expect(paletteValues).toContain(colour);
       }
     }
+    // The gradient stops are colours too, and they sit on `stop-color` rather
+    // than `fill`, so the loop above cannot see them.
+    for (const stop of container.querySelectorAll('stop')) {
+      expect(paletteValues).toContain(stop.getAttribute('stop-color'));
+    }
+  });
+
+  it('contains no `stroke` — every line is a filled path', () => {
+    // The house rule with the shortest distance between "written down" and
+    // "broken". The old `MiniFish` smile was a stroke, and a uniform vector
+    // stroke beside a filled variable-width contour is what makes a vignette
+    // look like a different artist drew it.
+    const { container } = render(<Preview />);
+
+    expect(container.querySelectorAll('[stroke]')).toHaveLength(0);
+    expect(container.querySelectorAll('[stroke-width]')).toHaveLength(0);
   });
 });

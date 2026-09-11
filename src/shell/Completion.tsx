@@ -57,7 +57,6 @@ type CompletionProps = {
 export function Completion({ onPlayAgain, onHome }: CompletionProps) {
   return (
     <div style={overlayStyle}>
-      <Confetti />
       {/*
        * The celebration slab lands with a gentle ease-out entrance (a soft
        * fade + scale-up from 0.95, never from 0 — so it settles in rather than
@@ -104,6 +103,15 @@ export function Completion({ onPlayAgain, onHome }: CompletionProps) {
           </motion.button>
         </div>
       </motion.div>
+      {/*
+       * The burst paints ABOVE the celebration slab. It used to be the first
+       * child, and since both sit in the same stacking context at the default
+       * z-index, DOM order decided — so a nearly-opaque cream card covered most
+       * of the celebration it was supposed to be celebrating. Safe to raise: the
+       * Confetti root is `aria-hidden` and `pointer-events: none`, so it cannot
+       * take a tap from Play again / Home underneath it.
+       */}
+      <Confetti />
     </div>
   );
 }

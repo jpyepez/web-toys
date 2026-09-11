@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { motion, type Variants } from 'motion/react';
 import type { ToyProps } from '../../shell/registry';
 import { timing } from '../../shell/tokens';
-import { FishDrawing } from './FishDrawing';
+import { FishDrawing, BODY_OFFSET, FISH_WIDTH } from './FishDrawing';
 import { UnderwaterBackdrop } from './UnderwaterBackdrop';
+import { useReefScene } from './useReefScene';
 import { puff } from './sounds';
 
 /** How many fish make up the Goal. Sized for ~15–30s of kid-paced loops. */
@@ -145,23 +146,24 @@ export function PufferFish({ onComplete, sound, haptics }: ToyProps) {
   // "length ≤ 1" across the states (= 0 here).
   const fishOnStage = state === 'arriving' || state === 'waiting' || state === 'dismissing';
 
+  /*
+   * The scene geometry, shared with the backdrop. The Fish hovers over the
+   * seabed this produces rather than at a CSS percentage tuned beside it — see
+   * `useReefScene`. Rebuilt only when the viewport crosses an aspect bucket, so
+   * it is stable across every frame of the choreography.
+   */
+  const scene = useReefScene();
+  /*
+   * Where the Fish hovers, as a percentage of the viewport's height. The scene's
+   * frame is 100 wide by `frame.h` tall with its aspect MATCHING the viewport,
+   * so a frame-space y maps straight onto a percentage of the viewport height
+   * with nothing to correct.
+   */
+  const hoverPct = (scene.art.float[1] / scene.frame.h) * 100;
+
   return (
-    <main
-      data-toy-state={state}
-      style={{
-        position: 'relative',
-        minHeight: '100dvh',
-        // The seabed band's height — shared with UnderwaterBackdrop's
-        // bottom-anchored sand layer (which reads `var(--ocean-floor)`) and its
-        // coral. Defining it on the common ancestor keeps the sand line at a
-        // fixed fraction of the viewport across aspect ratios (ADR-0005); a
-        // shorter band than the meadow's ground since it's just a seabed strip.
-        // The Fish floats in open water above it, so it keeps its own
-        // viewport-relative resting position (`top: 42%`).
-        ['--ocean-floor' as string]: 'clamp(150px, 26dvh, 360px)',
-      }}
-    >
-      <UnderwaterBackdrop />
+    <main data-toy-state={state} style={{ position: 'relative', minHeight: '100dvh' }}>
+      <UnderwaterBackdrop scene={scene} />
       {fishOnStage && (
         // Static centring wrapper. The `motion.button` inside drives `x`/`y`/
         // `scale` through its variants, so Motion fully owns the button's
@@ -177,7 +179,20 @@ export function PufferFish({ onComplete, sound, haptics }: ToyProps) {
           style={{
             position: 'absolute',
             left: '50%',
-            top: '42%',
+            /*
+             * The Fish's BODY hovers over the reef's seabed, and both read the
+             * same generator. This used to be a flat `top: 42%` — a percentage
+             * of the viewport with no relationship to the sand at all, in a
+             * reference frame the backdrop's `slice`-cropped water did not
+             * share. As the viewport widened the floor sank and the Fish stayed
+             * put, until it was hovering halfway up an empty blue rectangle.
+             *
+             * `hoverPct` is the hover point's own height in the scene;
+             * subtracting `BODY_OFFSET` of the Fish's width converts the
+             * drawing's top edge to the point its body centre actually sits at.
+             * Nothing here is tuned: both numbers come out of the geometry.
+             */
+            top: `calc(${hoverPct.toFixed(3)}% - ${FISH_WIDTH} * ${BODY_OFFSET.toFixed(4)})`,
             transform: 'translateX(-50%)',
           }}
         >

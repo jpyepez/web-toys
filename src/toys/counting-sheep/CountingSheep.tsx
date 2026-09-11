@@ -1,9 +1,11 @@
-import { useEffect, useId, useRef, useState } from 'react';
-import { motion, useReducedMotion, type Variants } from 'motion/react';
+import { useEffect, useRef, useState } from 'react';
+import { motion, type Variants } from 'motion/react';
 import type { ToyProps } from '../../shell/registry';
 import { timing } from '../../shell/tokens';
-import { palette } from './palette';
+import { FLEECES } from './palette';
 import { MeadowBackdrop } from './MeadowBackdrop';
+import { SheepDrawing, FOOT_OFFSET, SHEEP_WIDTH } from './SheepDrawing';
+import { useMeadowScene } from './useMeadowScene';
 import { baa } from './sounds';
 
 /** How many Sheep make up the Goal. Sized for ~15–30s of kid-paced loops. */
@@ -23,147 +25,6 @@ const TIMING_ARRIVAL_MS = 400;
 // so the registry holds the Shell's Completion for this final-Sheep exit beat.
 export const TIMING_DISMISS_MS = 1100;
 const TIMING_INTERMISSION_MS = 200;
-
-/**
- * The wool body's four circle centres. Shared between the wool layer and
- * the done-state glow overlay so the bloom paints over the same shapes
- * the fleece does — keeping the glow visually inside the wool rather than
- * floating beside it.
- */
-const WOOL_CIRCLES = [
-  { cx: 40, cy: 44, r: 16 },
-  { cx: 58, cy: 44, r: 16 },
-  { cx: 49, cy: 34, r: 16 },
-  { cx: 49, cy: 48, r: 18 },
-] as const;
-
-/**
- * A single Sheep, drawn from SVG primitives — no image assets (ADR-0002).
- * Every fill sources the dawn palette tokens. Structural pieces tagged with
- * `data-sheep-part` so tests can address them without coupling to which SVG
- * primitive draws each one (mirrors `data-meadow-layer` in MeadowBackdrop).
- *
- * The slice-#01 (mobile-rethink) rewrite keeps the SVG primitives verbatim —
- * only how many of these are mounted, and how they enter / exit, changes.
- */
-function SheepDrawing({ done }: { done: boolean }) {
-  // A stable per-instance id for the glow gradient — React's `useId` is
-  // the idiomatic primitive here, and avoids a leaky module-level counter.
-  const glowId = `sheep-glow-${useId()}`;
-
-  // Ambient life makes the still, waiting Sheep read as a friendly creature
-  // rather than a sticker (research: blink is the highest "alive"-per-byte
-  // animation; a slow breathe sells "calm and alive"). Both are driven by
-  // Motion's own frameloop — not React `setTimeout`s — deliberately: the
-  // Toy's mechanic tests drain the state-machine's fake timers one transition
-  // at a time, and a self-rescheduling blink timer pollutes that queue. Keeping
-  // the idle motion on Motion's rAF loop keeps it out of the timer queue the
-  // tests own. Both gate on reduced-motion — non-essential looping motion stops
-  // for those who opt out; the state-machine choreography is untouched.
-  const reducedMotion = useReducedMotion();
-
-  return (
-    // The sequential mechanic puts one Sheep centred on stage as a generous
-    // touch target. Sizing on-device-tuned per the slice DoD; ~min(220px,
-    // 55vw) is the cushioned-ease-out placeholder until the kid handoff
-    // confirms it. A slow breathing swell (scale from the feet) rides on top —
-    // disabled under reduced-motion.
-    <motion.svg
-      viewBox="0 0 100 80"
-      aria-hidden="true"
-      style={{
-        width: 'min(220px, 55vw)',
-        height: 'auto',
-        display: 'block',
-        transformOrigin: 'center bottom',
-      }}
-      animate={reducedMotion ? undefined : { scale: [1, 1.025, 1] }}
-      transition={{ duration: 3.4, ease: 'easeInOut', repeat: Infinity }}
-    >
-      <defs>
-        <radialGradient id={glowId} cx="0.5" cy="0.5" r="0.5">
-          <stop offset="0" stopColor={palette.doneGlow} stopOpacity="0.85" />
-          <stop offset="1" stopColor={palette.doneGlow} stopOpacity="0" />
-        </radialGradient>
-      </defs>
-      {/* legs */}
-      <rect data-sheep-part="leg" x="34" y="52" width="6" height="20" rx="3" fill={palette.sheepSilhouette} />
-      <rect data-sheep-part="leg" x="58" y="52" width="6" height="20" rx="3" fill={palette.sheepSilhouette} />
-      {/* fluffy body */}
-      {WOOL_CIRCLES.map((c, i) => (
-        <circle
-          key={`wool-${i}`}
-          data-sheep-part="wool"
-          cx={c.cx}
-          cy={c.cy}
-          r={c.r}
-          fill={palette.sheepWool}
-        />
-      ))}
-      {done &&
-        WOOL_CIRCLES.map((c, i) => (
-          <circle
-            key={`glow-${i}`}
-            data-sheep-part="glow"
-            cx={c.cx}
-            cy={c.cy}
-            r={c.r}
-            fill={`url(#${glowId})`}
-          />
-        ))}
-      {/* head + ears (drawn first so the face features paint on top) */}
-      <ellipse data-sheep-part="ear" cx="62" cy="34" rx="5" ry="3" fill={palette.sheepSilhouette} />
-      <ellipse data-sheep-part="ear" cx="82" cy="34" rx="5" ry="3" fill={palette.sheepSilhouette} />
-      <ellipse data-sheep-part="head" cx="72" cy="40" rx="12" ry="13" fill={palette.sheepSilhouette} />
-      {/*
-       * The cute-lamb face. Built from the baby-schema research: features sit
-       * low on the face, eyes are large with a bright base + a white catchlight
-       * (the "alive, friendly" lever vs. flat dots), a soft cream muzzle lets
-       * the dark eyes + smile read against the dark head, and rosy cheeks warm
-       * it. Geometry is on-device-tunable per the slice DoD; the load-bearing
-       * pieces are the part hooks and that every fill sources a palette token.
-       */}
-      {/* cream snout patch — drops the features into the lower face */}
-      <ellipse data-sheep-part="muzzle" cx="72" cy="46" rx="6.5" ry="5" fill={palette.muzzle} />
-      {/*
-       * Eyes blink on a slow loop: the group holds open most of the cycle, then
-       * squashes to a sliver (scaleY → 0.1) and back — one ~450ms blink every
-       * ~4.5s. `transformBox: fill-box` pivots on the group's own bounding box
-       * so the lids meet at the eye centreline rather than the SVG origin.
-       */}
-      <motion.g
-        style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
-        animate={reducedMotion ? undefined : { scaleY: [1, 1, 0.1, 1] }}
-        transition={{
-          duration: 4.5,
-          times: [0, 0.9, 0.945, 1],
-          ease: 'easeOut',
-          repeat: Infinity,
-        }}
-      >
-        {/* bright eye base */}
-        <ellipse data-sheep-part="eye" cx="67.5" cy="39" rx="3" ry="3.4" fill={palette.eyeWhite} />
-        <ellipse data-sheep-part="eye" cx="76.5" cy="39" rx="3" ry="3.4" fill={palette.eyeWhite} />
-        {/* big pupils, converged slightly inward + down (warm, not blank) */}
-        <circle cx="68.3" cy="39.7" r="2" fill={palette.eyePupil} />
-        <circle cx="75.7" cy="39.7" r="2" fill={palette.eyePupil} />
-        {/* catchlights — both offset the same way (consistent light) */}
-        <circle cx="69" cy="38.6" r="0.8" fill={palette.eyeShine} />
-        <circle cx="76.4" cy="38.6" r="0.8" fill={palette.eyeShine} />
-      </motion.g>
-      {/* tiny nose + a gentle, shallow smile */}
-      <ellipse data-sheep-part="nose" cx="72" cy="43.4" rx="1.5" ry="1.1" fill={palette.noseTip} />
-      <path
-        data-sheep-part="smile"
-        d="M 69.5 46 Q 72 48.6 74.5 46"
-        fill="none"
-        stroke={palette.eyePupil}
-        strokeWidth="1.1"
-        strokeLinecap="round"
-      />
-    </motion.svg>
-  );
-}
 
 /**
  * The five states of the per-Sheep loop (mobile-rethink PRD, slice #01).
@@ -270,6 +131,23 @@ export function CountingSheep({ onComplete, sound, haptics }: ToyProps) {
   // `waiting → dismissing` transition (the tap). Reaching SHEEP_COUNT is
   // the Goal-met signal: `onComplete` fires once and the loop terminates.
   const [dismissed, setDismissed] = useState(0);
+  /*
+   * WHICH Sheep is on stage, as distinct from HOW MANY have been dismissed.
+   *
+   * These used to be the same number, and that was fine only while all five
+   * Sheep were identical. `dismissed` increments on the TAP, and it drove both
+   * the React `key` and the fleece colour — so the instant a child tapped, the
+   * Sheep they had just touched was unmounted and a fresh one of the NEXT colour
+   * was mounted off-stage-left in its place. The tapped Sheep never played its
+   * exit at all; the next one performed it and then walked back in wearing the
+   * same fleece. Measured: tap an amber Sheep and it is moss at +0ms, still moss
+   * as it slides off at +700ms, and moss again when it arrives at +1800ms.
+   *
+   * Giving the two roles their own counters puts each change where it belongs —
+   * identity and colour flip when a NEW Sheep arrives, not when the current one
+   * is sent away.
+   */
+  const [onStage, setOnStage] = useState(0);
   // ADR-0001 amendment: `onComplete` is a one-shot. The ref guards against
   // a re-render with a new `onComplete` reference (which the Shell does the
   // moment Completion starts) re-firing the effect.
@@ -292,7 +170,12 @@ export function CountingSheep({ onComplete, sound, haptics }: ToyProps) {
       return () => clearTimeout(timer);
     }
     if (state === 'idle') {
-      const timer = setTimeout(() => setState('arriving'), TIMING_INTERMISSION_MS);
+      // The intermission is where the cast actually changes over: the next Sheep
+      // gets its identity and its fleece here, off-stage, rather than at the tap.
+      const timer = setTimeout(() => {
+        setOnStage((n) => n + 1);
+        setState('arriving');
+      }, TIMING_INTERMISSION_MS);
       return () => clearTimeout(timer);
     }
   }, [state, goalMet]);
@@ -311,26 +194,35 @@ export function CountingSheep({ onComplete, sound, haptics }: ToyProps) {
   // matching AC #1's "length ≤ 1" across the four states (=0 here).
   const sheepOnStage = state === 'arriving' || state === 'waiting' || state === 'dismissing';
 
+  /*
+   * The scene geometry, shared with the backdrop. The Sheep stands on the
+   * walking line this produces rather than on a CSS length tuned beside it —
+   * see `useMeadowScene`. Rebuilt only when the viewport crosses an aspect
+   * bucket, so it is stable across every frame of the choreography.
+   */
+  const scene = useMeadowScene();
+  /*
+   * Where the walking line sits, as a percentage of the viewport's height. The
+   * scene's frame is 100 wide by `frame.h` tall with its aspect MATCHING the
+   * viewport, so a frame-space y maps straight onto a percentage of the
+   * viewport height with nothing to correct.
+   */
+  const groundPct = (scene.art.stand[1] / scene.frame.h) * 100;
+  /*
+   * Which Sheep is on stage. The five share the house cast lightness and chroma
+   * and differ only in hue, so they read as one flock while still being five
+   * visibly different animals — which gives a three-year-old something to notice
+   * arriving, without adding a score, a streak or any other meta-layer (Home
+   * stays a pure launcher).
+   */
+  const fleece = FLEECES[onStage % FLEECES.length];
+
   return (
     <main
       data-toy-state={state}
-      style={{
-        position: 'relative',
-        minHeight: '100dvh',
-        // The ground band's height — shared with MeadowBackdrop's bottom-
-        // anchored hills layer (which reads `var(--meadow-ground)`) and with
-        // the Sheep's `bottom` below. Defining it here, on the common ancestor
-        // of both the backdrop and the Sheep, is what keeps the horizon and the
-        // Sheep's feet locked together across aspect ratios: the hills fill this
-        // band from the viewport bottom up, so the surface the Sheep stands on
-        // is always the same fraction of the viewport tall — never the
-        // slice-cropped, aspect-dependent line that floated the Sheep on
-        // desktop. `dvh` + clamp keeps the band sane from short landscape to
-        // tall phone.
-        ['--meadow-ground' as string]: 'clamp(240px, 42dvh, 520px)',
-      }}
+      style={{ position: 'relative', minHeight: '100dvh' }}
     >
-      <MeadowBackdrop />
+      <MeadowBackdrop scene={scene} />
       {sheepOnStage && (
         // Centring wrapper. The `motion.button` inside drives `x` through
         // its variants, which means Motion fully owns the button's
@@ -350,15 +242,20 @@ export function CountingSheep({ onComplete, sound, haptics }: ToyProps) {
           style={{
             position: 'absolute',
             left: '50%',
-            // Anchor the Sheep's feet to the shared ground band rather than a
-            // raw viewport fraction. The foreground hill's surface at centre
-            // sits ~0.7 up the band; the 0.62 multiplier lands the feet on that
-            // surface (the Sheep sprite's legs end a little above its box
-            // bottom, so the resting point is slightly below the bare surface
-            // fraction). Because both this and MeadowBackdrop's hills derive
-            // from `--meadow-ground`, they track together at every aspect ratio
-            // — fixing the desktop "Sheep floating above the hill" bug.
-            bottom: 'calc(var(--meadow-ground) * 0.62)',
+            /*
+             * The Sheep's FEET land on the meadow's walking line, and both read
+             * the same generator. This used to be `calc(var(--meadow-ground) *
+             * 0.62)` — a multiplier tuned by eye against a hill curve it could
+             * not see, in a reference frame the backdrop's `slice`-cropped sky
+             * did not share. As the viewport widened the horizon and the Sheep
+             * drifted apart and the Sheep floated above the ground.
+             *
+             * `groundPct` is the line's own height in the scene; subtracting
+             * `FOOT_OFFSET` of the Sheep's width converts the drawing's top edge
+             * to the point its hooves actually sit at. Nothing here is tuned:
+             * both numbers come out of the geometry.
+             */
+            top: `calc(${groundPct.toFixed(3)}% - ${SHEEP_WIDTH} * ${FOOT_OFFSET.toFixed(4)})`,
             transform: 'translateX(-50%)',
           }}
         >
@@ -368,7 +265,7 @@ export function CountingSheep({ onComplete, sound, haptics }: ToyProps) {
             // one). Without the key the conditional render would
             // re-use the same DOM node across iterations and `initial` would
             // skip on subsequent arrivals.
-            key={dismissed}
+            key={onStage}
             type="button"
             aria-label="Sheep"
             variants={sheepVariants}
@@ -413,7 +310,7 @@ export function CountingSheep({ onComplete, sound, haptics }: ToyProps) {
              * Sheep." The bloom inside the wool is the "warm light caught in
              * the fleece" beat of the rise-fall hop choreography.
              */}
-            <SheepDrawing done={state === 'dismissing'} />
+            <SheepDrawing fleece={fleece} done={state === 'dismissing'} interactive />
           </motion.button>
         </div>
       )}

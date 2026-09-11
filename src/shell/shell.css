@@ -83,3 +83,26 @@ body {
 .chrome-pill--top-left {
   left: calc(env(safe-area-inset-left) + 8px);
 }
+
+/*
+ * The paper grain overlay (see PaperGrain.tsx). Fixed and pointer-transparent so
+ * it textures everything without ever stealing a tap from a Critter. `multiply`
+ * keeps it reading as ink lying on a surface rather than a grey film over one.
+ */
+.paper-grain {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  mix-blend-mode: multiply;
+  z-index: 40;
+}
+
+/* Grain costs real contrast, which is a fair reason to drop it — unlike reduced
+   motion, which is about movement and has no quarrel with texture. */
+@media (prefers-contrast: more) {
+  .paper-grain {
+    display: none;
+  }
+}

@@ -39,28 +39,49 @@ const CYCLE_TIMES = [0, 0.12, 0.7, 0.85, 1];
 // rather than drifting out of phase.
 const cycle = { duration: CYCLE_S, ease: 'easeInOut', times: CYCLE_TIMES, repeat: Infinity } as const;
 
-// The carry path (DOM px, relative to the demo's start anchor): the bird lifts off
-// its rest spot up top and travels DOWN (and slightly toward centre) to the nest
-// in the lower band, then the keyframe holds at the nest through the release before
-// reforming. The long downward travel mirrors the real gesture now that the birds
-// wait up in the sky and the nest sits at the bottom. On-device-tuned offsets,
-// tuned on a 390×844 phone; approximate on other sizes (a decorative hint, not a
-// snap), and dropped entirely under reduced motion (root MotionConfig).
-const PATH_X = [0, 6, 60, 64, 0];
-const PATH_Y = [0, -14, 470, 474, 0];
+/**
+ * The carry path, as keyframe fractions of the journey rather than pixels.
+ *
+ * It used to be a literal `[0, 6, 60, 64, 0]` / `[0, -14, 470, 474, 0]` in DOM
+ * px, tuned on a 390x844 phone against a hand-written cast scatter. Both ends of
+ * that gesture have since moved: the fledglings are placed on the limbs the
+ * canopy generates, and the nest is placed on the bough. A fixed 470px drop now
+ * points at neither of them — on a wide viewport it ends in mid-air.
+ *
+ * So the demo takes its start and its travel from the SAME scene geometry the
+ * cast and the nest do. The shape of the gesture is what is authored here: a
+ * small lift, the long carry, a beat at the nest through the release, then
+ * reform. Where it goes is measured.
+ */
+const LIFT = -0.03;
+const PATH_FRACTIONS = [0, LIFT, 1, 1.008, 0];
 
-export function GhostCarryHand() {
+export function GhostCarryHand({
+  left = '26%',
+  top = '15%',
+  travel = { x: 60, y: 470 },
+}: {
+  /** Where the demo lifts from — a real perch, so it shows a real bird rising. */
+  left?: string;
+  top?: string;
+  /** Start-of-gesture to nest centre, in DOM px. Measured, not tuned. */
+  travel?: { x: number; y: number };
+}) {
+  const PATH_X = PATH_FRACTIONS.map((f) => travel.x * f);
+  // The lift is vertical only — a hand picking something up raises it before it
+  // carries it sideways, and scaling the lift by the horizontal travel would
+  // make it disappear whenever the nest happens to sit straight below.
+  const PATH_Y = PATH_FRACTIONS.map((f, i) => (i === 1 ? -14 : travel.y * f));
   return (
     <div
       data-ghost-carry-hand=""
       aria-hidden="true"
-      // Sits over a bird's rest spot up in the UPPER band (near the robin's
-      // start), pinned so the demo lifts from where a real fledgling waits and
-      // carries down to the nest in the lower band. Offsets on-device-tuned.
+      // Pinned to a real fledgling's perch, so the demo lifts from where a bird
+      // actually waits and carries down to where the nest actually is.
       style={{
         position: 'absolute',
-        left: '26%',
-        top: '15%',
+        left,
+        top,
         transform: 'translateX(-50%)',
         pointerEvents: 'none',
         overflow: 'visible',

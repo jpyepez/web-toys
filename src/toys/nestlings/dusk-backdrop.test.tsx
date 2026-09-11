@@ -1,4 +1,18 @@
 import { describe, it, expect } from 'vitest';
+import { buildCanopy } from './canopy';
+import { CANOPY, CANOPY_SEED } from './canopy-config';
+
+/**
+ * A scene to render against. `DuskBackdrop` takes its geometry as a PROP rather
+ * than building it — one generator, read by the backdrop that draws the limbs
+ * and by the cast that stands on them, so the two cannot drift apart. Tests
+ * therefore build it the same way the Toy does.
+ */
+const scene = () => {
+  const frame = { w: 100, h: 216 };
+  const birdW = 36;
+  return { frame, birdW, art: buildCanopy(CANOPY, frame, birdW, CANOPY_SEED, 5) };
+};
 import { render } from '@testing-library/react';
 import { DuskBackdrop } from './DuskBackdrop';
 import { palette } from './palette';
@@ -53,7 +67,7 @@ describe('Nestlings — DuskBackdrop', () => {
     // gradient evolution stays an implementation detail — the `sky`/`skyDeep`
     // gradient stops are caught via their `stop-color`).
     const paletteValues = new Set<string>(Object.values(palette));
-    const { container } = render(<DuskBackdrop />);
+    const { container } = render(<DuskBackdrop scene={scene()} />);
 
     const sky = container.querySelectorAll('[data-dusk-layer="sky"]');
     expect(sky.length).toBeGreaterThan(0);
@@ -70,11 +84,11 @@ describe('Nestlings — DuskBackdrop', () => {
     // AC #2: the low dusk ground band — the bottom-anchored ground anchor of the
     // layered scene (ADR-0005), the reachable lower band the nest rests in.
     // Addressed structurally via `data-dusk-layer="ground"`; its colour traces to
-    // the dusk palette. Height/shape (the `--nestlings-ground` dvh clamp) is
+    // the dusk palette. Height/shape (the understory's corner-weighted depth) is
     // on-device per the slice DoD, so we assert presence + the palette trace, not
     // geometry.
     const paletteValues = new Set<string>(Object.values(palette));
-    const { container } = render(<DuskBackdrop />);
+    const { container } = render(<DuskBackdrop scene={scene()} />);
 
     const ground = container.querySelectorAll('[data-dusk-layer="ground"]');
     expect(ground.length).toBeGreaterThan(0);
@@ -94,7 +108,7 @@ describe('Nestlings — DuskBackdrop', () => {
     // Position/shape is on-device per the slice DoD, so we assert presence + the
     // palette trace, not geometry.
     const paletteValues = new Set<string>(Object.values(palette));
-    const { container } = render(<DuskBackdrop />);
+    const { container } = render(<DuskBackdrop scene={scene()} />);
 
     const branch = container.querySelectorAll('[data-dusk-layer="branch"]');
     expect(branch.length).toBeGreaterThan(0);
@@ -116,7 +130,7 @@ describe('Nestlings — DuskBackdrop', () => {
     // exact rect / drop-zone size is on-device-tuned (load-bearing in slice #3),
     // so we assert presence + the palette trace, not geometry.
     const paletteValues = new Set<string>(Object.values(palette));
-    const { container } = render(<DuskBackdrop />);
+    const { container } = render(<DuskBackdrop scene={scene()} />);
 
     const nest = container.querySelectorAll('[data-dusk-layer="nest"]');
     expect(nest.length).toBeGreaterThan(0);
@@ -137,7 +151,7 @@ describe('Nestlings — DuskBackdrop', () => {
     // backdrops. We assert every root SVG carries `aria-hidden` and
     // `pointer-events: none`; the full-bleed `dvh`/`env()` layout itself is
     // on-device per the slice DoD.
-    const { container } = render(<DuskBackdrop />);
+    const { container } = render(<DuskBackdrop scene={scene()} />);
 
     const svgs = container.querySelectorAll('svg');
     expect(svgs.length).toBeGreaterThan(0);
@@ -157,7 +171,7 @@ describe('Nestlings — DuskBackdrop', () => {
     // assert each traces back to a `palette` value. Guards against a hardcoded
     // HSL slipping into any future layer tuned on-device.
     const paletteValues = new Set<string>(Object.values(palette));
-    const { container } = render(<DuskBackdrop />);
+    const { container } = render(<DuskBackdrop scene={scene()} />);
 
     const elements = container.querySelectorAll('svg *');
     expect(elements.length).toBeGreaterThan(0);

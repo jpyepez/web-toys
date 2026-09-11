@@ -1,3 +1,5 @@
+import { hex, type Oklch } from './art/oklch';
+
 /**
  * Type stack — rounded sans-serif. Replaces the editorial serif the polish
  * PRD's slice #07 originally pinned ("system serif only"). Reversal recorded
@@ -66,10 +68,32 @@ export const ink = 'hsl(20 14% 20%)';
  * Exact tuples are on-device-tunable per the slice DoD; the names are
  * load-bearing.
  */
+const completionSurface: Oklch = { l: 0.923, c: 0.028, h: 85 };
+
+/**
+ * Spark lightness. The sparks used to be peach, gold and CREAM — and the slab
+ * they burst over is cream, so one particle was invisible against it and the
+ * other two were within ΔL 0.07. The burst was painting behind the card at the
+ * time, which hid the problem; raising it above the card exposed it. Held a
+ * clear step below the surface so the celebration is legible against its own
+ * card AND against a bright Toy backdrop.
+ */
+const SPARK_L = 0.74;
+const SPARK_C = 0.14;
+
 export const completion = {
-  surface: 'hsl(38 35% 90%)',
-  ink: 'hsl(20 25% 22%)',
-  spark: ['hsl(28 55% 78%)', 'hsl(42 95% 72%)', 'hsl(38 35% 90%)'],
+  surface: hex(completionSurface),
+  ink: hex({ l: 0.3, c: 0.033, h: 45 }),
+  // Warm family — coral, amber, gold. One hue each, shared lightness and
+  // chroma, the same sibling rule the Critter casts follow.
+  spark: [
+    hex({ l: SPARK_L, c: SPARK_C, h: 30 }),
+    hex({ l: SPARK_L, c: SPARK_C, h: 65 }),
+    hex({ l: SPARK_L, c: SPARK_C, h: 100 }),
+  ],
+  /** Exported so the contrast rule can be asserted rather than eyeballed. */
+  surfaceLightness: completionSurface.l,
+  sparkLightness: SPARK_L,
 } as const;
 
 /**

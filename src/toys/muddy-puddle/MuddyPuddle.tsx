@@ -3,6 +3,8 @@ import { motion, type Variants } from 'motion/react';
 import type { ToyProps } from '../../shell/registry';
 import { timing } from '../../shell/tokens';
 import { BarnyardBackdrop } from './BarnyardBackdrop';
+import { useBarnyardScene } from './useBarnyardScene';
+import { CRITTER_WIDTH, FOOT_OFFSET } from './critter-metrics';
 import { WipeableCritter } from './WipeableCritter';
 import { GhostFinger } from './GhostFinger';
 import { CAST, shuffle } from './cast';
@@ -83,8 +85,19 @@ const SQUELCH_THROTTLE_MS = 70;
  * wrapper; this Motion element carries only its `x`/`y`/`scale` deltas, which
  * Motion fully owns — an inline `translateX(-50%)` here would be clobbered the
  * moment Motion writes its first transform string.
+ *
+ * WHY THIS IS A FUNCTION NOW. The splash used to be a literal `y: [0, -40, 90,
+ * 70, 80]` — a nudge downward from the resting position, tuned by eye against a
+ * puddle drawn into a separate CSS band. It landed in the water on the phone it
+ * was tuned on and in the grass beside it at 16:10, because the pool moves with
+ * the frame and the nudge did not. The offsets now come from the scene's own
+ * emitted `splash` point, so the two cannot drift apart.
+ *
+ * The deltas are in `vw` because the scene's frame is 100 units wide and maps to
+ * the viewport's full width — so one frame unit is one `vw` in BOTH axes, and no
+ * pixel measurement is needed to convert between them.
  */
-const critterVariants: Variants = {
+const makeCritterVariants = (splashDx: number, splashDy: number): Variants => ({
   arriving: {
     x: 0,
     y: 0,
@@ -122,13 +135,14 @@ const critterVariants: Variants = {
       times: [0, 0.16, 0.3, 0.4, 0.55, 0.9, 1],
     },
   },
-  // The last Critter's splash-for-joy Outro: it hops up then plops down into the
-  // puddle with a squash-and-settle, staying centred (the Shell's Completion
-  // overlay layers on top). Held opaque throughout — it's celebrating, not
-  // leaving.
+  // The last Critter's splash-for-joy Outro: it hops up, then plops down INTO
+  // the pool the backdrop actually drew, with a squash-and-settle. The Shell's
+  // Completion overlay layers on top; held opaque throughout — it's celebrating,
+  // not leaving. The arc overshoots the target slightly and settles back, which
+  // is what makes it read as a landing rather than as a slide.
   splashing: {
-    x: 0,
-    y: [0, -40, 90, 70, 80],
+    x: [0, splashDx * 0.3, splashDx, splashDx, splashDx].map((v) => `${v}vw`),
+    y: [0, splashDy * 0.3 - 8, splashDy + 3, splashDy - 2, splashDy].map((v) => `${v}vw`),
     scale: [1, 1.05, 0.9, 1.02, 1],
     opacity: 1,
     transition: {
@@ -137,7 +151,7 @@ const critterVariants: Variants = {
       times: [0, 0.22, 0.55, 0.8, 1],
     },
   },
-};
+});
 
 /**
  * Muddy Puddle — a barnyard scene that sends one muddy Critter at a time onto
@@ -257,34 +271,45 @@ export function MuddyPuddle({ onComplete, sound, haptics }: ToyProps) {
   // "zero Critters during idle".
   const critterOnStage = state === 'arriving' || state === 'wiping' || state === 'dismissing';
 
+  /*
+   * The scene geometry, shared with the backdrop. A Critter stands on the
+   * trotting line this emits and the last one splashes into the pool it draws,
+   * rather than both being positioned beside it — see `useBarnyardScene`.
+   * Rebuilt only when the viewport crosses an aspect bucket.
+   */
+  const scene = useBarnyardScene();
+  const { stand, splash } = scene.art;
+  // Where the trotting line sits, as a percentage of the stage's height.
+  const groundPct = (stand[1] / scene.frame.h) * 100;
+  // The pool, as an offset from the resting position. One frame unit is one
+  // `vw`, so no pixel measurement is needed to cross between the two spaces.
+  const critterVariants = makeCritterVariants(splash[0] - stand[0], splash[1] - stand[1]);
+
   return (
     <main
       data-toy-state={state}
       data-demo-active={demoActive}
-      style={{
-        position: 'relative',
-        minHeight: '100dvh',
-        // The ground band's height — shared with BarnyardBackdrop's
-        // bottom-anchored grass + mud-puddle layers (which read
-        // `var(--barnyard-floor)`). Defining it on the common ancestor keeps the
-        // horizon + puddle at a fixed fraction of the viewport across aspect
-        // ratios (ADR-0005). On-device-tuned; the name is the contract.
-        ['--barnyard-floor' as string]: 'clamp(160px, 30dvh, 380px)',
-      }}
+      style={{ position: 'relative', minHeight: '100dvh' }}
     >
-      <BarnyardBackdrop />
+      <BarnyardBackdrop scene={scene} />
       {critterOnStage && (
         // Static centring wrapper. The `motion.div` inside drives `x`/`y`/`scale`
         // through its variants, so Motion fully owns its `transform` — splitting
         // the centring (here) from the per-state deltas (the Motion element)
         // keeps each transform owned by exactly one thing (the
-        // `motion-transform-ownership` gotcha). Sits upper-center, clear of the
-        // bottom palm-rest dead zone (slice spec); `top`/offsets on-device-tuned.
+        // `motion-transform-ownership` gotcha).
+        //
+        // The vertical placement is DERIVED, not tuned. It used to be a flat
+        // `top: 34%`, which put a Critter's feet on the drawn ground at the one
+        // aspect the number was picked at and floated it above the ground
+        // everywhere else. `FOOT_OFFSET` of the Critter's width converts the
+        // drawing's top edge into the position that puts its FEET on the
+        // trotting line the backdrop actually drew.
         <div
           style={{
             position: 'absolute',
             left: '50%',
-            top: '34%',
+            top: `calc(${groundPct.toFixed(3)}% - ${CRITTER_WIDTH} * ${FOOT_OFFSET.toFixed(4)})`,
             transform: 'translateX(-50%)',
           }}
         >

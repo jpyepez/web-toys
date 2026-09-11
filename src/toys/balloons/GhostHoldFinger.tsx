@@ -39,17 +39,42 @@ const CYCLE_TIMES = [0, 0.45, 0.7, 1];
 // and reform as one gesture rather than drifting out of phase.
 const cycle = { duration: CYCLE_S, ease: 'easeInOut', times: CYCLE_TIMES, repeat: Infinity } as const;
 
-export function GhostHoldFinger() {
+export function GhostHoldFinger({
+  left,
+  top,
+  color = palette.balloon3,
+}: {
+  left: string;
+  top: string;
+  /**
+   * The body colour of the balloon this hint sits on.
+   *
+   * Now that the demo is placed on a real slot rather than in open sky, a ghost
+   * in some OTHER balloon's colour reads as a sixth balloon fading in over the
+   * fifth — on a phone the green ghost sat on the orange balloon and the pair
+   * came out as one muddy shape. Matching the colour makes the swell read as
+   * "this balloon is growing", which is the thing being taught.
+   */
+  color?: string;
+}) {
   return (
     <div
       data-ghost-hold-finger=""
       aria-hidden="true"
-      // Sits over the bunch's mid-zone (matching the balloons' fan), pinned so the
-      // demo presses where a real balloon waits. Offsets on-device-tuned.
+      /*
+       * Placed ON a real balloon's slot, not at a percentage of its own.
+       *
+       * It used to be pinned at `left: 48%, top: 34%`, tuned by eye against a
+       * bunch that was itself at hand-tuned percentages — so the demo pressed
+       * where a balloon had been on one phone, and pressed empty sky everywhere
+       * else. That is the same two-hand-maintained-positions failure the scene
+       * generator exists to end, and the fix is the same: the bunch hands this
+       * the slot of the balloon it wants to point at.
+       */
       style={{
         position: 'absolute',
-        left: '48%',
-        top: '34%',
+        left,
+        top,
         transform: 'translateX(-50%)',
         pointerEvents: 'none',
         overflow: 'visible',
@@ -66,7 +91,7 @@ export function GhostHoldFinger() {
         animate={{ scale: [0.82, 1, 1, 0.82], opacity: [0.35, 0.55, 0.55, 0.35] }}
         transition={cycle}
       >
-        <BalloonDrawing fill={0.55} color={palette.balloon3} />
+        <BalloonDrawing fill={0.55} color={color} />
       </motion.div>
 
       {/* The translucent ghost finger pressing the balloon's crown and DWELLING —
@@ -84,6 +109,13 @@ export function GhostHoldFinger() {
           viewBox="0 0 56 80"
           style={{ position: 'absolute', left: 0, top: 0, transform: 'translate(-46%, -86%)' }}
         >
+          {/* Deliberately `white` rather than a palette token, and it is the one
+              place in this Toy where that is right. The ghost hand is a UI
+              OVERLAY — a hint about the interface, not a thing in the world —
+              and Muddy Puddle's finger and Nestlings' carry-hand are both drawn
+              this way. Painting only this one in the paper would leave the
+              collection with two teaching hands that look alike and a third that
+              does not, which is a worse inconsistency than the one it fixes. */}
           {/* soft contact halo where the tip meets the balloon */}
           <ellipse cx="28" cy="74" rx="15" ry="5" fill="white" opacity="0.22" />
           {/* the finger — a soft translucent capsule */}

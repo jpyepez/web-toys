@@ -5,6 +5,8 @@ import { CarriableBird } from './CarriableBird';
 import { GhostCarryHand } from './GhostCarryHand';
 import type { BirdSpecies } from './BirdDrawing';
 import { chirp, coo, flutter, plip } from './sounds';
+import { FOOT_FRACTION, useCanopyScene } from './useCanopyScene';
+import { BODY_CENTRE_DROP } from './CarriableBird';
 
 /** A point in client (DOM-pixel) space — the measured nest centre. */
 type Point = { x: number; y: number };
@@ -28,27 +30,68 @@ const IDLE_DEMO_DELAY_MS = 2500;
 const FLUTTER_THROTTLE_MS = 90;
 
 /**
- * The cast — each fledgling's species (slice #2) plus where it sits at rest.
- * The cast SIZE is `CAST.length`, the on-device-tuned duration lever (like the
- * sheep / fish / balloon counts), deliberately NOT a unit-asserted magic number
- * (slice Notes). Five visually distinct species for variety; there is no hidden
- * identity/reveal (PRD), so they only colour the set.
+ * The cast — one species per fledgling, in the order they are handed perches.
  *
- * `left`/`top` (percent of the Toy's `<main>`) scatter the birds across the
- * UPPER band of the scene — up in the dusk sky, well clear of the nest at the
- * bottom — so the carry reads as an obvious "bring the bird DOWN home to the
- * nest" gesture rather than a tiny nudge sideways. They stay below the top
- * safe-area (the Home/mute controls) and the nest owns the lower band. The exact
- * tuples are on-device-tuned per AC #7 — this scatter is the starting point for
- * the reachability pass on a 390×844 phone, not a unit-asserted contract.
+ * The SIZE of this list is the on-device-tuned duration lever (like the sheep /
+ * fish / balloon counts) and the Goal is derived from it, so it is deliberately
+ * not a unit-asserted magic number. Five visually distinct species for variety;
+ * there is no hidden identity/reveal (PRD), so they only colour the set.
+ *
+ * WHERE THEY STAND IS NO LONGER WRITTEN HERE, and that is the point.
+ *
+ * This used to be five hand-tuned `left`/`top` percentages, chosen to descend
+ * toward the nest and to avoid the top chrome. They were maintained separately
+ * from the scene, which was drawn separately from them — so five birds wearing
+ * contact shadows stood in open sky, neither perched nor airborne, and no amount
+ * of adjusting either list could fix it, because nothing tied them together.
+ *
+ * The canopy generator now produces PERCH points on the limbs it draws, and the
+ * cast is placed on those. The birds stand on the branches for the same reason a
+ * real one does: the branch is there. It also means the scatter re-composes
+ * itself for the viewport instead of being a portrait arrangement stretched
+ * across a desktop.
  */
-const CAST: { species: BirdSpecies; left: string; top: string }[] = [
-  { species: 'robin', left: '26%', top: '15%' },
-  { species: 'bluebird', left: '62%', top: '18%' },
-  { species: 'sparrow', left: '44%', top: '32%' },
-  { species: 'wren', left: '80%', top: '25%' },
-  { species: 'goldfinch', left: '18%', top: '38%' },
-];
+const CAST: BirdSpecies[] = ['robin', 'bluebird', 'wren', 'sparrow', 'goldfinch'];
+
+/**
+ * Where each fledgling settles once it is tucked in — its seat in the huddle,
+ * as a fraction of the measured nest's width, plus how far it nestles down.
+ *
+ * A placed bird used to simply stay wherever the finger released it, and the
+ * snap radius is deliberately forgiving, so five of them landed in a pile: a
+ * full nest looked identical to a nest with one bird in it. The Goal of the
+ * whole Toy had no visible accumulation, which is the one reward a
+ * three-year-old is actually playing for.
+ *
+ * Seats are assigned by the bird's INDEX, not by the order it was carried, so
+ * the free-order cast stays free-order — every bird has its own spot and it does
+ * not matter which arrives first. `y` ascends with the index so a later bird
+ * draws in FRONT of an earlier one: DOM order is paint order, and a huddle
+ * whose back row overlaps its front row reads as a mistake.
+ *
+ * They overlap, and they are meant to. Five fledglings do not fit side by side
+ * in a bowl two birds wide, and a row of evenly spaced, non-touching birds would
+ * be a shelf rather than a nestful.
+ *
+ * Every `y` is POSITIVE — below the measured rect. That rect is the nest's
+ * OPENING, which sits at the top of the bowl, so seats level with it perch the
+ * huddle on the rim like eggs balanced on the edge; the inside of the bowl is
+ * further down than the thing the drop zone is measured from.
+ */
+/**
+ * How far above the nest the wordless demo starts, in bird-widths. Far enough
+ * that the pull is a carry rather than a nudge, close enough that the phantom
+ * stays in the nest's own clear approach lane instead of crossing the cast.
+ */
+const DEMO_LIFT_BIRDS = 1.9;
+
+const SEATS = [
+  { x: -0.3, y: 0.1, scale: 0.6 },
+  { x: 0.3, y: 0.1, scale: 0.6 },
+  { x: -0.15, y: 0.22, scale: 0.62 },
+  { x: 0.15, y: 0.22, scale: 0.62 },
+  { x: 0, y: 0.34, scale: 0.64 },
+] as const;
 
 /**
  * Nestlings — the free-order cast (nestlings PRD, slice #04). Like Balloons (and
@@ -65,6 +108,13 @@ const CAST: { species: BirdSpecies; left: string; top: string }[] = [
  * are later slices — this one ends at: five placed → `onComplete` once → terminal.
  */
 export function Nestlings({ onComplete, sound, haptics }: ToyProps) {
+  /*
+   * The scene geometry, built once from the viewport's aspect and shared with
+   * the backdrop. ONE generator read by two consumers: the backdrop draws the
+   * limbs and the cast stands on them, so they cannot drift apart the way two
+   * hand-maintained lists did.
+   */
+  const scene = useCanopyScene(CAST.length);
   // Placements counted toward the Goal — incremented as each bird snaps into the
   // nest (its `onPlaced`). The cast runs N concurrent lifecycles rather than one
   // conveyor, so this is a simple tally, not a state machine: the order birds are
@@ -81,6 +131,10 @@ export function Nestlings({ onComplete, sound, haptics }: ToyProps) {
   // nest's rect once and passes it". Starts at the origin; jsdom rects are all-
   // zero, so tests place a bird by releasing at `{0,0}`.
   const [nestCenter, setNestCenter] = useState<Point>({ x: 0, y: 0 });
+  // The nest opening's measured WIDTH in client px — the scale the seats are
+  // expressed in, so the huddle stays proportional to the nest at every viewport
+  // instead of being a fixed pixel fan that fits one phone.
+  const [nestWidth, setNestWidth] = useState(0);
   const mainRef = useRef<HTMLElement>(null);
   // Whether ANY carried bird is currently hovering over the nest's drop zone, so
   // the nest can swell a touch to say "yes — drop it here". A counter ref (not a
@@ -134,7 +188,11 @@ export function Nestlings({ onComplete, sound, haptics }: ToyProps) {
     if (!nest) return;
     const r = nest.getBoundingClientRect();
     setNestCenter({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
-  }, []);
+    setNestWidth(r.width);
+    // Re-measured when the scene's aspect bucket changes: the canopy rebuilds,
+    // the bough moves, and the nest goes with it — a drop zone left at the old
+    // coordinates would silently stop matching the nest the child can see.
+  }, [scene]);
 
   // The Goal — every bird in the cast placed. The count is the on-device-tuned
   // duration lever (slice Notes), so the Goal is derived from the cast size, never
@@ -172,26 +230,32 @@ export function Nestlings({ onComplete, sound, haptics }: ToyProps) {
       style={{
         position: 'relative',
         minHeight: '100dvh',
-        // The ground/branch/nest band height, shared with DuskBackdrop's bottom-
-        // anchored ground layer (which reads `var(--nestlings-ground)`). Defined
-        // on the common ancestor so the dusk horizon sits at a fixed fraction of
-        // the viewport across aspect ratios (ADR-0005). On-device-tuned; the name
-        // is the contract. A thin lower band — the tall dusk sky above is the mood
-        // space the carry happens through.
-        ['--nestlings-ground' as string]: 'clamp(120px, 22dvh, 280px)',
+        // `--nestlings-ground` used to live here: a `dvh` clamp the backdrop's
+        // bottom-anchored band read, so the horizon sat at a fixed fraction of
+        // the viewport (ADR-0005). It is gone because the thing it positioned is
+        // gone. The scene is no longer a stack of separately-positioned layers
+        // agreeing on a shared CSS length — it is one viewBox matched to the
+        // viewport's aspect, and everything in it is placed from that. A shared
+        // length between two coordinate systems was the seam the old scene came
+        // apart along on desktop; there is no seam left to share.
       }}
     >
       {/* The whole nestful settles to sleep UNDER the Shell's Completion overlay
        * on the terminal placement (slice #5): the backdrop deepens to night and
        * the first stars twinkle in. Driven by `goalMet` so it lands WITH the
        * Completion while the Toy keeps rendering (ADR-0001 layered-concurrent). */}
-      <DuskBackdrop night={goalMet} hovered={nestHovered} placedCount={placed} />
-      {CAST.map(({ species, left, top }, i) => (
+      <DuskBackdrop scene={scene} night={goalMet} hovered={nestHovered} placedCount={placed} />
+      {CAST.map((species, i) => {
+        // A perch is where the FEET land, so the bird's box is walked back up
+        // from it by the height its own feet sit at. Percentages of the frame,
+        // which is the same space the limbs were drawn in.
+        const [px, py] = scene.art.perches[i] ?? [50, scene.frame.h * 0.4];
+        return (
         <CarriableBird
           key={i}
           species={species}
-          left={left}
-          top={top}
+          left={`${px}%`}
+          top={`${((py - scene.birdW * FOOT_FRACTION) / scene.frame.h) * 100}%`}
           nestCenter={nestCenter}
           // Tally this bird's placement toward the Goal. Each bird owns its own
           // lifecycle, so this fires at most once per bird (placed is locked).
@@ -220,6 +284,17 @@ export function Nestlings({ onComplete, sound, haptics }: ToyProps) {
           onCarryStep={onCarryStep}
           // Tell the nest when this bird hovers over its drop zone so it nudges.
           onHoverNest={handleHoverNest}
+          // Its seat in the huddle, in client px. Skipped until the nest has
+          // been measured — a seat scaled by a zero width is the pile again.
+          seat={
+            nestWidth > 0
+              ? {
+                  x: SEATS[i].x * nestWidth,
+                  y: SEATS[i].y * nestWidth,
+                  scale: SEATS[i].scale,
+                }
+              : undefined
+          }
           onCarry={() => {
             // A real carry — the child has picked a bird up and started moving it.
             // Cancel the teaching demo at once and suppress it for the rest of play
@@ -229,12 +304,72 @@ export function Nestlings({ onComplete, sound, haptics }: ToyProps) {
             setDemoActive(false);
           }}
         />
-      ))}
+        );
+      })}
       {/* The wordless CARRY demo's ghost hand (slice #06), overlaid while the child
        * stalls. Rendered only when `demoActive` and the Goal isn't yet met,
        * `pointer-events: none` so a real carry underneath is untouched, and drawn
        * over its OWN faint demo bird so it never advances the real cast. */}
-      {demoActive && !goalMet && <GhostCarryHand />}
+      {demoActive && !goalMet && (() => {
+        /*
+         * Aim the wordless demo at the scene the child is actually looking at:
+         * it lifts off the FIRST fledgling's perch and carries to the measured
+         * nest. Both ends used to be constants tuned on one phone against a
+         * hand-written scatter, and both ends have since moved — a demo that
+         * teaches the gesture by ending in mid-air teaches the wrong thing.
+         */
+        /*
+         * The demo lifts from straight above the nest and pulls STRAIGHT DOWN
+         * into it, rather than from one of the cast's perches.
+         *
+         * Anchoring it to a real perch was the obvious idea and it was wrong
+         * twice over. Taking `perches[0]` — the list is sorted top-to-bottom so
+         * the cast reads as descending — handed the demo the longest, most
+         * diagonal journey available, dragging a translucent bird right across
+         * the real ones; what that looked like was a brown smear over a green
+         * fledgling. And even from the NEAREST perch it still begins life
+         * exactly on top of a solid, differently-coloured bird, because a perch
+         * is by definition occupied. Five birds a third of the frame wide leave
+         * no clear column on a phone, so there is no perch that avoids this.
+         *
+         * A phantom bird is allowed to be a phantom. Starting it over the nest's
+         * own approach — the one lane that is deliberately kept clear, since it
+         * is where the child is aiming — means the gesture plays out against
+         * scene rather than against the cast, and a purely vertical pull is the
+         * least ambiguous way to say "hold this and bring it down here".
+         */
+        const px = 50;
+        const py = scene.art.bough.top - scene.birdW * DEMO_LIFT_BIRDS;
+        const main = mainRef.current?.getBoundingClientRect();
+        // The demo bird's centre, from the same arithmetic that places a real
+        // one: a perch is where the FEET are, so walk up to the box's middle.
+        const startTop = (py - scene.birdW * FOOT_FRACTION) / scene.frame.h;
+        const centre = main && {
+          x: main.left + (px / 100) * main.width,
+          y: main.top + (startTop + scene.birdW / (2 * scene.frame.h)) * main.height,
+        };
+        return (
+          <GhostCarryHand
+            left={`${px}%`}
+            top={`${startTop * 100}%`}
+            travel={
+              centre && main && nestCenter.x > 0
+                ? {
+                    x: nestCenter.x - centre.x,
+                    // Plus the body drop, for the same reason a real placement
+                    // needs it: the bird's body sits low in its own box, so
+                    // landing the BOX on the nest hangs the demo bird above the
+                    // bowl instead of putting it in.
+                    y:
+                      nestCenter.y -
+                      centre.y +
+                      (scene.birdW / 100) * main.width * BODY_CENTRE_DROP,
+                  }
+                : undefined
+            }
+          />
+        );
+      })()}
     </main>
   );
 }

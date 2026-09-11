@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/react';
 import { BalloonDrawing } from './BalloonDrawing';
-import { palette } from './palette';
+import { palette, shadeOf, BALLOONS } from './palette';
 
 /**
  * Balloons — faced Critter art tests. `BalloonDrawing` is a stateless, code-drawn
@@ -15,6 +15,14 @@ import { palette } from './palette';
  * per the slice DoD — we assert the part hooks render and that `fill` drives the
  * state (monotonic/reversible inflation, sad→happy face) through the public
  * interface, never the pixels or the curve itself.
+ *
+ * WHAT THE MIGRATION ADDED HERE. The old drawing passed every test in this file
+ * while being an `<ellipse>` with `<circle>` eyes, a `stroke`d mouth and a
+ * `stroke`d string — because none of those tests could see construction. The
+ * three checks at the bottom are the ones that can: no `stroke` anywhere, a
+ * contour ring under the body, and a catchlight that is the PAPER rather than
+ * `#fff`. They are the difference between "this renders" and "this is drawn in
+ * the house style", and every one of them was false when the file shipped.
  */
 describe('Balloons — BalloonDrawing', () => {
   it('renders the structural balloon parts, each addressable via its data-balloon-part hook', () => {
@@ -94,6 +102,82 @@ describe('Balloons — BalloonDrawing', () => {
       expect(container.querySelectorAll('image')).toHaveLength(0);
       expect(container.querySelectorAll('svg').length).toBeGreaterThan(0);
     }
+  });
+
+  it('draws every line as a filled tapered path — there is no stroke in the file', () => {
+    /*
+     * The single loudest tell that a drawing came out of a vector editor rather
+     * than a hand. SVG has no variable-width stroke — `stroke-width` is one
+     * value in both SVG 1.1 and SVG 2 — so a contour that swells underneath and
+     * lightens on top has to be a filled ring either way, and a uniform stroke
+     * beside the scene's tapered scenery reads as two different artists.
+     *
+     * This drawing had two of them: the mouth and the string.
+     */
+    for (const fill of [0, 0.5, 1]) {
+      const { container } = render(<BalloonDrawing fill={fill} />);
+      for (const el of container.querySelectorAll('svg *')) {
+        const stroke = el.getAttribute('stroke');
+        expect(stroke === null || stroke === 'none', `${el.tagName} carries a stroke`).toBe(true);
+        expect(el.getAttribute('stroke-width'), `${el.tagName} carries a stroke-width`).toBeNull();
+      }
+    }
+  });
+
+  it('carries a contour and an occlusion derived from its own body colour', () => {
+    /*
+     * The house style in two claims. The contour is the collection's one dark
+     * and it belongs to the figure; the occlusion is `shade()` of THIS balloon
+     * — never a picked grey and never black, which kills chroma and makes mud.
+     *
+     * Asserted per body colour, because a shared shadow across the five would
+     * mean the occlusion had stopped being derived from the balloon it sits in,
+     * which is the failure a single-colour test cannot see.
+     */
+    for (const color of BALLOONS) {
+      const { container } = render(<BalloonDrawing fill={0.6} color={color} />);
+      const fills = [...container.querySelectorAll('[fill]')].map((el) => el.getAttribute('fill'));
+      expect(fills, `${color}: no contour ink`).toContain(palette.contour);
+      expect(fills, `${color}: no derived occlusion`).toContain(shadeOf(color));
+    }
+  });
+
+  it('makes the catchlight the paper, never pure white', () => {
+    // It was `hsl(0 0% 100%)`. Nothing in this collection is pure white — the
+    // lightest surface in the app is the paper at L 0.94, and a highlight is
+    // that paper showing through.
+    const { container } = render(<BalloonDrawing fill={1} />);
+    const shine = container.querySelectorAll('[data-balloon-part="eye-shine"]');
+    expect(shine.length).toBeGreaterThan(0);
+    for (const el of shine) {
+      expect(el.getAttribute('fill')).toBe(palette.paper);
+      expect(el.getAttribute('fill')).not.toBe('#ffffff');
+    }
+  });
+
+  it('draws its string to wherever the scene says the peg is', () => {
+    /*
+     * The string used to be a fixed `M50 92 Q54 110 50 132` in the drawing's own
+     * box, which meant it pointed at whatever was 40 units below the knot —
+     * nothing in particular, and certainly not the peg, which was drawn in a
+     * separate layer that stretched with the viewport. The Toy now hands in the
+     * vector from this balloon's anchor to the scene's tether, so the string
+     * lands on the stake at every aspect ratio.
+     */
+    const pathFor = (tail: { dx: number; dy: number }) =>
+      render(<BalloonDrawing fill={0.5} tail={tail} />)
+        .container.querySelector('[data-balloon-part="string"]')!
+        .getAttribute('d')!;
+
+    const short = pathFor({ dx: 0, dy: 30 });
+    const long = pathFor({ dx: -40, dy: 120 });
+    expect(short).not.toBe(long);
+    // `dx` is the tether MINUS the anchor, so a negative dx puts the peg to the
+    // left and the balloon to its right — and the string has to trail down-LEFT
+    // to reach it. The sign has to survive, or half the bunch ties off on the
+    // wrong side of the stake.
+    const xs = (d: string) => [...d.matchAll(/(-?\d+\.?\d*),/g)].map((m) => Number(m[1]));
+    expect(Math.max(...xs(long))).toBeLessThan(Math.max(...xs(short)));
   });
 
   it('sources every colour from the sky palette — no hardcoded HSL', () => {

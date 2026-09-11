@@ -1,22 +1,36 @@
 import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/react';
 import { SkyBackdrop } from './SkyBackdrop';
-import { palette } from './palette';
+import { buildSky, type Frame } from './sky';
+import { SKY, SKY_SEED } from './sky-config';
+import { BALLOONS, palette } from './palette';
+import type { SkyScene } from './useSkyScene';
 
 /**
- * Balloons — sky backdrop tests. `SkyBackdrop` is the analog of
- * `UnderwaterBackdrop` / `BarnyardBackdrop` / the meadow: a full-bleed code-drawn
- * SVG scene behind the balloon Critters, drawn from SVG primitives only
- * (ADR-0002), every fill sourced from the local sky palette. Scene layers are
- * tagged `data-sky-layer` so tests address the composition without coupling to
- * which primitive draws each one (mirrors `data-barnyard-layer`/`data-ocean-layer`).
+ * Up & Away — sky backdrop tests. `SkyBackdrop` is the analog of the meadow and
+ * the barnyard: a full-bleed code-drawn SVG scene behind the bunch, drawn from
+ * SVG primitives only (ADR-0002), every fill sourced from the local sky palette.
+ * Scene layers are tagged `data-sky-layer` so tests address the composition
+ * without coupling to which primitive draws each one.
  *
- * Note the INVERSION of emphasis vs the prior Toys (slice notes / ADR-0005): the
- * load-bearing space here is the TALL SKY above, not the ground band — but the
- * scene is still bottom-anchored (the grassy rise + peg are the ground anchor).
- * Geometry, exact colours, and `dvh`/`env()` layout are on-device-tuned per the
- * slice DoD — we assert the layer hooks and the palette-sourced fills, never the
- * shapes.
+ * WHAT CHANGED. The component no longer draws itself — it renders a scene the
+ * shared generator built, so these tests now hand it one. Two hooks survive the
+ * migration and mean something different, which is worth stating because a test
+ * asking for the old name would have kept passing against a layer that no longer
+ * exists in the form the name implies:
+ *
+ *   - `cloud` is now ONE bank cropped into a top corner, not five `<circle>`
+ *     puffs floating in the middle of the sky. That is the whole migration: a
+ *     puff is convex, closed, rounded and balloon-sized, which in a Toy about
+ *     balloons makes the background a set of decoys. `sky.test.ts` asserts the
+ *     shape rules on the emitted geometry.
+ *   - `peg` is now a tapered stake rather than a `<rect>` with an `<ellipse>`
+ *     cap — the cap was the puff's shape class one octave down, sitting at the
+ *     exact point the child's eye is drawn to.
+ *
+ * The `grass` hook is gone and `ground` replaces it, because the layer changed
+ * from a `preserveAspectRatio="none"` band with its own `--balloons-ground` CSS
+ * height into the generator's sampled ground line.
  *
  * Palette assertions sweep by SET MEMBERSHIP (a colour-bearing attribute's value
  * is one of the palette tokens) rather than pinning a layer to one exact token,
@@ -25,6 +39,21 @@ import { palette } from './palette';
  * (gradients) are structural, not colours, so they're skipped and the gradient's
  * own `stop-color` stops carry the palette trace.
  */
+
+/** A Card-shaped frame is the wrong shape to test a backdrop in — these are the
+ *  two the Toy actually ships into, and the phone is the one that legally gets
+ *  no far banks at all. */
+const PHONE: SkyScene = (() => {
+  const frame: Frame = { w: 100, h: 216.4 };
+  const balloonW = 28;
+  return { frame, balloonW, art: buildSky(SKY, frame, balloonW, SKY_SEED, BALLOONS.length) };
+})();
+
+const DESKTOP: SkyScene = (() => {
+  const frame: Frame = { w: 100, h: 62.5 };
+  const balloonW = 13.19;
+  return { frame, balloonW, art: buildSky(SKY, frame, balloonW, SKY_SEED, BALLOONS.length) };
+})();
 
 /** Every concrete colour a backdrop element paints — a layer's own
  * `fill`/`stroke` when it's a literal colour, plus any `stop-color` on gradient
@@ -44,98 +73,85 @@ function paletteColoursOf(el: Element): string[] {
   return colours;
 }
 
-describe('Balloons — SkyBackdrop', () => {
-  it('renders the tall sky layer, addressable via its data-sky-layer hook, painted from the sky palette', () => {
-    // AC #2 (tracer): the deliberately TALL open sky the whole scene sits in and
-    // the balloons rise/gather into. Addressed structurally via
-    // `data-sky-layer="sky"`; every colour it paints traces back to the sky
-    // palette (set membership, so a flat-fill → gradient evolution stays an
-    // implementation detail).
-    const paletteValues = new Set<string>(Object.values(palette));
-    const { container } = render(<SkyBackdrop />);
+/** Asserts a layer exists and that everything under it paints from the palette. */
+function expectPaletteLayer(container: HTMLElement, layer: string) {
+  const paletteValues = new Set<string>(Object.values(palette));
+  const nodes = container.querySelectorAll(`[data-sky-layer="${layer}"]`);
+  expect(nodes.length, `layer "${layer}"`).toBeGreaterThan(0);
+  for (const node of nodes) {
+    // A layer may be a `<g>` carrying no paint of its own; what must hold is
+    // that every colour beneath it is a palette token.
+    for (const el of [node, ...node.querySelectorAll('*')]) {
+      for (const colour of paletteColoursOf(el)) {
+        expect(paletteValues, `layer "${layer}"`).toContain(colour);
+      }
+    }
+  }
+}
 
-    const sky = container.querySelectorAll('[data-sky-layer="sky"]');
-    expect(sky.length).toBeGreaterThan(0);
-    for (const layer of sky) {
-      const colours = paletteColoursOf(layer);
-      expect(colours.length).toBeGreaterThan(0);
-      for (const colour of colours) {
-        expect(paletteValues).toContain(colour);
+describe('Up & Away — SkyBackdrop', () => {
+  it('renders every scene layer, addressable via its data-sky-layer hook', () => {
+    // The composition, back to front. Every one of these is present on a phone,
+    // which is the frame with the least room — the far banks are the exception
+    // and are asserted at the wide aspect instead.
+    const { container } = render(<SkyBackdrop scene={PHONE} />);
+    for (const layer of ['sky', 'cloud', 'ground', 'peg', 'tuft', 'mote', 'fore']) {
+      expectPaletteLayer(container, layer);
+    }
+  });
+
+  it('paints every layer from the sky palette at a wide aspect too', () => {
+    // The wide frame is the one that gets the elements a phone cannot legally
+    // hold — a second cloud bank and the cropped far banks — so it is the frame
+    // where an off-palette colour would first appear.
+    const { container } = render(<SkyBackdrop scene={DESKTOP} />);
+    for (const layer of ['sky', 'cloud', 'bank', 'ground', 'peg', 'tuft', 'mote', 'fore']) {
+      expectPaletteLayer(container, layer);
+    }
+  });
+
+  it('draws the scene from SVG primitives, with no raster and no bare strokes', () => {
+    // ADR-0002: the whole backdrop is code-drawn SVG — no `<canvas>`, no
+    // `<image>`, no binary assets. And no `stroke` anywhere: SVG has no
+    // variable-width stroke, so a uniform one reads as a different line language
+    // from the cast's filled contour, which is most of what makes a scene look
+    // like a different artist drew it. Every line here is a filled tapered path.
+    for (const scene of [PHONE, DESKTOP]) {
+      const { container } = render(<SkyBackdrop scene={scene} />);
+      expect(container.querySelectorAll('canvas')).toHaveLength(0);
+      expect(container.querySelectorAll('image')).toHaveLength(0);
+      expect(container.querySelectorAll('svg').length).toBeGreaterThan(0);
+      for (const el of container.querySelectorAll('svg *')) {
+        const stroke = el.getAttribute('stroke');
+        expect(stroke === null || stroke === 'none', `${el.tagName} carries a stroke`).toBe(true);
       }
     }
   });
 
-  it('renders a cloud or two drifting in the tall sky, addressable via its data-sky-layer hook and painted from the sky palette', () => {
-    // AC #2: the soft cloud(s) in the tall sky that make it read as open sky the
-    // balloons rise into. Addressed structurally via `data-sky-layer="cloud"`;
-    // its colour traces to the sky palette. Count/position/shape is on-device per
-    // the slice DoD, so we assert presence (at least one) + the palette trace,
-    // not geometry.
+  it('sources every colour in the whole scene from the sky palette', () => {
+    // The scene-wide guard that generalises the per-layer traces above: sweep
+    // every colour-bearing attribute on every element and trace each back to a
+    // `palette` value. Guards against a hardcoded colour slipping into a layer
+    // tuned in the lab.
     const paletteValues = new Set<string>(Object.values(palette));
-    const { container } = render(<SkyBackdrop />);
-
-    const cloud = container.querySelectorAll('[data-sky-layer="cloud"]');
-    expect(cloud.length).toBeGreaterThan(0);
-    for (const layer of cloud) {
-      const colours = paletteColoursOf(layer);
-      expect(colours.length).toBeGreaterThan(0);
-      for (const colour of colours) {
-        expect(paletteValues).toContain(colour);
+    for (const scene of [PHONE, DESKTOP]) {
+      const { container } = render(<SkyBackdrop scene={scene} />);
+      const elements = container.querySelectorAll('svg *');
+      expect(elements.length).toBeGreaterThan(0);
+      for (const el of elements) {
+        for (const colour of paletteColoursOf(el)) {
+          expect(paletteValues).toContain(colour);
+        }
       }
     }
   });
 
-  it('renders the bottom-anchored grassy rise, addressable via its data-sky-layer hook and painted from the sky palette', () => {
-    // AC #2: the grassy rise the peg stands on — the bottom-anchored ground
-    // anchor of the layered scene (ADR-0005). Note the inversion of emphasis:
-    // here the ground is just the anchor, the tall sky above is the load-bearing
-    // space. Addressed structurally via `data-sky-layer="grass"`; its colour
-    // traces to the sky palette. Height/shape is on-device per the slice DoD, so
-    // we assert presence + the palette trace, not geometry.
-    const paletteValues = new Set<string>(Object.values(palette));
-    const { container } = render(<SkyBackdrop />);
-
-    const grass = container.querySelectorAll('[data-sky-layer="grass"]');
-    expect(grass.length).toBeGreaterThan(0);
-    for (const layer of grass) {
-      const colours = paletteColoursOf(layer);
-      expect(colours.length).toBeGreaterThan(0);
-      for (const colour of colours) {
-        expect(paletteValues).toContain(colour);
-      }
-    }
-  });
-
-  it('renders the low peg in the lower third, addressable via its data-sky-layer hook and painted from the sky palette', () => {
-    // AC #2: the low peg standing on the grassy rise that the balloons are tied
-    // to (slice #2/#3 attach their strings here). Anchored in the lower third per
-    // the bottom-anchored layered pattern (ADR-0005). Addressed structurally via
-    // `data-sky-layer="peg"`; its colour traces to the sky palette.
-    // Position/shape is on-device per the slice DoD, so we assert presence + the
-    // palette trace, not geometry.
-    const paletteValues = new Set<string>(Object.values(palette));
-    const { container } = render(<SkyBackdrop />);
-
-    const peg = container.querySelectorAll('[data-sky-layer="peg"]');
-    expect(peg.length).toBeGreaterThan(0);
-    for (const layer of peg) {
-      const colours = paletteColoursOf(layer);
-      expect(colours.length).toBeGreaterThan(0);
-      for (const colour of colours) {
-        expect(paletteValues).toContain(colour);
-      }
-    }
-  });
-
-  it('is decorative — aria-hidden and pointer-events: none, so the balloon Critters above stay reachable', () => {
+  it('is decorative — hidden from screen readers and transparent to pointers', () => {
     // The backdrop is the world behind the balloons, not an interactive element.
     // It must be hidden from screen readers (so they skim straight to the
-    // held/inflatable Critters) and transparent to taps/holds (so a Hold falls
-    // through to the balloon above). Same posture as the prior Toys' backdrops.
-    // We assert every root SVG carries `aria-hidden` and `pointer-events: none`;
-    // the full-bleed `dvh`/`env()` layout itself is on-device per the slice DoD.
-    const { container } = render(<SkyBackdrop />);
-
+    // holdable Critters) and transparent to taps (so a Hold falls through to the
+    // balloon above).
+    const { container } = render(<SkyBackdrop scene={PHONE} />);
     const svgs = container.querySelectorAll('svg');
     expect(svgs.length).toBeGreaterThan(0);
     for (const svg of svgs) {
@@ -144,24 +160,23 @@ describe('Balloons — SkyBackdrop', () => {
     }
   });
 
-  it('sources every fill from the sky palette — no hardcoded HSL anywhere in the scene', () => {
-    // AC #4 + ADR-0002: the whole backdrop is SVG primitives whose every colour
-    // routes through the local sky palette — no raw colour strings, no
-    // `<canvas>`, no binary assets. This is the scene-wide guard that generalises
-    // the per-layer traces above: we sweep every colour-bearing attribute
-    // (`fill`/`stroke`, plus gradient `stop-color`) on every element, excluding
-    // the structural `none` sentinel and `url(...)` paint-server references, and
-    // assert each traces back to a `palette` value. Guards against a hardcoded
-    // HSL slipping into any future layer tuned on-device.
-    const paletteValues = new Set<string>(Object.values(palette));
-    const { container } = render(<SkyBackdrop />);
-
-    const elements = container.querySelectorAll('svg *');
-    expect(elements.length).toBeGreaterThan(0);
-    for (const el of elements) {
-      for (const colour of paletteColoursOf(el)) {
-        expect(paletteValues).toContain(colour);
-      }
+  it('composes into a viewBox whose aspect is the viewport’s, so nothing is stretched', () => {
+    /*
+     * The replacement for the old two-layer stack: a square `xMidYMid slice` sky
+     * over a `preserveAspectRatio="none"` ground band whose height was a `dvh`
+     * clamp. Those agreed with each other on a phone and came apart everywhere
+     * else — the slice scaled the sky by width and cropped it about the vertical
+     * centre while the band stayed pinned to the bottom, so the peg slid out from
+     * under a bunch that was positioned against the viewport instead.
+     *
+     * One box, matched to the viewport, leaves `preserveAspectRatio` nothing to
+     * correct.
+     */
+    for (const scene of [PHONE, DESKTOP]) {
+      const { container } = render(<SkyBackdrop scene={scene} />);
+      const svg = container.querySelector('svg')!;
+      expect(svg.getAttribute('viewBox')).toBe(`0 0 ${scene.frame.w} ${scene.frame.h}`);
+      expect(svg.getAttribute('preserveAspectRatio')).toBe('none');
     }
   });
 });

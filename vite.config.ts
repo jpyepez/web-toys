@@ -3,6 +3,7 @@ import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import { Resvg } from '@resvg/resvg-js';
+import { mkdir, writeFile } from 'node:fs/promises';
 import { pwaManifest, pwaIconSvg } from './src/shell/pwa';
 
 /**
@@ -40,11 +41,46 @@ function codegenPwaIcons(): Plugin {
   };
 }
 
+/**
+ * Dev-only endpoint the critter lab's Save button posts to (see src/lab/Lab.tsx).
+ *
+ * Saving to a FILE rather than only the clipboard is the point: the real Toys
+ * will import the saved JSON, so saving IS shipping the decision. `apply: 'serve'`
+ * keeps it out of every build.
+ */
+function labConfigSave(): Plugin {
+  return {
+    name: 'lab-config-save',
+    apply: 'serve',
+    configureServer(server) {
+      server.middlewares.use('/__lab/save', async (req, res, next) => {
+        if (req.method !== 'POST') return next();
+        const chunks: Buffer[] = [];
+        for await (const c of req) chunks.push(c as Buffer);
+        try {
+          const { name, config } = JSON.parse(Buffer.concat(chunks).toString());
+          const safe = String(name).replace(/[^a-z0-9-]/gi, '-');
+          const dir = new URL('./src/lab/saved/', import.meta.url);
+          await mkdir(dir, { recursive: true });
+          const file = new URL(`${safe}.json`, dir);
+          await writeFile(file, JSON.stringify(config, null, 2) + '\n');
+          res.setHeader('content-type', 'application/json');
+          res.end(JSON.stringify({ path: `src/lab/saved/${safe}.json` }));
+        } catch (err) {
+          res.statusCode = 400;
+          res.end(JSON.stringify({ error: String(err) }));
+        }
+      });
+    },
+  };
+}
+
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
     react(),
     codegenPwaIcons(),
+    labConfigSave(),
     VitePWA({
       registerType: 'autoUpdate',
       // The manifest object is defined in src/shell/pwa.ts so its shape is

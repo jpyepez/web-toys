@@ -1,112 +1,234 @@
+import { useId } from 'react';
+import { blob, closedPath, quadPts, taperedOutline } from '../../shell/art/geometry';
+import { line as houseLine } from '../../shell/art/house';
 import { palette } from './palette';
 import { MudBlobs, type MudBlob } from './MudBlobs';
+import {
+  ASYM,
+  BLOB_AMP,
+  ContactShadow,
+  CritterSvg,
+  FEATURE_WIDTH,
+  Face,
+  coloursFor,
+  faceGeometry,
+  legGeometry,
+  occlusion,
+  ring,
+  rngFor,
+  smilePath,
+} from './critter-figure';
 
 /**
- * The duckling's bill geometry, named once so the structural bill (drawn under
- * the mud) and the tease bill (re-drawn on top, the bit poking out) stay
- * pixel-identical — otherwise the bill would jump at the clean-snap when the
- * tease drops (the piglet's shared-ear invariant, applied to the bill). Shape is
- * on-device-tuned; the invariant is that the two references coincide.
+ * The duckling. Rebuilt onto the house style alongside the rest of the cast —
+ * see `PigletDrawing.tsx` for the full account of what changed and why; this
+ * file carries only what makes it a duckling.
+ *
+ * SILHOUETTE. The bill is the whole cue, and it is a boundary cue: broad, flat
+ * and jutting clear of the body's outline, which no other animal in the cast
+ * does. The folded wing notches the body's side and the tail flicks up behind.
+ * Filled solid black it cannot be confused with the chick beside it, whose beak
+ * is a tiny wedge and whose head carries spikes.
+ *
+ * That mattered more here than anywhere else in the cast: the duckling and the
+ * chick are the two whose hues sit closest together, because sRGB will not hold
+ * the cast's chroma anywhere in the yellows and both had to come out of the same
+ * narrow warm arc. Colour cannot separate them, so the outline has to.
  */
-const BILL = { cx: 50, cy: 64, rx: 13, ry: 8 } as const;
-const BILL_SPLIT = 'M40 64 Q50 68 60 64';
+
+const NAME = 'duckling' as const;
+const PART = 'data-critter-part';
+
+const BODY_CX = 46;
+const BODY_CY = 52;
+const BODY_RX = 29;
+const BODY_RY = 27;
+const HEAD = { cx: BODY_CX + 2, cy: BODY_CY - 3, r: BODY_RX * 0.8, ry: BODY_RY * 0.8 };
+
+function geometry() {
+  const rnd = rngFor(NAME, 'body');
+  const jit = (a: number) => (rnd() - 0.5) * 2 * a;
+
+  const body = blob(BODY_CX, BODY_CY, BODY_RX, BODY_RY, BLOB_AMP, rnd, 26);
+
+  /*
+   * THE BILL. Wide, shallow and set low, reaching past the body's right edge so
+   * it breaks the silhouette. It was an `<ellipse>` plus a second `<ellipse>`
+   * for the parting line — concentric, entirely inside the body, and invisible
+   * the moment the drawing was filled black.
+   */
+  const billCx = BODY_CX + BODY_RX * 0.78;
+  const billCy = BODY_CY + BODY_RY * 0.24;
+  const bill = blob(billCx, billCy, BODY_RX * 0.42, BODY_RY * 0.19, BLOB_AMP * 1.2, rnd, 18);
+  /** The bill's parting — a tapered line, so the two mandibles read as one form
+   *  divided rather than as two shapes laid on each other. */
+  const billLine = taperedOutline(
+    quadPts(
+      [billCx - BODY_RX * 0.34, billCy + 0.6],
+      [billCx, billCy + 1.5],
+      [billCx + BODY_RX * 0.38, billCy + 0.2],
+      12,
+    ),
+    houseLine.detail * 1.1,
+    0.5,
+  );
+
+  /*
+   * The folded wing — a lobe notching the body's own side. Behind the body's
+   * contour, so what shows is the part clearing it: a wing drawn on top is a
+   * patch of colour painted on a ball.
+   */
+  const wing = blob(BODY_CX - BODY_RX * 0.42, BODY_CY + BODY_RY * 0.18, BODY_RX * 0.46, BODY_RY * 0.38, BLOB_AMP * 1.4, rnd, 18);
+  const wingRot = -13 + jit(3);
+
+  /** The tail flick — short, up, and on one side only. */
+  const tail = taperedOutline(
+    quadPts(
+      [BODY_CX - BODY_RX * 0.86, BODY_CY - BODY_RY * 0.12],
+      [BODY_CX - BODY_RX * 1.2, BODY_CY - BODY_RY * 0.46],
+      [BODY_CX - BODY_RX * 1.16, BODY_CY - BODY_RY * 0.66],
+      12,
+    ),
+    houseLine.contour * 2.2,
+    0.28,
+  );
+
+  // Webbed feet rather than hooves — flat, splayed, and the second thing after
+  // the bill that says "waterfowl" in outline alone.
+  const foot = (x: number, y: number, flip: number) =>
+    closedPath([
+      [x - 4.2 * flip, y - 1.2],
+      [x + 4.6 * flip, y - 0.4],
+      [x + 3.8 * flip, y + 2.2],
+      [x - 3.6 * flip, y + 1.9],
+    ]);
+  const legs = legGeometry(
+    [BODY_CX - BODY_RX * 0.34, BODY_CX + BODY_RX * 0.3],
+    BODY_CY + BODY_RY * 0.74,
+    NAME,
+    1.5,
+  );
+
+  return {
+    body,
+    bill,
+    billLine,
+    wing,
+    wingRot,
+    tail,
+    legs,
+    feet: [foot(BODY_CX - BODY_RX * 0.34 - 1, 85, 1), foot(BODY_CX + BODY_RX * 0.3 + 1, 84.2, -1)],
+    face: faceGeometry(HEAD, ASYM),
+    smile: smilePath(BODY_CX + 2, BODY_CY + BODY_RY * 0.02, BODY_RX * 0.1, 1.4),
+    bodyOcclusion: occlusion(BODY_CX, BODY_CY + BODY_RY * 0.5, BODY_RX * 0.94, 0.7, 0.55),
+  };
+}
+
+const G = geometry();
 
 /**
- * The duckling's mud blanket — discrete smudges (in the `0 0 100 100` viewBox)
- * caked over the clean duckling. Deterministic by construction (no randomness),
- * each becoming its own `data-mud-blob` node so coverage is countable (ADR-0006).
- * Count/positions/radii are on-device-tuned; the contract is discrete countable
- * nodes blanketing the Critter, leaving only the bill tease legible.
+ * The duckling's mud blanket. Blankets the body AND the wing, leaving only the
+ * bill to be redrawn on top as the tease — the extremity that most obviously
+ * asks "who is that?" without answering it.
  */
 export const DUCKLING_BLOBS: readonly MudBlob[] = [
-  { cx: 40, cy: 24, r: 10 },
-  { cx: 52, cy: 22, r: 11 },
-  { cx: 62, cy: 24, r: 10 },
-  { cx: 30, cy: 36, r: 11 },
-  { cx: 44, cy: 34, r: 12 },
-  { cx: 58, cy: 34, r: 12 },
-  { cx: 70, cy: 38, r: 10 },
-  { cx: 28, cy: 48, r: 11 },
-  { cx: 42, cy: 48, r: 12 },
-  { cx: 58, cy: 48, r: 12 },
-  { cx: 72, cy: 50, r: 10 },
-  { cx: 32, cy: 60, r: 11 },
-  { cx: 50, cy: 60, r: 13 },
-  { cx: 68, cy: 60, r: 11 },
-  { cx: 40, cy: 72, r: 10 },
-  { cx: 56, cy: 72, r: 10 },
-  { cx: 50, cy: 80, r: 9 },
+  { cx: 30, cy: 27, r: 10 },
+  { cx: 44, cy: 24, r: 11 },
+  { cx: 58, cy: 27, r: 10 },
+  { cx: 24, cy: 38, r: 10 },
+  { cx: 37, cy: 35, r: 11 },
+  { cx: 51, cy: 34, r: 11 },
+  { cx: 64, cy: 38, r: 10 },
+  { cx: 20, cy: 50, r: 10 },
+  { cx: 33, cy: 48, r: 12 },
+  { cx: 47, cy: 47, r: 12 },
+  { cx: 61, cy: 50, r: 11 },
+  { cx: 70, cy: 44, r: 8 },
+  { cx: 24, cy: 62, r: 10 },
+  { cx: 37, cy: 62, r: 11 },
+  { cx: 51, cy: 61, r: 11 },
+  { cx: 63, cy: 61, r: 10 },
+  { cx: 33, cy: 72, r: 9 },
+  { cx: 47, cy: 74, r: 10 },
+  { cx: 58, cy: 71, r: 9 },
 ];
 
-/**
- * The duckling Critter, drawn from SVG primitives only (ADR-0002) — a pale-lemon
- * round body, a folded wing, a rounded orange bill (its signature feature + the
- * tease extremity), big friendly eyes with catchlights, and blushy cheeks. Every
- * fill sources the local barnyard palette. Structural pieces are tagged
- * `data-critter-part` so tests address them without coupling to which primitive
- * draws each (the generic cast hook, mirroring the piglet's `data-piglet-part`).
- *
- * Muddy is the default: the clean duckling is drawn first, then (while muddy)
- * caked in discrete `data-mud-blob` smudges with the bill re-drawn on top as the
- * one tease poking out; `cleaned` drops that mud layer for the full reveal.
- */
-export function DucklingDrawing({
-  cleaned = false,
-  remainingBlobIndices,
-}: {
+export type DucklingFigureProps = {
   cleaned?: boolean;
   remainingBlobIndices?: readonly number[];
-}) {
+};
+
+export function DucklingFigure({ cleaned = false, remainingBlobIndices }: DucklingFigureProps) {
+  const c = coloursFor(NAME);
+  const uid = useId().replace(/:/g, '');
+  const Bill = () => (
+    <>
+      <path d={ring(G.bill.pts, FEATURE_WIDTH, NAME, 'bill')} fill={palette.contour} fillRule="evenodd" />
+      <path {...{ [PART]: 'beak' }} d={G.bill.d} fill={c.feature} />
+      <path {...{ [PART]: 'beak' }} d={G.billLine} fill={c.shade} />
+    </>
+  );
   return (
-    <svg
-      viewBox="0 0 100 100"
-      aria-hidden="true"
-      style={{ width: 'min(220px, 55vw)', height: 'auto', display: 'block' }}
-    >
-      {/* folded wing behind the body */}
-      <ellipse data-critter-part="wing" cx="68" cy="58" rx="16" ry="20" fill={palette.ducklingWing} />
+    <>
+      <defs>
+        <clipPath id={`duckling-body-${uid}`}>
+          <path d={G.body.d} />
+        </clipPath>
+      </defs>
 
-      {/* smooth round body */}
-      <circle data-critter-part="body" cx="50" cy="54" r="32" fill={palette.ducklingBody} />
+      <ContactShadow cx={BODY_CX + 2} rx={BODY_RX * 0.7} colour={c.shade} />
 
-      {/* blushy cheeks */}
-      <circle data-critter-part="cheek" cx="32" cy="58" r="7" fill={palette.ducklingCheek} />
-      <circle data-critter-part="cheek" cx="68" cy="58" r="7" fill={palette.ducklingCheek} />
+      <path {...{ [PART]: 'tail' }} d={G.tail} fill={c.crop} />
 
-      {/* large round eyes with white catchlights */}
-      <circle data-critter-part="eye" cx="41" cy="46" r="5" fill={palette.ducklingEye} />
-      <circle data-critter-part="eye" cx="59" cy="46" r="5" fill={palette.ducklingEye} />
-      <circle data-critter-part="eye-shine" cx="42.8" cy="44.2" r="1.6" fill={palette.ducklingEyeShine} />
-      <circle data-critter-part="eye-shine" cx="60.8" cy="44.2" r="1.6" fill={palette.ducklingEyeShine} />
+      <g {...{ [PART]: 'leg' }} fill={c.crop}>
+        {G.legs.map((l, i) => (
+          <path key={i} d={l.leg} />
+        ))}
+      </g>
+      {/* Webbed feet — flat and splayed where the rest of the cast has hooves. */}
+      <g {...{ [PART]: 'foot' }} fill={c.feature}>
+        {G.feet.map((d, i) => (
+          <path key={i} d={d} />
+        ))}
+      </g>
 
-      {/* rounded bill — the signature feature; a soft split line gives it form */}
-      <ellipse data-critter-part="beak" {...BILL} fill={palette.ducklingBeak} />
-      <path
-        data-critter-part="beak"
-        d={BILL_SPLIT}
-        fill="none"
-        stroke={palette.ducklingEye}
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
+      {/* the wing, BEHIND the body so only the part clearing its silhouette shows */}
+      <g transform={`rotate(${G.wingRot} ${BODY_CX - BODY_RX * 0.42} ${BODY_CY + BODY_RY * 0.18})`}>
+        <path d={ring(G.wing.pts, FEATURE_WIDTH, NAME, 'wing')} fill={palette.contour} fillRule="evenodd" />
+        <path {...{ [PART]: 'wing' }} d={G.wing.d} fill={c.crop} />
+      </g>
+
+      {/* THE BILL, drawn BEFORE the body so the body's contour crosses its root —
+          which is what makes it grow out of the head rather than sit on it. */}
+      <Bill />
+
+      <path d={ring(G.body.pts, houseLine.contour, NAME, 'body')} fill={palette.contour} fillRule="evenodd" />
+      <path {...{ [PART]: 'body' }} d={G.body.d} fill={c.body} />
+
+      <g clipPath={`url(#duckling-body-${uid})`}>
+        <path d={G.bodyOcclusion} fill={c.shade} opacity={0.38} />
+        <Face face={G.face} partAttr={PART} />
+        <path {...{ [PART]: 'smile' }} d={G.smile} fill={palette.critterEye} />
+      </g>
 
       {!cleaned && (
         <>
-          {/* mud layer caked on top of the clean duckling */}
-          <MudBlobs blobs={DUCKLING_BLOBS} remaining={remainingBlobIndices} />
-          {/* tease — the bill re-drawn ON TOP of the mud, the one bit poking out */}
+          <MudBlobs blobs={DUCKLING_BLOBS} remaining={remainingBlobIndices} critter={NAME} />
+          {/* tease — the bill, reusing its own geometry so it cannot jump when
+              the tease is dropped at the clean-snap. */}
           <g data-critter-tease="beak">
-            <ellipse {...BILL} fill={palette.ducklingBeak} />
-            <path
-              d={BILL_SPLIT}
-              fill="none"
-              stroke={palette.ducklingEye}
-              strokeWidth="1.5"
-              strokeLinecap="round"
-            />
+            <Bill />
           </g>
         </>
       )}
-    </svg>
+    </>
+  );
+}
+
+export function DucklingDrawing(props: DucklingFigureProps) {
+  return (
+    <CritterSvg>
+      <DucklingFigure {...props} />
+    </CritterSvg>
   );
 }

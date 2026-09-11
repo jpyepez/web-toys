@@ -29,13 +29,31 @@ describe('design tokens — completion', () => {
     // a cream `surface`, a dark `ink`, and a non-empty `spark` list of warm
     // particle fills. `completion` being its own export (not a key on the
     // meadow `palette`) is the load-bearing "Shell-owned" assertion.
-    expect(completion.surface).toMatch(/^hsl\(/);
-    expect(completion.ink).toMatch(/^hsl\(/);
+    // The format assertion here used to be `/^hsl\(/`. That encoded a decision
+    // since reversed: colours are authored in OKLCH and emitted as hex, because
+    // `hsl()`'s L is a channel midpoint rather than a lightness — which is
+    // precisely how a cream spark ended up indistinguishable from the cream slab
+    // it bursts over. The shape assertion stays; the format one is replaced by
+    // the relationship it was failing to protect.
+    expect(completion.surface).toMatch(/^#[0-9a-f]{6}$/);
+    expect(completion.ink).toMatch(/^#[0-9a-f]{6}$/);
     expect(Array.isArray(completion.spark)).toBe(true);
     expect(completion.spark.length).toBeGreaterThan(0);
     for (const fill of completion.spark) {
-      expect(fill).toMatch(/^hsl\(/);
+      expect(fill).toMatch(/^#[0-9a-f]{6}$/);
     }
+    // Every spark must be distinct, or the "warm family" is one colour repeated.
+    expect(new Set(completion.spark).size).toBe(completion.spark.length);
+  });
+
+  it('keeps the sparks legible against the slab they burst over', () => {
+    // The burst paints ABOVE the celebration card. A spark at the surface's own
+    // lightness is invisible there, which is exactly what shipped: the old spark
+    // list ended in the same cream as `surface`.
+    const delta = Math.abs(completion.surfaceLightness - completion.sparkLightness);
+    expect(delta).toBeGreaterThanOrEqual(0.12);
+    // And the ink still has to carry type on that surface.
+    expect(completion.surfaceLightness).toBeGreaterThan(0.8);
   });
 });
 

@@ -4,168 +4,141 @@ import { CountingSheep } from './CountingSheep';
 import { palette } from './palette';
 
 /**
- * Counting Sheep — backdrop + Sheep-palette tests that survive the
- * mobile-rethink slice #01 mechanic rewrite. The mechanic-level assertions
- * (one-Sheep-at-a-time, tap-advances-loop, re-tap safety, 5th-tap
- * `onComplete`, terminal `completed`) live in `counting-sheep-mechanic.test.tsx`
- * and exercise the state machine through fake timers + the public button
- * query. The polish PRD's slice-#04 per-Sheep done-state tests and the
- * slice-#05 group-Outro stagger tests are retired by the mobile-rethink PRD
- * (see `.work/issues/counting-sheep-mobile-rethink/01-…`, "Notes": those
- * tests "no longer map cleanly" and are rewritten in this slice).
+ * Counting Sheep — what the scene actually paints.
+ *
+ * The mechanic-level assertions (one-Sheep-at-a-time, tap-advances-loop, re-tap
+ * safety, 5th-tap `onComplete`, terminal `completed`) live in
+ * `counting-sheep-mechanic.test.tsx`; the scene's shape-class rules live in
+ * `meadow.test.ts` and its colour rules in `palette.test.ts`. This file covers
+ * the seam between them: that the composition the generator describes is the one
+ * the component paints, out of this Toy's own palette.
+ *
+ * Several tests here are DELETIONS, and they are the most valuable ones. The
+ * suite this replaces asserted that the scene painted four cloud clusters, a
+ * tree canopy and a tree trunk — it pinned the rivals in place, so any attempt
+ * to remove them would have failed the build. A test can hold a bug still just
+ * as firmly as it can hold a contract, and the only defence is that the thing
+ * being asserted is a rule rather than an inventory.
  */
-describe('Counting Sheep — scene + palette', () => {
-  it('paints the sky as a solid skyUpper fill from the dawn palette tokens', () => {
-    // The meadow reads as a place at dawn rather than a white page (slice
-    // #03 intent). Original mechanism was a sky-upper → horizon-glow linear
-    // gradient; on-device review in slice #07 revised the visual direction
-    // toward "very few gradients" — sky becomes a solid fill from the same
-    // dawn palette token. The load-bearing rule is unchanged (sky sources
-    // from the dawn palette, single source of truth); only the mechanism
-    // moved from two-stop gradient to solid skyUpper.
-    const { container } = render(<CountingSheep onComplete={vi.fn()} />);
+const renderToy = () => render(<CountingSheep onComplete={vi.fn()} />);
 
+describe('Counting Sheep — scene + palette', () => {
+  it('paints the open sky from the meadow palette', () => {
+    const { container } = renderToy();
     const sky = container.querySelector('[data-meadow-layer="sky"]');
     expect(sky).not.toBeNull();
-    expect(sky!.getAttribute('fill')).toBe(palette.skyUpper);
+    const stops = Array.from(sky!.querySelectorAll('stop')).map((s) => s.getAttribute('stop-color'));
+    expect(stops).toEqual([palette.skyHigh, palette.sky]);
   });
 
-  // The polish PRD's half-moon test (`data-meadow-layer="moon"` painted
-  // from a palette token) retires with the on-device kid-handoff dusk →
-  // day pivot. The moon was the dusk era's single atmospheric detail;
-  // the daytime scene replaces it with a cloud-cluster scatter (asserted
-  // by the cloud-count test below). Sanctioned-pivot pattern — same shape
-  // as polish PRD slice #07's "grass-distant + grass-foreground share
-  // grassSilhouette" test retiring when this PRD's slice #02 split the
-  // two grass layers into hill-distant + hill-near, and the polish #07
-  // serif → rounded-sans token rewrite earlier in this session.
+  it('paints one oversized sun, cropped rather than floating clear of every edge', () => {
+    // The single oversized motif that replaces the four cloud clusters. Its size
+    // is asserted against a Sheep in `meadow.test.ts`; what matters here is that
+    // it is painted from the scene's own token and sits BEHIND the rest, so the
+    // bough and the banks cut into it. A disc laid on top of the sky is a
+    // sticker; a disc the scene crops is a distance.
+    const { container } = renderToy();
+    const sun = container.querySelector('[data-meadow-layer="sun"]');
+    expect(sun).not.toBeNull();
+    expect(sun!.getAttribute('fill')).toBe(palette.sun);
 
-  // The polish PRD's "layers two grass silhouettes" test (grass-distant +
-  // grass-foreground both painted from `palette.grassSilhouette`) is
-  // retired in the mobile-rethink PRD's slice #02 — the two grass layers
-  // are replaced by `hill-distant` and `hill-near`, each from its own
-  // dedicated token, and asserted by the two single-hill tests below.
-  // The shared-grass-token rule is mechanically subsumed by "each hill
-  // paints from its own token".
-  it('paints a distant hill silhouette behind the scene from the hillDistant token', () => {
-    // Layered-backdrop slice (mobile-rethink PRD, slice #02). The deepest
-    // plane of the new flat-colour vignette: a distant hill silhouette
-    // sitting behind the scenery and the foreground hill, in its own
-    // cooler blue-grey token so the depth reads as a distinct plane
-    // rather than a single grass tone. Structurally addressed via
-    // `data-meadow-layer="hill-distant"`; fill traces to `palette.hillDistant`.
-    const { container } = render(<CountingSheep onComplete={vi.fn()} />);
-
-    const distantHills = container.querySelectorAll('[data-meadow-layer="hill-distant"]');
-    expect(distantHills).toHaveLength(1);
-    expect(distantHills[0].getAttribute('fill')).toBe(palette.hillDistant);
+    const layers = Array.from(container.querySelectorAll('[data-meadow-layer]')).map((el) =>
+      el.getAttribute('data-meadow-layer'),
+    );
+    expect(layers.indexOf('sun')).toBeLessThan(layers.indexOf('ground'));
   });
 
-  // The mid-distance scenery silhouette test (treeline / cottage in
-  // `palette.scenery`) retires with the dusk → day pivot. The scenery
-  // LAYER concept (mid-distance silhouette between the two hills) is
-  // replaced by a single stylised tree — asserted by the tree-canopy +
-  // tree-trunk tests below. The `palette.scenery` token itself stays on
-  // the palette (now consumed by the tree trunk) per the retire-but-keep
-  // pattern; the token's structural existence is asserted by the
-  // tokens-module test, and its consumer test moves to the tree-trunk
-  // assertion below.
+  it('paints the walking line from the near-bank token, in front of the far banks', () => {
+    const { container } = renderToy();
+    const ground = container.querySelector('[data-meadow-layer="ground"]');
+    expect(ground).not.toBeNull();
+    expect(ground!.querySelector('path')!.getAttribute('fill')).toBe(palette.bankNear);
 
-  it('paints the foreground hill silhouette from the hillNear token', () => {
-    // Frontmost ground plane of the layered backdrop (mobile-rethink PRD,
-    // slice #02). The near hill silhouette overlaps the scenery and distant
-    // hill so the scene reads as three planes of depth, painted in
-    // `palette.hillNear`'s warmer green so the foreground reads as closer
-    // and warmer than the cooler distant hill. Structurally addressed via
-    // `data-meadow-layer="hill-near"`; the rule that retires with this slice
-    // is "both grass layers share one token" — replaced with "each hill
-    // paints from its own token", same structural shape, two tokens not one.
-    const { container } = render(<CountingSheep onComplete={vi.fn()} />);
-
-    const nearHill = container.querySelectorAll('[data-meadow-layer="hill-near"]');
-    expect(nearHill).toHaveLength(1);
-    expect(nearHill[0].getAttribute('fill')).toBe(palette.hillNear);
+    const layers = Array.from(container.querySelectorAll('[data-meadow-layer]')).map((el) =>
+      el.getAttribute('data-meadow-layer'),
+    );
+    // Paint order IS depth order, and every adjacent pair overlaps rather than
+    // abutting — abutting is what made the old three-stripe scene read as
+    // stripes.
+    if (layers.includes('bank')) {
+      expect(layers.indexOf('bank')).toBeLessThan(layers.indexOf('ground'));
+    }
+    expect(layers.indexOf('ground')).toBeLessThan(layers.indexOf('tuft'));
   });
 
-  it('scatters three to four static cloud clusters across the upper sky, each painted from the clouds token', () => {
-    // Atmospheric scatter for the daytime backdrop (mobile-rethink PRD slice
-    // #02 with the kid-handoff DoD dusk → day pivot applied). Three-to-four
-    // cloud clusters replace the retired 5–7 star scatter; each cluster is
-    // a `<g data-meadow-layer="cloud">` wrapping circles + an ellipse, all
-    // painted from `palette.clouds` (cool bright white, separate from
-    // `sheepWool`'s warm cream). Static — no per-render jitter, no
-    // animation; the polish PRD's out-of-scope rule against idle ambient
-    // motion still binds. The structural assertion is the count band +
-    // the clouds-token fill on each shape inside each cluster; exact
-    // positions are tuned on-device per the slice DoD.
-    const { container } = render(<CountingSheep onComplete={vi.fn()} />);
+  it('stands grass and flowers on the line, each from its own token', () => {
+    const { container } = renderToy();
+    const tufts = container.querySelectorAll('[data-meadow-layer="tuft"]');
+    expect(tufts.length).toBeGreaterThan(0);
+    for (const tuft of tufts) {
+      expect([palette.tuft, palette.tuftShade]).toContain(tuft.getAttribute('fill'));
+    }
 
-    const clouds = container.querySelectorAll('[data-meadow-layer="cloud"]');
-    expect(clouds.length).toBeGreaterThanOrEqual(3);
-    expect(clouds.length).toBeLessThanOrEqual(4);
-    for (const cloud of clouds) {
-      const shapes = cloud.querySelectorAll('circle, ellipse');
-      expect(shapes.length).toBeGreaterThan(0);
-      for (const shape of shapes) {
-        expect(shape.getAttribute('fill')).toBe(palette.clouds);
-      }
+    const flowers = container.querySelectorAll('[data-meadow-layer="flower"]');
+    expect(flowers.length).toBeGreaterThan(0);
+    const petals = flowers[0].querySelectorAll('circle');
+    expect(petals.length).toBeGreaterThan(1);
+    expect(petals[0].getAttribute('fill')).toBe(palette.flower);
+  });
+
+  it('carries the foreground grass in front of everything else', () => {
+    // The repoussoir — the third plane, and the strongest "this is a place" cue
+    // the scene has. It is painted last so it is genuinely in front.
+    const { container } = renderToy();
+    const layers = Array.from(container.querySelectorAll('[data-meadow-layer]')).map((el) =>
+      el.getAttribute('data-meadow-layer'),
+    );
+    expect(layers).toContain('fore');
+    expect(layers.indexOf('fore')).toBe(layers.length - 1);
+  });
+
+  it('has no clouds, no tree and no hill stripes left in it', () => {
+    /*
+     * The regression guard, and the reason this suite was rewritten rather than
+     * patched. Four cloud clusters and a lollipop tree were CONVEX, CLOSED and
+     * inside the Sheep's own size band — 0.29 and 0.17 of a Sheep on a phone —
+     * and the clouds shared the Sheep's colour class besides. The old tests
+     * asserted their presence and their counts, which means the suite was
+     * actively holding the defect in place.
+     */
+    const { container } = renderToy();
+    for (const retired of ['cloud', 'tree-canopy', 'tree-trunk', 'hill-near', 'hill-distant']) {
+      expect(
+        container.querySelector(`[data-meadow-layer="${retired}"]`),
+        `\`${retired}\` is back in the scene`,
+      ).toBeNull();
     }
   });
 
-  it('paints the single tree canopy from the hillNear token', () => {
-    // Single stylised tree on the foreground hill (dusk → day pivot). The
-    // canopy reuses `palette.hillNear`'s vibrant lime so the tree stays
-    // visually anchored to the foreground-plane palette family without
-    // minting a separate token; it silhouettes against the cooler
-    // `hillDistant` plane behind it, not against the hill it stands on.
-    // Structurally addressed via `data-meadow-layer="tree-canopy"`; fill
-    // traces to `palette.hillNear`. Exact circle radius + position is
-    // tuned on-device per the slice DoD.
-    const { container } = render(<CountingSheep onComplete={vi.fn()} />);
+  it('draws the Sheep with a fleece at the cast lightness and a real contour', () => {
+    const { container } = renderToy();
+    const wool = container.querySelector('[data-sheep-part="wool"]');
+    expect(wool).not.toBeNull();
+    // The first Sheep the loop sends on is `terracotta`; the fleece is its BODY
+    // colour, not a near-paper cream. This is the migration in one assertion.
+    expect(wool!.getAttribute('fill')).toBe(palette.terracottaBody);
+    expect(wool!.getAttribute('fill')).not.toBe(palette.paper);
 
-    const canopy = container.querySelectorAll('[data-meadow-layer="tree-canopy"]');
-    expect(canopy).toHaveLength(1);
-    expect(canopy[0].getAttribute('fill')).toBe(palette.hillNear);
+    // The catchlight is the paper showing through, never `#fff`.
+    const shine = container.querySelector('[data-sheep-part="eye-shine"]');
+    expect(shine!.getAttribute('fill')).toBe(palette.paper);
+
+    // And it stands on something: a Critter without a contact shadow floats,
+    // which is exactly what this one did above a hill it had no agreement with.
+    expect(container.querySelector('[data-sheep-part="contact"]')).not.toBeNull();
   });
 
-  it('paints the single tree trunk from the scenery token', () => {
-    // The tree trunk is the live consumer of `palette.scenery` (warm
-    // brown) after the dusk-era scenery LAYER concept (treeline / cottage)
-    // retired with the day pivot. The token name + value semantic
-    // ("warm-brown mid-distance accent") still holds; only the live
-    // consumer narrowed from a silhouette path to a tree-trunk rect.
-    // Structurally addressed via `data-meadow-layer="tree-trunk"`.
-    const { container } = render(<CountingSheep onComplete={vi.fn()} />);
-
-    const trunk = container.querySelectorAll('[data-meadow-layer="tree-trunk"]');
-    expect(trunk).toHaveLength(1);
-    expect(trunk[0].getAttribute('fill')).toBe(palette.scenery);
-  });
-
-  it('paints wool from the sheep-wool token and silhouette parts from the sheep-silhouette token', () => {
-    // The polish PRD's headline acceptance criterion for slice #04: every fill
-    // in the Sheep components routes through the design-tokens module, no
-    // hardcoded colour strings. Structural pieces are labelled via
-    // `data-sheep-part` so tests address wool / head / ears / legs without
-    // coupling to which SVG primitive each one happens to be. Under the new
-    // mechanic only the current Sheep is on stage, so the part-counts are
-    // smaller (one wool group, one head, two ears, two legs) — but the rule
-    // is unchanged: every part with a fill traces back to a palette token.
-    const { container } = render(<CountingSheep onComplete={vi.fn()} />);
-
-    const wool = container.querySelectorAll('[data-sheep-part="wool"]');
-    const heads = container.querySelectorAll('[data-sheep-part="head"]');
-    const ears = container.querySelectorAll('[data-sheep-part="ear"]');
-    const legs = container.querySelectorAll('[data-sheep-part="leg"]');
-
-    expect(wool.length).toBeGreaterThan(0);
-    expect(heads.length).toBeGreaterThan(0);
-    expect(ears.length).toBeGreaterThan(0);
-    expect(legs.length).toBeGreaterThan(0);
-
-    for (const w of wool) expect(w.getAttribute('fill')).toBe(palette.sheepWool);
-    for (const h of heads) expect(h.getAttribute('fill')).toBe(palette.sheepSilhouette);
-    for (const e of ears) expect(e.getAttribute('fill')).toBe(palette.sheepSilhouette);
-    for (const l of legs) expect(l.getAttribute('fill')).toBe(palette.sheepSilhouette);
+  it('contains no `stroke` anywhere — every line is a filled tapered path', () => {
+    /*
+     * The house rule with the shortest distance between "written down" and
+     * "broken": SVG has no variable-width stroke, so a uniform one reads as a
+     * different line language from the cast's filled contour ring, and that
+     * single mismatch is what makes a scene look like a different artist drew
+     * it. This Toy had ten of them — two hill paths, a trunk rect, four cloud
+     * clusters, the leg rects and a stroked smile.
+     */
+    const { container } = renderToy();
+    expect(container.querySelectorAll('[stroke]')).toHaveLength(0);
+    expect(container.querySelectorAll('[stroke-width]')).toHaveLength(0);
   });
 });

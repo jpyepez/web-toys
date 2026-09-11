@@ -24,16 +24,20 @@ import { SETTLE_MS } from './nestlings/DuskBackdrop';
  * string the Toy supplies from its own world — ADR-0004) and its `preview`
  * (the tiny SVG preview-scene the Card hosts above the title) — both
  * registry-driven so a future Toy declares its atmosphere here, not in the
- * Shell. Counting Sheep's tint sources `palette.sheepWool` from the Toy's own
- * Sheep-local palette (`./counting-sheep/palette`) — the Card carries no
+ * Shell. Counting Sheep's tint sources `palette.sky` from the Toy's own
+ * meadow-local palette (`./counting-sheep/palette`) — the Card carries no
  * dependency on a shared palette grab-bag (ADR-0004, completed in slice #04).
+ * It moved off `sheepWool` when the fleece came down to the house cast
+ * lightness: a tint is the Card's SURFACE, and a surface at the Critter's own
+ * lightness is a dark card rather than an atmosphere. Every Toy now tints from
+ * the field its own scene sits in.
  */
 export const registry: ToyEntry[] = [
   {
     id: 'counting-sheep',
     title: 'Counting Sheep',
     component: CountingSheep,
-    tint: palette.sheepWool,
+    tint: palette.sky,
     preview: CountingSheepPreview,
     // Hold the Completion until the last Sheep finishes its dismiss exit —
     // `onComplete` fires on the 5th tap, at the START of that exit.

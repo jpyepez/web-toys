@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'motion/react';
-import { BalloonDrawing } from './BalloonDrawing';
+import { BalloonDrawing, type Tail } from './BalloonDrawing';
 import { palette } from './palette';
 
 /**
@@ -66,6 +66,7 @@ const HOLD_DWELL_FILL = 0.12;
 
 export function HoldableBalloon({
   color = palette.balloon1,
+  tail,
   onFloat,
   onHold,
   onFillProgress,
@@ -73,6 +74,21 @@ export function HoldableBalloon({
 }: {
   /** Balloon body colour, from slice #1's palette (`palette.balloon1`…`5`). */
   color?: string;
+  /**
+   * Where this balloon's string ends, as an offset from its knot in the
+   * drawing's own box units — the vector from this balloon's anchor to the
+   * scene's tether point, which the bunch computes from the generated scene.
+   *
+   * Passed straight through to the art. It rides INSIDE the animating element on
+   * purpose: the string is attached to the balloon, so when the balloon detaches
+   * and rises the string has to leave with it. A separate strings layer drawn in
+   * frame space would need this component's phase lifted out of it, and would
+   * leave five strings hanging in the sky after the bunch was gone.
+   *
+   * Optional, so a bare mount (this slice's tests, the ghost-finger demo) still
+   * draws a balloon on a plumb string.
+   */
+  tail?: Tail;
   /**
    * Fired ONCE at the `limp → floating` self-cap transition — how the bunch
    * (slice #4) learns this balloon has detached, so it can count floats toward
@@ -222,10 +238,7 @@ export function HoldableBalloon({
         // upward while the string stays anchored. The glow ring is an instant
         // toggle (decorative, on-device-tuned) layered under the eased lift/scale,
         // shown only while actively held (not once it has detached and floats off).
-        style={{
-          transformOrigin: 'center bottom',
-          filter: held && phase === 'limp' ? `drop-shadow(0 0 9px ${palette.sparkle})` : undefined,
-        }}
+        style={{ transformOrigin: 'center bottom', position: 'relative' }}
         animate={
           phase === 'limp'
             ? // While held: lift + extra swell so the active balloon pops clear of
@@ -242,7 +255,32 @@ export function HoldableBalloon({
             : { duration: 0.2, ease: 'easeOut' }
         }
       >
-        <BalloonDrawing fill={fill} color={color} interactive />
+        {/*
+         * The "which balloon?" glow. This used to be `filter: drop-shadow(...)`
+         * on this same animating element — and a filter on a moving element is
+         * re-rasterised every frame, here during the exact interaction the child
+         * is performing (the balloon is lifting, swelling AND morphing its path
+         * while held). It is now a code-drawn radial gradient toggled by
+         * `opacity`, which the compositor handles without ever re-rastering.
+         * Same cue, none of the cost. Decorative and pointer-transparent, so it
+         * cannot steal the press from the balloon it sits behind.
+         */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            inset: '-16%',
+            zIndex: 0,
+            borderRadius: '50%',
+            background: `radial-gradient(circle, ${palette.sparkle} 0%, transparent 68%)`,
+            opacity: held && phase === 'limp' ? 0.85 : 0,
+            transition: 'opacity 140ms ease-out',
+            pointerEvents: 'none',
+          }}
+        />
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          <BalloonDrawing fill={fill} color={color} tail={tail} interactive />
+        </div>
       </motion.div>
     </div>
   );

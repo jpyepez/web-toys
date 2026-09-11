@@ -1,100 +1,136 @@
-import { palette } from './palette';
+import { buildSky, type Frame } from './sky';
+import { SKY, SKY_SEED } from './sky-config';
+import { BalloonFigure } from './BalloonDrawing';
+import { KNOT_FRACTION, BALLOON_ASPECT, VB_W } from './balloon-metrics';
+import { BALLOONS, palette } from './palette';
 
 /**
- * Up & Away's tiny SVG preview-scene — the miniature sky vignette a Home Card
- * carries above its title. Drawn from inside the Toy so its composition stays
- * coherent with the live scene (`SkyBackdrop`) and cast (`BalloonDrawing`) —
- * visual coherence between the preview and the live Toy is on-device per this
- * slice's Notes, which is exactly why the preview lives next to the Toy that
- * owns its palette and silhouettes.
+ * Up & Away's Card preview — the miniature sky the Home Card carries above its
+ * title.
  *
- * The vignette teases the *activity* this Toy is about (a clearly different
- * activity from the tap toys and the wipe toy): a happy faced balloon floating
- * UP on its string, having lifted off the low peg — so the Card reads "fill me
- * up and let me go" at a glance. A tall open-sky world (sky, a soft cloud, the
- * grassy rise + peg at the bottom) so the Home reads as a varied collection next
- * to the meadow, the ocean and the barnyard.
+ * IT IS THE REAL SCENE, DRAWN BY THE REAL COMPONENTS. The scene comes from
+ * `buildSky` — the same generator, config and seed the live Toy runs — evaluated
+ * into a Card-shaped frame, and the balloons are `BalloonFigure`, the very
+ * component the Toy mounts, hanging off the anchors the generator emitted.
+ * Nothing here is a miniature *of* the Toy; it is the Toy's own art at a smaller
+ * size.
  *
- * Scale is heavily reduced — primitives are simplified for a Card-sized vignette
- * so the preview reads as a believable miniature, not a full inspection of the
- * live Critter (same posture as the Sheep/Fish/Puddle previews). The exact
- * composition + colour tuples are on-device-tuned per this slice's Notes and
- * deliberately not unit-asserted; the contract the test pins is that it's a
- * decorative SVG sourcing every fill from this Toy's own palette.
+ * WHY THAT MATTERS MORE THAN IT LOOKS. This file was a hand-drawn vignette, and
+ * it had already drifted off the Toy it advertises: the Card showed one plump
+ * happy balloon that had ALREADY lifted off, on a string trailing to a peg it
+ * was no longer attached to, over two flat cloud ellipses — while the live scene
+ * had five limp sad ones tied down and waiting to be filled. It advertised the
+ * ending rather than the activity, which is the one thing a launcher Card must
+ * not do. Two hand-maintained drawings of one scene cannot be kept in agreement;
+ * one generator read by both cannot fall out of step, and now a lab harvest
+ * updates the Card for free.
+ *
+ * The bunch is drawn PART-FILLED rather than limp or floating, because that is
+ * what the Card is advertising: the activity, mid-hold. The fills differ per
+ * balloon so the Card shows the sad→happy range in one still — which is the
+ * whole mechanic, and it cannot be shown by a single balloon at any one value.
+ *
+ * The frame is 100x60 and a balloon is 17 units of it, so the Card composes as a
+ * WIDE viewport — about six balloons across, which is roughly the desktop
+ * proportion. That is deliberate: a Card is a landscape window, and at a phone's
+ * 3.6 balloons the generator correctly refuses to draw a second cloud bank.
  *
  * Decorative for accessibility — the Card's title and `<Link>` carry the
  * semantic load; the SVG is `aria-hidden` so screen readers skim past it.
  */
+
+const CARD: Frame = { w: 100, h: 60 };
+/** A balloon's width in Card units — about six across, a landscape proportion. */
+const CARD_BALLOON = 17;
+/** Computed once at module scope: the generator is pure, so this never changes. */
+const ART = buildSky(SKY, CARD, CARD_BALLOON, SKY_SEED, BALLOONS.length);
+
+/**
+ * How full each balloon in the Card's bunch is. Spread across the range so one
+ * still shows the sad→happy arc the Toy is about; none of them at 1, because a
+ * capped balloon has already detached and the Card would again be advertising
+ * the ending.
+ */
+const CARD_FILLS = [0.72, 0.34, 0.9, 0.15, 0.55];
+
 export function Preview() {
   return (
     <svg
-      viewBox="0 0 100 60"
+      viewBox={`0 0 ${CARD.w} ${CARD.h}`}
       preserveAspectRatio="xMidYMid meet"
       width="100%"
       height="100%"
       aria-hidden="true"
       style={{ display: 'block' }}
     >
-      {/* Open tall sky — the field the whole scene sits in (also the Card's own
-       * surface tint, so the preview blends into its cover). */}
-      <rect x="0" y="0" width="100" height="60" fill={palette.sky} />
-      {/* A soft cloud drifting in the sky. */}
-      <ellipse cx={22} cy={16} rx={13} ry={5} fill={palette.cloud} />
-      <ellipse cx={30} cy={13} rx={9} ry={5} fill={palette.cloud} />
-      {/* Grassy rise across the bottom — the floor the peg stands on. */}
-      <path d="M 0 50 Q 30 47 50 49 T 100 49 L 100 60 L 0 60 Z" fill={palette.grass} />
-      {/* The low peg the bunch is tied to. */}
-      <rect x={70} y={44} width={3} height={8} fill={palette.peg} />
+      {/* Paint order IS depth order, exactly as in `SkyBackdrop`: sky, the
+          cropped cloud banks, the far banks, the ground line, the peg, the
+          grass in front of its foot, the bunch, then the corner grass. */}
+      <linearGradient id="balloons-preview-sky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stopColor={palette.skyHigh} />
+        <stop offset="0.52" stopColor={palette.skyMid} />
+        <stop offset="1" stopColor={palette.sky} />
+      </linearGradient>
+      <rect x="0" y="0" width={CARD.w} height={CARD.h} fill="url(#balloons-preview-sky)" />
 
-      {/* The happy faced balloon floating up on its string. */}
-      <FloatingBalloon />
+      {ART.clouds.map((c, i) => (
+        <g key={`cloud-${i}`}>
+          <path d={c.fill} fill={palette.cloud} />
+          <path d={c.relief} fill={palette.cloudShade} />
+        </g>
+      ))}
+
+      {ART.banks.map((b, i) => (
+        <g key={`bank-${i}`}>
+          <path d={b.fill} fill={palette.groundFar} />
+          <path d={b.relief} fill={palette.groundShade} opacity={0.4} />
+        </g>
+      ))}
+
+      <path d={ART.ground.fill} fill={palette.ground} />
+      <path d={ART.ground.relief} fill={palette.groundShade} opacity={0.3} />
+
+      <path d={ART.peg.ink} fill={palette.contour} />
+      <path d={ART.peg.body} fill={palette.peg} />
+
+      {ART.tufts.map((t, i) => (
+        <g key={`tuft-${i}`} fill={i % 2 === 0 ? palette.tuft : palette.tuftShade}>
+          {t.blades.map((d, k) => (
+            <path key={k} d={d} />
+          ))}
+        </g>
+      ))}
+
+      {/* The bunch, hanging off the anchors the generator emitted and tied to
+          the peg it drew — the same points the live Toy places its balloons on,
+          and the same figure it draws there. Each one's box is `VB_W` wide with
+          its knot at `KNOT_FRACTION` of its height, so the placement is derived
+          rather than nudged into looking right. */}
+      {BALLOONS.map((color, i) => {
+        const [ax, ay] = ART.anchors[i] ?? ART.tether;
+        const unit = VB_W / CARD_BALLOON;
+        return (
+          <g
+            key={color}
+            transform={`translate(${ax - CARD_BALLOON / 2} ${ay - CARD_BALLOON * BALLOON_ASPECT * KNOT_FRACTION}) scale(${CARD_BALLOON / VB_W})`}
+          >
+            <BalloonFigure
+              fill={CARD_FILLS[i % CARD_FILLS.length]}
+              color={color}
+              tail={{ dx: (ART.tether[0] - ax) * unit, dy: (ART.tether[1] - ay) * unit }}
+            />
+          </g>
+        );
+      })}
+
+      {ART.fore && (
+        <g>
+          <path d={ART.fore.base} fill={palette.foreGrass} />
+          {ART.fore.blades.map((d, i) => (
+            <path key={i} d={d} fill={i % 3 === 0 ? palette.foreGrassShade : palette.foreGrass} />
+          ))}
+        </g>
+      )}
     </svg>
-  );
-}
-
-/**
- * One miniature balloon floating up on its string — plump and happy (the
- * lifted-off state the live Toy rewards). Its round body is tagged
- * `data-balloon-part="body"`, the same structural hook the live `BalloonDrawing`
- * uses, so the Home wiring test can find the Critter without coupling to the
- * tuned geometry.
- */
-function FloatingBalloon() {
-  const cx = 50;
-  const cy = 30;
-  return (
-    <g>
-      {/* string trailing down toward the peg */}
-      <path
-        d={`M ${cx} ${cy + 14} Q ${cx + 6} ${cy + 26} ${cx + 22} ${cy + 22}`}
-        fill="none"
-        stroke={palette.string}
-        strokeWidth={1}
-        strokeLinecap="round"
-      />
-      {/* plump body */}
-      <ellipse data-balloon-part="body" cx={cx} cy={cy} rx={12} ry={14} fill={palette.balloon1} />
-      {/* knot */}
-      <path d={`M ${cx - 2} ${cy + 13} L ${cx + 2} ${cy + 13} L ${cx} ${cy + 16} Z`} fill={palette.balloon1} />
-      {/* blushy cheeks + happy face */}
-      <circle cx={cx - 6} cy={cy + 2} r={2} fill={palette.cheek} />
-      <circle cx={cx + 6} cy={cy + 2} r={2} fill={palette.cheek} />
-      <circle cx={cx - 3.5} cy={cy - 2} r={1.4} fill={palette.faceInk} />
-      <circle cx={cx + 3.5} cy={cy - 2} r={1.4} fill={palette.faceInk} />
-      <circle cx={cx - 3} cy={cy - 2.5} r={0.5} fill={palette.faceShine} />
-      <circle cx={cx + 4} cy={cy - 2.5} r={0.5} fill={palette.faceShine} />
-      <path
-        d={`M ${cx - 4} ${cy + 3} Q ${cx} ${cy + 7} ${cx + 4} ${cy + 3}`}
-        fill="none"
-        stroke={palette.faceInk}
-        strokeWidth={1}
-        strokeLinecap="round"
-      />
-      {/* a little sky sparkle */}
-      <path
-        d={`M ${cx + 16} ${cy - 12} l 0.8 2 l 2 0.8 l -2 0.8 l -0.8 2 l -0.8 -2 l -2 -0.8 l 2 -0.8 Z`}
-        fill={palette.sparkle}
-      />
-    </g>
   );
 }
