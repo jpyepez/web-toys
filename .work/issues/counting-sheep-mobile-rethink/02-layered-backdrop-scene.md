@@ -1,7 +1,7 @@
 ---
 slice: 2
 title: Layered backdrop — two-tone hills + scenery silhouette + stars
-status: in-progress
+status: done
 type: afk
 blocked_by: []
 parent_prd: counting-sheep-mobile-rethink
@@ -63,7 +63,7 @@ End-to-end through one vertical:
 - [x] The existing slice-#07 (polish PRD) half-moon assertion still
       passes — the moon path with `data-meadow-layer="moon"` filled
       from a palette token still queryable.
-- [ ] On-device check (mine, before re-marking done): the scene reads
+- [x] On-device check (mine, before re-marking done): the scene reads
       as a layered dusk meadow with depth — distant hill, mid-distance
       scenery, foreground hill — and a stable scatter of stars in the
       upper sky on a 390×844 phone viewport.

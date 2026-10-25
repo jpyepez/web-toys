@@ -1,7 +1,7 @@
 ---
 slice: 1
 title: Sequential Sheep mechanic — one Sheep at a time, kid-paced loop
-status: in-progress
+status: done
 type: afk
 blocked_by: []
 parent_prd: counting-sheep-mobile-rethink
@@ -74,7 +74,7 @@ End-to-end through one vertical:
       Motion-API ease shape (a four-number cubic-bezier tuple, mirroring
       `timing.tapCurve`). Asserted via the tokens unit-test pattern from
       the polish PRD.
-- [ ] On-device check (mine, before re-marking the slice done — see PRD
+- [x] On-device check (mine, before re-marking the slice done — see PRD
       Testing Decisions inversion): the loop reads as one big Sheep at a
       time, kid-paced, on a 390×844 phone viewport.
 

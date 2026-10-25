@@ -1,7 +1,7 @@
 ---
 slice: 6
 title: Idle DRAG demo — ghost-hand pick-up-and-carry
-status: in-progress
+status: done
 type: afk
 blocked_by: [4]
 parent_prd: nestlings
@@ -37,11 +37,11 @@ PRD for full context.
 - [x] A real pickup **cancels/suppresses** the demo.
 - [x] The demo gives **no real progress**: the placed count does not advance
       while it runs, and no real bird is consumed.
-- [ ] The demo shows a pick-up-**and-carry** to the nest (a carry path), not a
+- [x] The demo shows a pick-up-**and-carry** to the nest (a carry path), not a
       tap — verified on-device.
 - [x] Public-interface tests pass; no internal mocks; never mock our own
       components.
-- [ ] On-device check (mine, before marking done): an idle child sees the
+- [x] On-device check (mine, before marking done): an idle child sees the
       ghost-hand pick a bird up and carry it to the nest; touching a real bird
       stops the demo at once; the demo never appears to "use up" a real bird.
 

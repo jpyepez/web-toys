@@ -1,7 +1,7 @@
 ---
 slice: 3
 title: Card preview refresh to match the redesigned live Toy
-status: in-progress
+status: done
 type: afk
 blocked_by: [2]
 parent_prd: counting-sheep-mobile-rethink
@@ -37,13 +37,13 @@ End-to-end through one vertical:
 
 ## Acceptance criteria
 
-- [ ] `Preview` still exports from `src/toys/counting-sheep/Preview.tsx`
+- [x] `Preview` still exports from `src/toys/counting-sheep/Preview.tsx`
       with no prop changes (the registry entry from the polish PRD's
       slice #07 still imports it unchanged).
-- [ ] The existing slice-#07 (polish PRD) Card test
+- [x] The existing slice-#07 (polish PRD) Card test
       `renders the Toy's declared preview-scene inside its Card` still
       passes — Preview mounts inside the Card slot.
-- [ ] On-device check (mine, before re-marking done): the Card's
+- [x] On-device check (mine, before re-marking done): the Card's
       preview vignette reads as a believable miniature of the
       redesigned live meadow — two-tone hills, stars, one centred
       Sheep — on a 390×844 phone viewport.
