@@ -17,7 +17,7 @@ import { registry } from '../toys/registry';
  * `src/toys/counting-sheep/counting-sheep-mechanic.test.tsx`. Mirrors the
  * `finishableToy` fixture used in `completion-lifecycle.test.tsx`; lifting
  * it into a shared fixture is tracked in
- * `.work/notes/shared-render-app-test-helper.md`.
+ * issue 25 (shared `renderApp` test helper).
  */
 const finishableToy: ToyEntry = {
   id: 'finishable',
