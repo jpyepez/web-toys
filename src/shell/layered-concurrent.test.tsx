@@ -1,9 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { RouterProvider, createMemoryHistory } from '@tanstack/react-router';
-import { createAppRouter } from './createAppRouter';
 import type { ToyEntry } from './registry';
+import { renderApp } from './test-support/renderApp';
 
 /**
  * A stand-in Toy whose final-frame content is unmistakable in the DOM, so we
@@ -23,18 +22,10 @@ const finalFrameToy: ToyEntry = {
   ),
 };
 
-function renderAppAt(toys: ToyEntry[], initialPath: string) {
-  const router = createAppRouter(toys, {
-    history: createMemoryHistory({ initialEntries: [initialPath] }),
-  });
-  render(<RouterProvider router={router} />);
-  return router;
-}
-
 describe('Shell layered-concurrent lifecycle', () => {
   it('keeps the Toy mounted under the Shell celebration overlay after onComplete', async () => {
     const user = userEvent.setup();
-    renderAppAt([finalFrameToy], '/toy/final-frame');
+    renderApp('/toy/final-frame', { toys: [finalFrameToy] });
 
     // The Toy is showing its world. Trigger Goal-met.
     await user.click(await screen.findByRole('button', { name: 'finish' }));

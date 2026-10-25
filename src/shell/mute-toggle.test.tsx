@@ -1,11 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { RouterProvider, createMemoryHistory } from '@tanstack/react-router';
-import { createAppRouter } from './createAppRouter';
 import { createSound, type Sound } from './sound';
-import { registry } from '../toys/registry';
 import { fakeStorage } from '../test/fakes';
+import { renderApp } from './test-support/renderApp';
 
 function fakeSound(): Sound {
   // The mute toggle reads isMuted() to render its label, and writes through
@@ -22,20 +20,11 @@ function fakeSound(): Sound {
   };
 }
 
-function renderAppAt(initialPath: string, sound?: Sound) {
-  const router = createAppRouter(registry, {
-    history: createMemoryHistory({ initialEntries: [initialPath] }),
-    sound,
-  });
-  render(<RouterProvider router={router} />);
-  return router;
-}
-
 describe('Shell mute toggle', () => {
   it('silences the sound utility when tapped — through the public Shell surface', async () => {
     const user = userEvent.setup();
     const sound = fakeSound();
-    renderAppAt('/', sound);
+    renderApp('/', { sound });
 
     // Wait for the launcher to mount, then the toggle should be in the Shell chrome.
     await screen.findByRole('link', { name: 'Counting Sheep' });
@@ -51,7 +40,7 @@ describe('Shell mute toggle', () => {
     // already has the flag set when the Sound utility constructs.
     const storage = fakeStorage(new Map([['web-toys:muted', '1']]));
     const sound = createSound({ storage });
-    renderAppAt('/', sound);
+    renderApp('/', { sound });
 
     // The toggle picked up the restored state — its label is the un-mute action,
     // and the underlying utility reports muted. No tap was needed this session.

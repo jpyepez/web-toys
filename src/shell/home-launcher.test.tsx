@@ -1,8 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { RouterProvider, createMemoryHistory } from '@tanstack/react-router';
-import { createAppRouter } from './createAppRouter';
 import type { ToyEntry } from './registry';
 import { ink } from './tokens';
 import { palette } from '../toys/counting-sheep/palette';
@@ -10,15 +8,7 @@ import { palette as oceanPalette } from '../toys/puffer-fish/palette';
 import { palette as barnyardPalette } from '../toys/muddy-puddle/palette';
 import { palette as skyPalette } from '../toys/balloons/palette';
 import { palette as duskPalette } from '../toys/nestlings/palette';
-import { registry } from '../toys/registry';
-
-function renderApp(toys: ToyEntry[], initialPath = '/') {
-  const router = createAppRouter(toys, {
-    history: createMemoryHistory({ initialEntries: [initialPath] }),
-  });
-  render(<RouterProvider router={router} />);
-  return router;
-}
+import { renderApp } from './test-support/renderApp';
 
 describe('home launcher', () => {
   it('renders a Card for a registered toy, labelled from its registry metadata', async () => {
@@ -26,7 +16,7 @@ describe('home launcher', () => {
       { id: 'counting-sheep', title: 'Counting Sheep', component: () => <p>sheep</p> },
     ];
 
-    renderApp(toys);
+    renderApp('/', { toys });
 
     expect(await screen.findByText('Counting Sheep')).toBeInTheDocument();
   });
@@ -37,7 +27,7 @@ describe('home launcher', () => {
       { id: 'counting-sheep', title: 'Counting Sheep', component: () => <p>the sheep meadow</p> },
     ];
 
-    renderApp(toys);
+    renderApp('/', { toys });
     await user.click(await screen.findByText('Counting Sheep'));
 
     expect(await screen.findByText('the sheep meadow')).toBeInTheDocument();
@@ -63,7 +53,7 @@ describe('home launcher', () => {
       },
     ];
 
-    renderApp(toys);
+    renderApp('/', { toys });
 
     const card = await screen.findByRole('link', { name: /Counting Sheep/ });
     const cover = card.querySelector('[data-card-cover]') as HTMLElement;
@@ -87,7 +77,7 @@ describe('home launcher', () => {
       { id: 'no-tint', title: 'No Tint', component: () => <p>plain</p>, preview: Dot },
     ];
 
-    renderApp(toys);
+    renderApp('/', { toys });
 
     const card = await screen.findByRole('link', { name: /No Tint/ });
     const cover = card.querySelector('[data-card-cover]') as HTMLElement;
@@ -110,7 +100,7 @@ describe('home launcher', () => {
       { id: 'counting-sheep', title: 'Counting Sheep', component: () => <p>sheep</p> },
     ];
 
-    renderApp(toys);
+    renderApp('/', { toys });
 
     const title = await screen.findByText('Counting Sheep');
     const probe = document.createElement('div');
@@ -142,7 +132,7 @@ describe('home launcher', () => {
       },
     ];
 
-    renderApp(toys);
+    renderApp('/', { toys });
 
     expect(await screen.findByTestId('preview-sentinel')).toBeInTheDocument();
   });
@@ -153,7 +143,7 @@ describe('home launcher', () => {
       { id: 'bubble-pop', title: 'Bubble Pop', component: () => <p>bubbles</p> },
     ];
 
-    renderApp(toys);
+    renderApp('/', { toys });
 
     expect(await screen.findByText('Counting Sheep')).toBeInTheDocument();
     expect(screen.getByText('Bubble Pop')).toBeInTheDocument();
@@ -171,7 +161,7 @@ describe('registered toys', () => {
     // way prior slices moved it 1 → 2 → 3 → 4 as the fish, the puddle and the
     // balloons landed). Each Card carries its title and routes to its own Toy; the
     // per-Card tint + preview wiring is asserted in the focused tests below.
-    renderApp(registry);
+    renderApp();
 
     expect(await screen.findByText('Counting Sheep')).toBeInTheDocument();
     expect(screen.getByText('Puffer Fish')).toBeInTheDocument();
@@ -204,7 +194,7 @@ describe('registered toys', () => {
     // registry entry reads from so it stays a single source of truth;
     // round-tripped through jsdom's parser (which normalises hsl() → rgb())
     // exactly as the sheep tint check does.
-    renderApp(registry);
+    renderApp();
 
     const fishCard = await screen.findByRole('link', { name: /Puffer Fish/ });
     const fishCover = fishCard.querySelector('[data-card-cover]') as HTMLElement;
@@ -220,7 +210,7 @@ describe('registered toys', () => {
     // miniature scene carries — inside the Puffer Fish Card. The live Toy isn't
     // mounted on Home, so this hook can only come from the Card's preview,
     // proving the registry entry's `preview` resolves to the fish's own scene.
-    renderApp(registry);
+    renderApp();
 
     const fishCard = await screen.findByRole('link', { name: /Puffer Fish/ });
     expect(fishCard.querySelector('[data-fish-part="body"]')).not.toBeNull();
@@ -232,7 +222,7 @@ describe('registered toys', () => {
     // labelled "Fish" (mirrors the Sheep's role-named marker). After the tap the
     // launcher is gone — the Toy is mounted in its place, not alongside it.
     const user = userEvent.setup();
-    renderApp(registry);
+    renderApp();
 
     await user.click(await screen.findByText('Puffer Fish'));
 
@@ -249,7 +239,7 @@ describe('registered toys', () => {
     // from so it stays a single source of truth; round-tripped through jsdom's
     // parser (which normalises hsl() → rgb()) exactly as the sheep/fish tint
     // checks do.
-    renderApp(registry);
+    renderApp();
 
     const card = await screen.findByRole('link', { name: /Muddy Puddle/ });
     const cover = card.querySelector('[data-card-cover]') as HTMLElement;
@@ -266,7 +256,7 @@ describe('registered toys', () => {
     // the Muddy Puddle Card. The live Toy isn't mounted on Home, so this hook
     // can only come from the Card's preview, proving the entry's `preview`
     // resolves to the muddy critter's own scene.
-    renderApp(registry);
+    renderApp();
 
     const card = await screen.findByRole('link', { name: /Muddy Puddle/ });
     expect(card.querySelector('[data-piglet-part="body"]')).not.toBeNull();
@@ -280,7 +270,7 @@ describe('registered toys', () => {
     // specific animal). After the tap the launcher is gone — the Toy is mounted
     // in its place, not alongside it (mirrors the fish routing check).
     const user = userEvent.setup();
-    renderApp(registry);
+    renderApp();
 
     await user.click(await screen.findByText('Muddy Puddle'));
 
@@ -297,7 +287,7 @@ describe('registered toys', () => {
     // reads from so it stays a single source of truth; round-tripped through
     // jsdom's parser (which normalises hsl() → rgb()) exactly as the
     // sheep/fish/puddle tint checks do.
-    renderApp(registry);
+    renderApp();
 
     const card = await screen.findByRole('link', { name: /Up & Away/ });
     const cover = card.querySelector('[data-card-cover]') as HTMLElement;
@@ -314,7 +304,7 @@ describe('registered toys', () => {
     // the Up & Away Card. The live Toy isn't mounted on Home, so this hook can
     // only come from the Card's preview, proving the entry's `preview` resolves
     // to the balloons' own scene.
-    renderApp(registry);
+    renderApp();
 
     const card = await screen.findByRole('link', { name: /Up & Away/ });
     expect(card.querySelector('[data-balloon-part="body"]')).not.toBeNull();
@@ -330,7 +320,7 @@ describe('registered toys', () => {
     // launcher is gone — the Toy is mounted in its place, not alongside it
     // (mirrors the fish/puddle routing checks).
     const user = userEvent.setup();
-    renderApp(registry);
+    renderApp();
 
     await user.click(await screen.findByText('Up & Away'));
 
@@ -349,7 +339,7 @@ describe('registered toys', () => {
     // entry reads from so it stays a single source of truth; round-tripped through
     // jsdom's parser (which normalises hsl() → rgb()) exactly as the
     // sheep/fish/puddle/balloons tint checks do.
-    renderApp(registry);
+    renderApp();
 
     const card = await screen.findByRole('link', { name: /Tuck-In/ });
     const cover = card.querySelector('[data-card-cover]') as HTMLElement;
@@ -366,7 +356,7 @@ describe('registered toys', () => {
     // Tuck-In Card. The live Toy isn't mounted on Home, so this hook can only come
     // from the Card's preview, proving the entry's `preview` resolves to the
     // songbird's own scene.
-    renderApp(registry);
+    renderApp();
 
     const card = await screen.findByRole('link', { name: /Tuck-In/ });
     expect(card.querySelector('[data-bird-part="body"]')).not.toBeNull();
@@ -381,7 +371,7 @@ describe('registered toys', () => {
     // is gone — the Toy is mounted in its place, not alongside it (mirrors the
     // fish/puddle/balloons routing checks).
     const user = userEvent.setup();
-    renderApp(registry);
+    renderApp();
 
     await user.click(await screen.findByText('Tuck-In'));
 

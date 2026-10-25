@@ -1,33 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { RouterProvider, createMemoryHistory } from '@tanstack/react-router';
-import { createAppRouter } from './createAppRouter';
 import type { ToyEntry } from './registry';
-
-/** A stand-in Toy: a real component whose only interaction fires onComplete. */
-const finishableToy: ToyEntry = {
-  id: 'finishable',
-  title: 'Finishable',
-  component: ({ onComplete }) => (
-    <button type="button" onClick={onComplete}>
-      finish
-    </button>
-  ),
-};
-
-function renderAppAt(toys: ToyEntry[], initialPath: string) {
-  const router = createAppRouter(toys, {
-    history: createMemoryHistory({ initialEntries: [initialPath] }),
-  });
-  render(<RouterProvider router={router} />);
-  return router;
-}
+import { finishableToy, renderApp } from './test-support/renderApp';
 
 describe('Shell Completion lifecycle', () => {
   it('shows the celebration when the mounted Toy fires onComplete', async () => {
     const user = userEvent.setup();
-    renderAppAt([finishableToy], '/toy/finishable');
+    renderApp('/toy/finishable', { toys: [finishableToy] });
 
     await user.click(await screen.findByRole('button', { name: 'finish' }));
 
@@ -45,7 +25,7 @@ describe('Shell Completion lifecycle', () => {
     // pill that stays visible during the celebration (layered-concurrent
     // contract — ADR-0001 amendment).
     const user = userEvent.setup();
-    renderAppAt([finishableToy], '/toy/finishable');
+    renderApp('/toy/finishable', { toys: [finishableToy] });
 
     await user.click(await screen.findByRole('button', { name: 'finish' }));
 
@@ -57,7 +37,7 @@ describe('Shell Completion lifecycle', () => {
 
   it('returns to the launcher when Home is tapped from the end state', async () => {
     const user = userEvent.setup();
-    renderAppAt([finishableToy], '/toy/finishable');
+    renderApp('/toy/finishable', { toys: [finishableToy] });
 
     await user.click(await screen.findByRole('button', { name: 'finish' }));
     const endState = await screen.findByTestId('end-state', undefined, { timeout: 3000 });
@@ -79,7 +59,7 @@ describe('Shell Completion lifecycle', () => {
     // the home-control re-entry test, which exercises the equivalent
     // route-driven remount.
     const user = userEvent.setup();
-    renderAppAt([finishableToy], '/toy/finishable');
+    renderApp('/toy/finishable', { toys: [finishableToy] });
 
     // Reach the Goal.
     await user.click(await screen.findByRole('button', { name: 'finish' }));
@@ -96,7 +76,7 @@ describe('Shell Completion lifecycle', () => {
 
   it('celebrates with a code-drawn confetti burst — no image assets (ADR-0002)', async () => {
     const user = userEvent.setup();
-    renderAppAt([finishableToy], '/toy/finishable');
+    renderApp('/toy/finishable', { toys: [finishableToy] });
 
     await user.click(await screen.findByRole('button', { name: 'finish' }));
 
@@ -119,7 +99,7 @@ describe('Shell Completion lifecycle', () => {
     // before the dialogue lands (e.g. balloons floating off over FLOAT_AWAY_MS).
     const delayedToy: ToyEntry = { ...finishableToy, winDelayMs: 300 };
     const user = userEvent.setup();
-    renderAppAt([delayedToy], '/toy/finishable');
+    renderApp('/toy/finishable', { toys: [delayedToy] });
 
     await user.click(await screen.findByRole('button', { name: 'finish' }));
 
@@ -132,7 +112,7 @@ describe('Shell Completion lifecycle', () => {
   });
 
   it('never reaches the end state without onComplete — no timer or fail path', async () => {
-    renderAppAt([finishableToy], '/toy/finishable');
+    renderApp('/toy/finishable', { toys: [finishableToy] });
 
     // The Toy is in play, and stays there well past the celebration-beat
     // window without anyone firing onComplete: nothing but the Goal advances

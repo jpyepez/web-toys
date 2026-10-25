@@ -1,33 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { RouterProvider, createMemoryHistory } from '@tanstack/react-router';
-import { createAppRouter } from './createAppRouter';
 import type { Sound } from './sound';
 import type { Haptics } from './haptics';
-import type { ToyEntry } from './registry';
-import { registry } from '../toys/registry';
-
-/**
- * Stand-in Toy used in tests that assert Shell-side behaviour at the
- * `onComplete` boundary (celebration sound, no-binary-assets sweep). Using
- * this rather than driving Counting Sheep's full 5-tap loop keeps the
- * assertion focused on the Shell — the Counting Sheep mechanic's own
- * 5th-tap-fires-onComplete coverage lives in
- * `src/toys/counting-sheep/counting-sheep-mechanic.test.tsx`. Mirrors the
- * `finishableToy` fixture used in `completion-lifecycle.test.tsx`; lifting
- * it into a shared fixture is tracked in
- * issue 25 (shared `renderApp` test helper).
- */
-const finishableToy: ToyEntry = {
-  id: 'finishable',
-  title: 'Finishable',
-  component: ({ onComplete }) => (
-    <button type="button" onClick={onComplete}>
-      finish
-    </button>
-  ),
-};
+import { finishableToy, renderApp } from './test-support/renderApp';
 
 function fakeSound(): Sound {
   return {
@@ -39,25 +15,12 @@ function fakeSound(): Sound {
   };
 }
 
-function renderAppAt(
-  initialPath: string,
-  utils: { sound?: Sound; haptics?: Haptics; toys?: ToyEntry[] } = {},
-) {
-  const { toys = registry, ...rest } = utils;
-  const router = createAppRouter(toys, {
-    history: createMemoryHistory({ initialEntries: [initialPath] }),
-    ...rest,
-  });
-  render(<RouterProvider router={router} />);
-  return router;
-}
-
 describe('Shell sound + haptics wiring', () => {
   it('provides its sound/haptics to the mounted Toy through the contract', async () => {
     const user = userEvent.setup();
     const sound = fakeSound();
     const haptics: Haptics = { tick: vi.fn() };
-    renderAppAt('/toy/counting-sheep', { sound, haptics });
+    renderApp('/toy/counting-sheep', { sound, haptics });
 
     // Tap the single on-stage Sheep — under the mobile-rethink mechanic the
     // current Sheep is queryable from the moment it arrives, no need to
@@ -81,7 +44,7 @@ describe('Shell sound + haptics wiring', () => {
     // mechanic test in `counting-sheep-mechanic.test.tsx`.
     const user = userEvent.setup();
     const sound = fakeSound();
-    renderAppAt('/toy/finishable', { sound, toys: [finishableToy] });
+    renderApp('/toy/finishable', { sound, toys: [finishableToy] });
 
     await user.click(await screen.findByRole('button', { name: 'finish' }));
     await screen.findByText('You did it!');
@@ -92,7 +55,7 @@ describe('Shell sound + haptics wiring', () => {
   it('unlocks audio on the Card tap — not on page load', async () => {
     const user = userEvent.setup();
     const sound = fakeSound();
-    renderAppAt('/', { sound });
+    renderApp('/', { sound });
 
     // On the launcher, before any gesture, audio stays locked (mobile constraint).
     await screen.findByRole('link', { name: 'Counting Sheep' });
@@ -113,7 +76,7 @@ describe('Shell sound + haptics wiring', () => {
     // counting-sheep.test.tsx's wool / silhouette palette assertions (which
     // would catch any swap from SVG to img).
     const user = userEvent.setup();
-    renderAppAt('/toy/finishable', { toys: [finishableToy] });
+    renderApp('/toy/finishable', { toys: [finishableToy] });
 
     await user.click(await screen.findByRole('button', { name: 'finish' }));
     await screen.findByText('You did it!');

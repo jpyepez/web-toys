@@ -1,22 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { RouterProvider, createMemoryHistory } from '@tanstack/react-router';
-import { createAppRouter } from './createAppRouter';
-import type { ToyEntry } from './registry';
-import { registry } from '../toys/registry';
-
-function renderAppAt(toys: ToyEntry[], initialPath: string) {
-  const router = createAppRouter(toys, {
-    history: createMemoryHistory({ initialEntries: [initialPath] }),
-  });
-  render(<RouterProvider router={router} />);
-  return router;
-}
+import { renderApp } from './test-support/renderApp';
 
 describe('Always-visible Home control', () => {
   it('shows a Home control while a Toy is mounted and playing', async () => {
-    renderAppAt(registry, '/toy/counting-sheep');
+    renderApp('/toy/counting-sheep');
 
     // The Toy is in play (its current Sheep is on stage — one at a time
     // under the mobile-rethink mechanic, PRD slice #01)...
@@ -27,7 +16,7 @@ describe('Always-visible Home control', () => {
 
   it('returns to the launcher on a single tap — no confirmation gate', async () => {
     const user = userEvent.setup();
-    renderAppAt(registry, '/toy/counting-sheep');
+    renderApp('/toy/counting-sheep');
 
     await user.click(await screen.findByRole('button', { name: 'Home' }));
 
@@ -46,7 +35,7 @@ describe('Always-visible Home control', () => {
     // mid-dismiss state), and the Shell's celebration overlay isn't present
     // either (re-entry isn't a Completion).
     const user = userEvent.setup();
-    renderAppAt(registry, '/toy/counting-sheep');
+    renderApp('/toy/counting-sheep');
 
     // Mid-play: tap the current Sheep (drives it into dismissing).
     await user.click(await screen.findByRole('button', { name: 'Sheep' }));
