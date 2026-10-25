@@ -6,7 +6,5 @@ dist-ssr/
 coverage/
 .vite/
 
-.work/notes/
-
 # dmux worktree tooling — per-checkout scratch metadata, not project state.
 .dmux/

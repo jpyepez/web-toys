@@ -1,4 +1,4 @@
-# CONTEXT
+# Glossary
 
 Shared domain glossary for **web-toys** — a small phone-first website that hosts a
 collection of tiny, finite interactive experiences ("toys") to entertain young children (around 3–4).

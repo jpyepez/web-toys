@@ -54,8 +54,34 @@ tests in `canopy.test.ts`. **The scene's unit is a bird, not the viewport** — 
 of a phone's width and under 10% of a desktop's, so any size authored in frame units
 silently changes class as the frame grows.
 
-## Reference docs (`.work/`, load on demand)
-IMPORTANT: before writing or changing Shell or Toy code, read `.work/CONTEXT.md` for the
+## Reference docs (load on demand)
+IMPORTANT: before writing or changing Shell or Toy code, read `GLOSSARY.md` for the
 domain vocabulary (use Toy / Goal / Completion / Card / Critter — not game / score / level)
-and skim `.work/adr/` for the architectural decisions and gotchas behind the rules above
-(e.g. the audio + test-harness constraints in ADR-0003). Rejected features: `.work/out-of-scope/`.
+and skim `docs/adr/` for the architectural decisions and gotchas behind the rules above
+(e.g. the audio + test-harness constraints in ADR-0003). Rejected features: `docs/out-of-scope/`.
+
+Active specs are GitHub issues labelled `ready` that have sub-issues — read the relevant one
+(`gh issue view <n> --json number,title,body,labels,comments`) before implementing a feature.
+Finished PRDs and slices from before the move to GitHub: `docs/archive.md`.
+
+## Agent skills
+
+### Issue tracker
+
+Issues and specs are GitHub issues, managed with `gh`. A spec is a parent issue with its
+tickets as sub-issues. A merged PR with `Closes #<n>` closes a code ticket; `gh issue close`
+is only for work that ships no code. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default five triage roles; `ready-for-agent` is written as `ready`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Glossary `GLOSSARY.md`, ADRs `docs/adr/`, out-of-scope `docs/out-of-scope/`, all writable.
+See `docs/agents/domain.md`.
+
+### Notes
+
+Running notes and rough ideas are GitHub issues: label `notes` for running notes,
+`needs-triage` for an idea to sort later. There is no `.work/` folder.
