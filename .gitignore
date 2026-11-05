@@ -8,3 +8,4 @@ coverage/
 
 # dmux worktree tooling — per-checkout scratch metadata, not project state.
 .dmux/
+.claude/dmux/
