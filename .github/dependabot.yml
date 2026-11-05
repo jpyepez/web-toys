@@ -1,11 +1,11 @@
 # Dependabot configuration
 # Docs: https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
 #
-# Bun is supported under the "npm" ecosystem — Dependabot reads bun.lock.
+# The "bun" ecosystem updates package.json and regenerates bun.lock in the same PR.
 version: 2
 updates:
   # App dependencies (package.json + bun.lock)
-  - package-ecosystem: "npm"
+  - package-ecosystem: "bun"
     directory: "/"
     schedule:
       interval: "weekly"

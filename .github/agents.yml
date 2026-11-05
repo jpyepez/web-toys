@@ -1,0 +1,4 @@
+# Settings for the github-agents engine (https://github.com/jpyepez/github-agents).
+# Only keys that differ from the engine's defaults; see its docs/design.md "Settings".
+automation: implement
+board: 2

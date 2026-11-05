@@ -66,6 +66,9 @@ Finished PRDs and slices from before the move to GitHub: `docs/archive.md`.
 
 ## Agent skills
 
+Triage and implement run on [github-agents](https://github.com/jpyepez/github-agents), configured in
+`.github/agents.yml`. Commit and PR title style: `docs/git-workflow.md`.
+
 ### Issue tracker
 
 Issues and specs are GitHub issues, managed with `gh`. A spec is a parent issue with its
