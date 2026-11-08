@@ -6,56 +6,36 @@ on:
   pull_request:
 
 jobs:
-  build-and-test:
+  # Required by the `main` ruleset, under this name. Runs the same checks, in the
+  # same order, as github-agents' implement (see .github/agents.yml).
+  checks:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # allow committing a synced bun.lock back to Dependabot PRs
+      contents: read
     steps:
       - uses: actions/checkout@v7
-        with:
-          # Check out the PR head branch (not the detached merge ref) so the
-          # lockfile-sync step below can push back to it.
-          ref: ${{ github.head_ref }}
 
       - name: Set up Bun
         uses: oven-sh/setup-bun@v2
 
-      # Dependabot bumps package.json but does NOT regenerate bun.lock, so a
-      # frozen install fails on its PRs. Regenerate the lockfile and commit it
-      # back so the PR is internally consistent (and patch/minor can auto-merge).
-      - name: Install & sync lockfile (Dependabot PRs)
-        if: github.actor == 'dependabot[bot]'
-        run: |
-          bun install
-          if ! git diff --quiet bun.lock; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add bun.lock
-            git commit -m "chore(deps): sync bun.lock [skip ci]"
-            git push
-          fi
-
-      # Everyone else: strict install — fails loudly if package.json and
-      # bun.lock have drifted, which is exactly the guard that caught the
-      # Dependabot lockfile gap.
+      # Strict install: fails loudly if package.json and bun.lock have drifted.
+      # Dependabot's "bun" ecosystem regenerates bun.lock itself, so its PRs pass too.
       - name: Install dependencies (frozen)
-        if: github.actor != 'dependabot[bot]'
         run: bun install --frozen-lockfile
 
-      # `bun run build` is `tsc -b && vite build`, so this covers the typecheck
-      # and the production build in one step.
-      - name: Build (typecheck + production build)
-        run: bun run build
+      - name: Typecheck
+        run: bun run typecheck
 
       - name: Test
         run: bun run test
 
-  # Auto-merge low-risk Dependabot PRs (patch + minor) — runs only after
-  # build-and-test passes (via `needs`), which substitutes for a required-status
-  # branch-protection rule (unavailable on private repos without GitHub Pro).
-  # Major bumps fall through and wait for manual review.
+      - name: Build
+        run: bun run build
+
+  # Auto-merge low-risk Dependabot PRs (patch + minor), only after `checks`
+  # passes. The ruleset requires `checks` too. Major bumps wait for manual review.
   dependabot-auto-merge:
-    needs: build-and-test
+    needs: checks
     runs-on: ubuntu-latest
     if: github.actor == 'dependabot[bot]'
     permissions:
