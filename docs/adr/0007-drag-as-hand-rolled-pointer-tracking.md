@@ -32,3 +32,20 @@ momentum and capture free from Motion.
 - A future Toy wanting throw/fling momentum (a velocity gesture, explicitly outside the
   Drag definition) would need to revisit this — it is a deliberate trade of free momentum
   for testability and snap control.
+
+## Amendment — Swipe, the velocity gesture (issue 2, Penguin Slide)
+
+The last consequence above anticipated a Toy wanting throw/fling momentum. **Swipe** (see
+the glossary) is that Toy, and the decision holds: Swipe is hand-rolled pointer tracking
+too, not Motion's `drag` with momentum. The reasons carry over unchanged — Motion's `drag`
+can't be exercised in jsdom, and a Swipe launches the Critter on release rather than
+dragging it, so momentum-while-dragging isn't even the shape we need.
+
+- Launch direction and speed are derived by hand from the last few pointer samples before
+  release. The launch is assertable at the boundary (a stroke past the minimum distance
+  reaches a launched state; a tap doesn't); the exact speed-to-distance mapping and the
+  minimum distance are on-device-tuned and deliberately not asserted.
+- Speed shapes the launch but never gates it — there is no velocity threshold that makes a
+  stroke "not count" (ADR-0001: no failure path).
+- The same pointer-capture/cancel/loss handling applies: a lost or cancelled pointer ends
+  the stroke without launching, and the Critter stays put to be Swiped again.

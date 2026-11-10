@@ -44,7 +44,7 @@ A character in a Toy (fish, sheep, piglet, or a faced balloon, etc.) the child i
 animal or an anthropomorphised object — drawn from code
 SVG primitives — never an image. The interaction is interaction-agnostic: it may be a tap
 (Counting Sheep, Puffer Fish), a sustained **Wipe** (Muddy Puddle), a sustained **Hold**
-(Balloons), or some future gesture. Engaging the Critter is the core interaction; the
+(Balloons), a **Drag** (Nestlings), a **Swipe**, or some future gesture. Engaging the Critter is the core interaction; the
 specific gesture is per-Toy.
 
 **Wipe**:
@@ -78,6 +78,18 @@ every Drag makes visible progress toward the Goal and nothing is ever undone. Th
 non-tap core interaction in the collection.
 _Avoid_: swipe, fling, throw (those are velocity gestures); reserve "drop" for the release
 event, not the gesture name.
+
+**Swipe**:
+The core gesture of the penguin Toy: a quick directional stroke across a **Critter** that
+*launches* it on the finger's release, sending it off the way it was stroked. Distinct from a
+**Drag** (the Critter never stays on the finger and there is no target to reach) and from a
+**Wipe** (the stroke moves the Critter rather than accumulating coverage on it). Speed shapes
+the launch, never gates it: any real stroke counts, a faster one just sends the Critter
+quicker and further, so no stroke is ever "too slow". Every direction is a good direction;
+there is no aiming. A tap is not a Swipe. The fourth non-tap core interaction in the
+collection.
+_Avoid_: flick, fling, throw (as gesture names); reserve "launch" for what the Critter does
+in response, not the gesture.
 
 **Outro**:
 A Toy's choreographed end-beat after its Goal is met — the Toy keeps rendering its
