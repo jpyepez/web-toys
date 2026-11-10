@@ -14,6 +14,8 @@ Package manager is **Bun** (use `bun install`, not npm/pnpm/yarn).
 - `bun run build` — typecheck (`tsc -b`) + production build
 - `bun run test` — Vitest (one-shot); `bun run test:watch` to watch
 - `bun run typecheck` — `tsc -b` only
+- `bun run test:e2e` — Playwright smoke test of the production build (Home and every Toy
+  load with no console errors). Visual checks before a PR: `docs/browser-verification.md`
 
 ## Non-negotiable rules
 - **No binary assets.** Critters are code-drawn SVG; sound is synthesized.
