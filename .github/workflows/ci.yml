@@ -32,6 +32,23 @@ jobs:
       - name: Build
         run: bun run build
 
+      # The smoke suite serves the dist/ built above (playwright.config.ts skips the build under CI).
+      - name: Install Chromium
+        run: bunx playwright install --with-deps chromium
+
+      - name: Smoke test (Playwright)
+        run: bun run test:e2e
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+
   # Auto-merge low-risk Dependabot PRs (patch + minor), only after `checks`
   # passes. The ruleset requires `checks` too. Major bumps wait for manual review.
   dependabot-auto-merge:

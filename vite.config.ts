@@ -1,5 +1,6 @@
 /// <reference types="vitest/config" />
 import { defineConfig, type Plugin } from 'vite';
+import { configDefaults } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import { Resvg } from '@resvg/resvg-js';
@@ -95,5 +96,7 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     globals: false,
+    // `e2e/` is the Playwright smoke suite, run by `bun run test:e2e`, not Vitest.
+    exclude: [...configDefaults.exclude, 'e2e/**'],
   },
 });

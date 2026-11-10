@@ -21,6 +21,7 @@ bun install        # install dependencies
 bun run dev        # start the Vite dev server
 bun run test       # run the Vitest suite once
 bun run build      # typecheck and build for production
+bun run test:e2e   # smoke-test the production build in Chromium
 ```
 
 ## No image or audio files

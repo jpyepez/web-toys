@@ -32,10 +32,13 @@ An issue is `ready` only when every point holds:
 
 1. **One outcome, named in the glossary's words.** It says what changes for a Toy, the
    Shell or the tooling, using Toy / Goal / Completion / Card / Critter.
-2. **Every acceptance criterion is checkable by a Vitest test**, such as a state
-   transition, `onComplete()` firing once, a DOM structure, or a colour or geometry rule
-   asserted like `canopy.test.ts`. For a docs- or config-only change, reading the diff
-   is enough.
+2. **Every acceptance criterion is checkable by a Vitest test or a screenshot.** A test
+   covers a state transition, `onComplete()` firing once, a DOM structure, or a colour or
+   geometry rule asserted like `canopy.test.ts`. A screenshot from the browser walk
+   (`docs/browser-verification.md`) covers a visible fact anyone would agree on, such as
+   "the Card appears on Home" or "the Completion overlay shows after the last Critter",
+   never whether something looks good (that's point 3). For a docs- or config-only
+   change, reading the diff is enough.
 3. **No judgement of look or feel.** "Cuter", "reads better on a phone", tuning a palette
    or timing on-device, or drawing new art needs the critter lab and a real device, so
    it's `ready-for-human`.
