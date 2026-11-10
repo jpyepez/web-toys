@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { act, fireEvent, render } from '@testing-library/react';
 import { Balloons } from './Balloons';
 import { pop, raspberry } from './sounds';
+import { fakeSound } from '../../test/fakes';
 
 /**
  * Balloons — sound + haptics wiring (slice #07).
@@ -17,17 +18,6 @@ import { pop, raspberry } from './sounds';
  * the other boundary: `vi.useFakeTimers()` drives the fill ramp AND the pip
  * throttle's clock (`Date.now`).
  */
-
-/** A fake `Sound` recording every `play(voice)` the Toy makes. */
-function fakeSound() {
-  return {
-    unlock: vi.fn(),
-    play: vi.fn(),
-    celebrate: vi.fn(),
-    isMuted: vi.fn(() => false),
-    setMuted: vi.fn(),
-  };
-}
 
 /**
  * The fill pip is the Toy's ONLY `triangle` voice (sounds.ts) — so we count pips

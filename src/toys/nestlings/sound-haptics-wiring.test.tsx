@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { fireEvent, render } from '@testing-library/react';
 import { Nestlings } from './Nestlings';
 import { chirp, coo, flutter, plip } from './sounds';
+import { fakeSound } from '../../test/fakes';
 
 /**
  * Nestlings — sound + haptics wiring (slice #07).
@@ -17,17 +18,6 @@ import { chirp, coo, flutter, plip } from './sounds';
  * pointer events (never pixels; jsdom has no layout, so `nestCenter` is `{0,0}` —
  * a release at the origin places, a release far away rests loose).
  */
-
-/** A fake `Sound` recording every `play(voice)` the Toy makes. */
-function fakeSound() {
-  return {
-    unlock: vi.fn(),
-    play: vi.fn(),
-    celebrate: vi.fn(),
-    isMuted: vi.fn(() => false),
-    setMuted: vi.fn(),
-  };
-}
 
 /** Every carriable bird in the cast (slice #3's `data-carriable-bird` surface). */
 const birds = (container: HTMLElement) =>

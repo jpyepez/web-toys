@@ -1,24 +1,9 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { createSound, type Sound } from './sound';
-import { fakeStorage } from '../test/fakes';
+import { createSound } from './sound';
+import { fakeSound, fakeStorage } from '../test/fakes';
 import { renderApp } from './test-support/renderApp';
-
-function fakeSound(): Sound {
-  // The mute toggle reads isMuted() to render its label, and writes through
-  // setMuted(). Default to unmuted so the toggle starts in the "sound on" state.
-  let muted = false;
-  return {
-    unlock: vi.fn(),
-    play: vi.fn(),
-    celebrate: vi.fn(),
-    isMuted: vi.fn(() => muted),
-    setMuted: vi.fn((next: boolean) => {
-      muted = next;
-    }),
-  };
-}
 
 describe('Shell mute toggle', () => {
   it('silences the sound utility when tapped — through the public Shell surface', async () => {

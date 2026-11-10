@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { MuddyPuddle } from './MuddyPuddle';
 import { sparkle, REVEAL_VOICES } from './sounds';
+import { fakeSound } from '../../test/fakes';
 
 /**
  * Muddy Puddle — sound + haptics wiring (slice #07).
@@ -17,17 +18,6 @@ import { sparkle, REVEAL_VOICES } from './sounds';
  * (never pixels, ADR-0006). Time is the other boundary: `vi.useFakeTimers()`
  * drives the loop's trot-in beat AND the squelch throttle's clock (`Date.now`).
  */
-
-/** A fake `Sound` recording every `play(voice)` the Toy makes. */
-function fakeSound() {
-  return {
-    unlock: vi.fn(),
-    play: vi.fn(),
-    celebrate: vi.fn(),
-    isMuted: vi.fn(() => false),
-    setMuted: vi.fn(),
-  };
-}
 
 /**
  * The squelch is the Toy's ONLY `sawtooth` voice (sounds.ts) — so we count
