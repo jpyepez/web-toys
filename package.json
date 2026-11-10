@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@tanstack/react-router": "^1.170.46",
-    "motion": "^12.40.0",
+    "motion": "^14.9.1",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
   },
