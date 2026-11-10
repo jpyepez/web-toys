@@ -1,19 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { Sound } from './sound';
 import type { Haptics } from './haptics';
 import { finishableToy, renderApp } from './test-support/renderApp';
-
-function fakeSound(): Sound {
-  return {
-    unlock: vi.fn(),
-    play: vi.fn(),
-    celebrate: vi.fn(),
-    isMuted: vi.fn(() => false),
-    setMuted: vi.fn(),
-  };
-}
+import { fakeSound } from '../test/fakes';
 
 describe('Shell sound + haptics wiring', () => {
   it('provides its sound/haptics to the mounted Toy through the contract', async () => {
