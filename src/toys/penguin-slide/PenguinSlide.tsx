@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { motion } from 'motion/react';
 import type { ToyProps } from '../../shell/registry';
 import { PenguinDrawing } from './PenguinDrawing';
+import { peep, plop, swish } from './sounds';
 import { GhostSwipeFinger } from './GhostSwipeFinger';
 
 /** Penguins on the floe — the Goal is to send every one into the water. */
@@ -60,7 +61,7 @@ export function strokeSpeed(samples: Sample[]): number {
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
-export function PenguinSlide({ onComplete }: ToyProps) {
+export function PenguinSlide({ onComplete, sound, haptics }: ToyProps) {
   const [states, setStates] = useState<PenguinState[]>(() =>
     Array.from({ length: PENGUIN_COUNT }, () => 'standing'),
   );
@@ -97,6 +98,7 @@ export function PenguinSlide({ onComplete }: ToyProps) {
   }, []);
 
   const land = (index: number) => {
+    sound?.play(plop(statesRef.current.filter((s) => s === 'in-water').length));
     const next = statesRef.current.map((s, i) => (i === index ? 'in-water' : s)) as PenguinState[];
     statesRef.current = next;
     setStates(next);
@@ -108,6 +110,8 @@ export function PenguinSlide({ onComplete }: ToyProps) {
   };
 
   const launch = (index: number, dir: Vec, speed: number) => {
+    sound?.play(swish);
+    haptics?.tick();
     launchedForReal.current = true;
     setDemoActive(false);
     const len = Math.hypot(dir.x, dir.y) || 1;
@@ -151,6 +155,7 @@ export function PenguinSlide({ onComplete }: ToyProps) {
     if (Math.hypot(dx, dy) >= MIN_STROKE_PX) {
       launch(index, { x: dx, y: dy }, strokeSpeed(s.samples));
     } else {
+      sound?.play(peep);
       setWiggle((w) => w.map((v, i) => (i === index ? v + 1 : v)));
     }
   };
