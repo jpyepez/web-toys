@@ -316,9 +316,30 @@ export function buildFloe(cfg: FloeConfig, frame: Frame, pw: number, seed: numbe
     }
     return true;
   };
-  const cols = Math.max(1, Math.round(widthInP / cfg.slotSpacing));
-  const rowsN = Math.max(1, Math.round(frame.h / pw / (cfg.slotSpacing * 0.85)));
-  const slots = jitteredGrid(cols, rowsN, frame.w, frame.h, 0.35, rnd('slots')).filter(swimFits);
+  // Packed, not gridded. A coarse grid left holes exactly where direction
+  // matters most — hard against the floe's sides and corners — so on a phone a
+  // sideways swipe found nothing beside the floe and went down instead. Dense
+  // candidates are taken nearest-the-floe first, keeping a swimmer's width
+  // between any two, so the ring of water hugging the ice fills before the open
+  // sea does.
+  const fine = pw * 0.3;
+  const sr = rnd('slots');
+  const candidates: Array<{ p: Pt; key: number }> = [];
+  for (let y = fine / 2; y < frame.h; y += fine) {
+    for (let x = fine / 2; x < frame.w; x += fine) {
+      const p: Pt = [x + jitter(sr, fine * 0.3), y + jitter(sr, fine * 0.3)];
+      if (!swimFits(p)) continue;
+      // Elliptical distance from the floe, so the ring follows its shape.
+      const key = Math.hypot((p[0] - cx) / (rx + pw), (p[1] - cy) / (ry + pw));
+      candidates.push({ p, key });
+    }
+  }
+  candidates.sort((a, b) => a.key - b.key);
+  const minGap = cfg.slotSpacing * 0.85 * pw;
+  const slots: Pt[] = [];
+  for (const { p } of candidates) {
+    if (slots.every((q) => Math.hypot(q[0] - p[0], (q[1] - p[1]) * 1.25) >= minGap)) slots.push(p);
+  }
 
   /* --- the Outro row: high in the open water above the floe ------------------ */
   // High, not midway: the Completion overlay is a card centred in the viewport,
@@ -389,6 +410,9 @@ function smoothOpen(pts: readonly Pt[]): Pt[] {
  * Returns -1 only if every slot is taken, which `check`-style tests rule out by
  * asserting there are more slots than penguins at every shipped frame.
  */
+/** How far off the stroke a landing may be while forward water is free (95°). */
+const MAX_OFF_AXIS = (95 * Math.PI) / 180;
+
 export function landingFor(
   art: Pick<FloeArt, 'slots' | 'pw'>,
   from: Pt,
@@ -400,22 +424,63 @@ export function landingFor(
   const ux = dir[0] / len;
   const uy = dir[1] / len;
   const want = art.pw * (1.3 + 2.4 * Math.min(1, Math.max(0, reach)));
-  let best = -1;
-  let bestScore = Infinity;
-  art.slots.forEach(([x, y], i) => {
-    if (taken.has(i)) return;
-    const vx = x - from[0];
-    const vy = y - from[1];
-    const d = Math.hypot(vx, vy) || 1;
-    const cos = (vx * ux + vy * uy) / d;
-    const angle = Math.acos(Math.max(-1, Math.min(1, cos)));
-    const score = angle * 2.2 + Math.abs(d - want) / art.pw * 0.45;
-    if (score < bestScore) {
-      bestScore = score;
-      best = i;
+  // Never backwards while there is anywhere forwards: slots more than
+  // `MAX_OFF_AXIS` off the stroke are only considered once nothing within it is
+  // free. Scoring alone let a full side of the frame send a penguin the
+  // opposite way it was swiped.
+  const pick = (limit: number) => {
+    let best = -1;
+    let bestScore = Infinity;
+    art.slots.forEach(([x, y], i) => {
+      if (taken.has(i)) return;
+      const vx = x - from[0];
+      const vy = y - from[1];
+      const d = Math.hypot(vx, vy) || 1;
+      const angle = Math.acos(Math.max(-1, Math.min(1, (vx * ux + vy * uy) / d)));
+      if (angle > limit) return;
+      const score = angle * 2.2 + (Math.abs(d - want) / art.pw) * 0.45;
+      if (score < bestScore) {
+        bestScore = score;
+        best = i;
+      }
+    });
+    return best;
+  };
+  const forward = pick(MAX_OFF_AXIS);
+  return forward >= 0 ? forward : pick(Math.PI);
+}
+
+/** One Swipe, as the Toy remembers it: who, which way, how hard. */
+export type Launch = { index: number; dir: Pt; reach: number };
+
+/**
+ * Where every launched penguin is, resolved from the swipes themselves rather
+ * than stored as slot numbers. The scene is rebuilt when the viewport changes —
+ * a phone rotated mid-play has a different floe and a different set of slots —
+ * so a stored index would point at the wrong water, or past the end of the list.
+ * Replaying the swipes in order against the CURRENT scene always gives every
+ * swimmer a place of its own in water that exists.
+ */
+export function resolveLandings(art: FloeArt, launches: readonly Launch[]): Map<number, Pt> {
+  const taken = new Set<number>();
+  const out = new Map<number, Pt>();
+  for (const { index, dir, reach } of launches) {
+    const from = art.rests[index];
+    const slot = landingFor(art, from, dir, reach, taken);
+    if (slot >= 0) {
+      taken.add(slot);
+      out.set(index, art.slots[slot]);
+    } else {
+      // Unreachable at every shipped frame (the tests hold slots > cast), but a
+      // penguin must still end somewhere on screen rather than nowhere.
+      const len = Math.hypot(dir[0], dir[1]) || 1;
+      out.set(index, [
+        Math.min(art.frame.w - art.pw * 0.6, Math.max(art.pw * 0.6, from[0] + (dir[0] / len) * art.pw * 2)),
+        Math.min(art.frame.h - art.pw * 0.2, Math.max(art.pw, from[1] + (dir[1] / len) * art.pw * 2)),
+      ]);
     }
-  });
-  return best;
+  }
+  return out;
 }
 
 /* ------------------------------------------------------------------ *

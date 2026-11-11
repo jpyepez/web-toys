@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildFloe, check, landingFor, SWIM_HALF_W, type Frame } from './floe';
+import { buildFloe, check, landingFor, resolveLandings, SWIM_HALF_W, type Frame } from './floe';
 import { FLOE, FLOE_SEED } from './floe-config';
 import { PENGUIN_COUNT } from './PenguinSlide';
 import { penguinPx } from './PenguinDrawing';
@@ -137,6 +137,56 @@ describe('Penguin Slide — the floe', () => {
         const [x, y] = art.slots[landingFor(art, from, dir, 0.5, new Set())];
         const dot = (x - from[0]) * dir[0] + (y - from[1]) * dir[1];
         expect(dot, `${f.name}: swiped ${dir}`).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it('keeps landings close to the swipe — tightly on wide frames, never backwards on any', () => {
+    // Measured over 8 directions from every penguin into empty water. A phone
+    // is 4.5 penguins wide and has no room for a swimmer BESIDE the floe, so a
+    // sideways swipe there lands diagonally; that is geometry, and the bound
+    // for narrow frames is only that a penguin never goes the wrong way. Wide
+    // frames have the room, so they are held to the stroke.
+    const worst = (f: (typeof FRAMES)[number]) => {
+      const art = build(f);
+      let max = 0;
+      for (const from of art.rests) {
+        for (let k = 0; k < 8; k++) {
+          const a = (k / 8) * Math.PI * 2;
+          const d: [number, number] = [Math.cos(a), Math.sin(a)];
+          const [x, y] = art.slots[landingFor(art, from, d, 0.5, new Set())];
+          const v = [x - from[0], y - from[1]];
+          max = Math.max(max, (Math.acos((v[0] * d[0] + v[1] * d[1]) / Math.hypot(v[0], v[1])) * 180) / Math.PI);
+        }
+      }
+      return max;
+    };
+    for (const f of FRAMES) {
+      // Roomy means room both ways: a landscape phone is wide but only ~5
+      // penguins tall, so its up/down swipes are the constrained ones.
+      const roomy = f.frame.w / f.pw >= 8 && f.frame.h / f.pw >= 6;
+      expect(worst(f), f.name).toBeLessThanOrEqual(roomy ? 35 : 95);
+    }
+  });
+
+  it('re-places every swimmer when the scene is rebuilt for a new viewport', () => {
+    // A phone rotated mid-play gets a different floe with a different number of
+    // slots. Landings are replayed from the swipes, so every swimmer still has
+    // water of its own — never an index past the end of the new list.
+    const launches = [
+      { index: 0, dir: [-1, 0] as [number, number], reach: 0.8 },
+      { index: 3, dir: [0, 1] as [number, number], reach: 0.2 },
+      { index: 4, dir: [1, -1] as [number, number], reach: 1 },
+    ];
+    for (const f of FRAMES) {
+      const art = build(f);
+      const placed = resolveLandings(art, launches);
+      expect(placed.size, f.name).toBe(3);
+      const keys = new Set([...placed.values()].map((p) => p.join(',')));
+      expect(keys.size, `${f.name}: two swimmers share a slot`).toBe(3);
+      for (const p of placed.values()) {
+        expect(inside(p, art.floe.pts), f.name).toBe(false);
+        expect(p[1], f.name).toBeLessThan(f.frame.h);
       }
     }
   });

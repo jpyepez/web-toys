@@ -135,6 +135,28 @@ describe('PenguinSlide', () => {
     expect(container.querySelectorAll('[data-penguin-splash]').length).toBe(5);
   });
 
+  it('survives the viewport changing mid-play, swimmers and all', () => {
+    // Rotating a phone rebuilds the floe and its landing slots. Swimmers are
+    // re-placed from their swipes; nothing indexes into the old scene.
+    const { container } = render(<PenguinSlide onComplete={vi.fn()} />);
+    swipe(penguins(container)[0]);
+    swipe(penguins(container)[1], 0, FAR);
+    settle();
+    const before = { w: window.innerWidth, h: window.innerHeight };
+    act(() => {
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: 390 });
+      Object.defineProperty(window, 'innerHeight', { configurable: true, value: 844 });
+      window.dispatchEvent(new Event('resize'));
+    });
+    expect(states(container).slice(0, 2)).toEqual(['in-water', 'in-water']);
+    for (const p of penguins(container).slice(0, 2)) expect(p.style.left).toMatch(/%$/);
+    act(() => {
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: before.w });
+      Object.defineProperty(window, 'innerHeight', { configurable: true, value: before.h });
+      window.dispatchEvent(new Event('resize'));
+    });
+  });
+
   it('exports a positive Outro duration for winDelayMs', () => {
     expect(OUTRO_MS).toBeGreaterThan(0);
   });

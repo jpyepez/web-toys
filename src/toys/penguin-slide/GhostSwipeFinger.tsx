@@ -3,26 +3,44 @@ import { palette } from './palette';
 
 /** One demo stroke: how long it takes (s) and how far the finger travels (px). */
 export const DEMO_STROKE_S = 1.6;
-export const DEMO_STROKE_PX = 110;
+export const DEMO_STROKE_PX = 84;
 
 /**
  * Wordless Swipe demo: a translucent fingertip presses on a standing penguin,
  * draws a plain stroke and fades. Purely visual — it is `pointer-events: none`,
  * `aria-hidden`, and never touches a penguin's state. Its own copy, per
  * `docs/out-of-scope/shared-toy-loop-abstraction.md`. It is the PAPER — a
- * fingertip of light, the way a highlight is drawn in this style — with a soft
- * deep-water halo so it reads on the ice as well as on the sea.
+ * fingertip of light, the way a highlight is drawn in this style — ringed in
+ * ink, because paper on ice is a lightness step of almost nothing and the first
+ * version all but vanished there.
+ *
+ * `dir` is the stroke's direction. The Toy aims it OUT from the floe's middle,
+ * so the demo always points at open water and never ends on a neighbour.
  */
-export function GhostSwipeFinger({ left, top }: { left: string; top: string }) {
+export function GhostSwipeFinger({
+  left,
+  top,
+  dir = [1, 0],
+}: {
+  left: string;
+  top: string;
+  dir?: readonly [number, number];
+}) {
+  const len = Math.hypot(dir[0], dir[1]) || 1;
+  const dx = (dir[0] / len) * DEMO_STROKE_PX;
+  const dy = (dir[1] / len) * DEMO_STROKE_PX;
   return (
     <div
       data-ghost-swipe-finger=""
       aria-hidden="true"
-      style={{ position: 'absolute', left, top, pointerEvents: 'none', overflow: 'visible' }}
+      // Above every penguin: the cast is stacked by depth (z-index from its
+      // height on screen), and a demo finger hidden behind the penguin it is
+      // demonstrating on is no demo at all.
+      style={{ position: 'absolute', left, top, pointerEvents: 'none', overflow: 'visible', zIndex: 100000 }}
     >
       <motion.div
-        initial={{ x: 0, opacity: 0 }}
-        animate={{ x: [0, 0, DEMO_STROKE_PX, DEMO_STROKE_PX], opacity: [0, 0.6, 0.6, 0] }}
+        initial={{ x: 0, y: 0, opacity: 0 }}
+        animate={{ x: [0, 0, dx, dx], y: [0, 0, dy, dy], opacity: [0, 0.85, 0.85, 0] }}
         transition={{ duration: DEMO_STROKE_S, times: [0, 0.2, 0.8, 1], ease: 'easeOut', repeat: Infinity, repeatDelay: 0.6 }}
         style={{
           width: 36,
@@ -31,7 +49,7 @@ export function GhostSwipeFinger({ left, top }: { left: string; top: string }) {
           marginTop: -18,
           borderRadius: '50%',
           background: palette.paper,
-          boxShadow: `0 0 0 4px ${palette.waterDeep}`,
+          boxShadow: `0 0 0 2px ${palette.contour}, 0 0 0 6px ${palette.waterLight}`,
         }}
       />
     </div>
