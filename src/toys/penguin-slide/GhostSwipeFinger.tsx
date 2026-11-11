@@ -1,4 +1,5 @@
 import { motion } from 'motion/react';
+import { palette } from './palette';
 
 /** One demo stroke: how long it takes (s) and how far the finger travels (px). */
 export const DEMO_STROKE_S = 1.6;
@@ -8,7 +9,9 @@ export const DEMO_STROKE_PX = 110;
  * Wordless Swipe demo: a translucent fingertip presses on a standing penguin,
  * draws a plain stroke and fades. Purely visual — it is `pointer-events: none`,
  * `aria-hidden`, and never touches a penguin's state. Its own copy, per
- * `docs/out-of-scope/shared-toy-loop-abstraction.md`; the look is the art ticket's.
+ * `docs/out-of-scope/shared-toy-loop-abstraction.md`. It is the PAPER — a
+ * fingertip of light, the way a highlight is drawn in this style — with a soft
+ * deep-water halo so it reads on the ice as well as on the sea.
  */
 export function GhostSwipeFinger({ left, top }: { left: string; top: string }) {
   return (
@@ -27,8 +30,8 @@ export function GhostSwipeFinger({ left, top }: { left: string; top: string }) {
           marginLeft: -18,
           marginTop: -18,
           borderRadius: '50%',
-          background: 'white',
-          boxShadow: '0 0 0 3px rgba(255,255,255,0.5)',
+          background: palette.paper,
+          boxShadow: `0 0 0 4px ${palette.waterDeep}`,
         }}
       />
     </div>

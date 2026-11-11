@@ -20,6 +20,8 @@ import { MEADOW } from '../toys/counting-sheep/meadow-config';
 import { SKY } from '../toys/balloons/sky-config';
 import { REEF } from '../toys/puffer-fish/reef-config';
 import { BARNYARD } from '../toys/muddy-puddle/barnyard-config';
+import { type FloeConfig } from '../toys/penguin-slide/floe';
+import { FLOE } from '../toys/penguin-slide/floe-config';
 
 export type LineMode = 'contour' | 'none';
 
@@ -44,7 +46,8 @@ export type BackgroundMode =
   | 'meadow'
   | 'reef'
   | 'barnyard'
-  | 'sky';
+  | 'sky'
+  | 'floe';
 
 /**
  * THE FORK. A dark ground and a dark-ink cast cannot both work — the ink stops
@@ -208,6 +211,12 @@ export type Config = {
      * the meadow is: the Puffer Fish palette is already derived and asserted, so
      * the lab renders it verbatim and tunes only the composition.
      */
+    /**
+     * The floe — see `toys/penguin-slide/floe.ts`. Colourless for the same
+     * reason as the reef: the Penguin Slide palette is already derived and
+     * asserted, so the lab renders it verbatim and tunes only the composition.
+     */
+    floe: FloeConfig;
     reef: ReefConfig;
     /**
      * The barnyard — see `toys/muddy-puddle/barnyard.ts`. Colourless for the
@@ -355,6 +364,7 @@ export const DEFAULT_CONFIG: Config = {
     canopy: CANOPY,
     meadow: MEADOW,
     reef: REEF,
+    floe: FLOE,
     barnyard: BARNYARD,
     sky: SKY,
     foliage: { hue: 152, chroma: 0.06, depthDc: 0.028, depthDl: 0.035 },

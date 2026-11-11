@@ -103,6 +103,38 @@ describe('PenguinSlide', () => {
     expect(onComplete).toHaveBeenCalledTimes(1);
   });
 
+  it('takes a press only on the painted penguin, never on its rectangle', () => {
+    // The staggered rows overlap, so a wrapper rectangle would steal taps aimed
+    // at the penguin behind it. Every wrapper is transparent to the pointer and
+    // only a STANDING penguin's painted shape opts back in.
+    const { container } = render(<PenguinSlide onComplete={vi.fn()} />);
+    for (const p of penguins(container)) {
+      expect(p.style.pointerEvents).toBe('none');
+      expect((p.firstElementChild as HTMLElement).style.pointerEvents).toBe('none');
+      const painted = p.querySelector('[data-penguin-part="penguin"]') as SVGElement;
+      expect(painted.style.pointerEvents.toLowerCase()).toBe('visiblepainted');
+    }
+    swipe(penguins(container)[0]);
+    settle();
+    const swum = penguins(container)[0].querySelector('[data-penguin-part="penguin"]') as SVGElement;
+    expect(swum.style.pointerEvents).toBe('');
+  });
+
+  it('stands a different kind of penguin in every spot', () => {
+    const { container } = render(<PenguinSlide onComplete={vi.fn()} />);
+    const kinds = penguins(container).map((p) => p.getAttribute('data-penguin-kind'));
+    expect(new Set(kinds).size).toBe(5);
+  });
+
+  it('pops the row up and splashes once the Outro gathers', () => {
+    const { container } = render(<PenguinSlide onComplete={vi.fn()} />);
+    penguins(container).forEach((p) => {
+      swipe(p);
+      settle();
+    });
+    expect(container.querySelectorAll('[data-penguin-splash]').length).toBe(5);
+  });
+
   it('exports a positive Outro duration for winDelayMs', () => {
     expect(OUTRO_MS).toBeGreaterThan(0);
   });
