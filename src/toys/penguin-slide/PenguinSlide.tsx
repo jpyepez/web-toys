@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import type { ToyProps } from '../../shell/registry';
 import { PenguinDrawing } from './PenguinDrawing';
 import { peep, plop, swish } from './sounds';
+import { GhostSwipeFinger } from './GhostSwipeFinger';
 
 /** Penguins on the floe — the Goal is to send every one into the water. */
 export const PENGUIN_COUNT = 5;
@@ -18,6 +19,8 @@ export const MAX_SLIDE_PX = 600;
 export const SLIDE_MS_AT_SPEED_1 = 700;
 export const MIN_SLIDE_MS = 350;
 export const MAX_SLIDE_MS = 1100;
+/** Idle time (ms) with no penguin launched before the ghost-finger demo shows. */
+export const IDLE_DEMO_DELAY_MS = 2500;
 /** Brief wiggle on a tap. */
 export const WIGGLE_MS = 400;
 /**
@@ -74,10 +77,20 @@ export function PenguinSlide({ onComplete, sound, haptics }: ToyProps) {
   const [phase, setPhase] = useState<Phase>('playing');
 
   const stroke = useRef<{ index: number; pointerId: number; start: Vec; samples: Sample[]; moved: boolean } | null>(null);
+  const [demoActive, setDemoActive] = useState(false);
+  // Latches once a penguin is launched for real: the demo never returns.
+  const launchedForReal = useRef(false);
   const completed = useRef(false);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const statesRef = useRef(states);
   statesRef.current = states;
+
+  useEffect(() => {
+    const id = setTimeout(() => {
+      if (!launchedForReal.current) setDemoActive(true);
+    }, IDLE_DEMO_DELAY_MS);
+    return () => clearTimeout(id);
+  }, []);
 
   useEffect(() => {
     const pending = timers.current;
@@ -99,6 +112,8 @@ export function PenguinSlide({ onComplete, sound, haptics }: ToyProps) {
   const launch = (index: number, dir: Vec, speed: number) => {
     sound?.play(swish);
     haptics?.tick();
+    launchedForReal.current = true;
+    setDemoActive(false);
     const len = Math.hypot(dir.x, dir.y) || 1;
     const distance = clamp(speed * SLIDE_PX_PER_SPEED, MIN_SLIDE_PX, MAX_SLIDE_PX);
     const ms = clamp(SLIDE_MS_AT_SPEED_1 / Math.max(speed, 0.001) / 1, MIN_SLIDE_MS, MAX_SLIDE_MS);
@@ -153,6 +168,7 @@ export function PenguinSlide({ onComplete, sound, haptics }: ToyProps) {
     <main
       data-toy-state={phase}
       data-phase={phase}
+      data-demo-active={demoActive}
       style={{
         position: 'relative',
         width: '100%',
@@ -219,6 +235,11 @@ export function PenguinSlide({ onComplete, sound, haptics }: ToyProps) {
           </motion.div>
         );
       })}
+      {demoActive && phase === 'playing' && (() => {
+        const target = states.indexOf('standing');
+        if (target < 0) return null;
+        return <GhostSwipeFinger left={`${REST[target].left}%`} top={`${REST[target].top + 8}%`} />;
+      })()}
     </main>
   );
 }
