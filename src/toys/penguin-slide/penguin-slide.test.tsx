@@ -103,6 +103,60 @@ describe('PenguinSlide', () => {
     expect(onComplete).toHaveBeenCalledTimes(1);
   });
 
+  it('takes a press only on the painted penguin, never on its rectangle', () => {
+    // The staggered rows overlap, so a wrapper rectangle would steal taps aimed
+    // at the penguin behind it. Every wrapper is transparent to the pointer and
+    // only a STANDING penguin's painted shape opts back in.
+    const { container } = render(<PenguinSlide onComplete={vi.fn()} />);
+    for (const p of penguins(container)) {
+      expect(p.style.pointerEvents).toBe('none');
+      expect((p.firstElementChild as HTMLElement).style.pointerEvents).toBe('none');
+      const painted = p.querySelector('[data-penguin-part="penguin"]') as SVGElement;
+      expect(painted.style.pointerEvents.toLowerCase()).toBe('visiblepainted');
+    }
+    swipe(penguins(container)[0]);
+    settle();
+    const swum = penguins(container)[0].querySelector('[data-penguin-part="penguin"]') as SVGElement;
+    expect(swum.style.pointerEvents).toBe('');
+  });
+
+  it('stands a different kind of penguin in every spot', () => {
+    const { container } = render(<PenguinSlide onComplete={vi.fn()} />);
+    const kinds = penguins(container).map((p) => p.getAttribute('data-penguin-kind'));
+    expect(new Set(kinds).size).toBe(5);
+  });
+
+  it('pops the row up and splashes once the Outro gathers', () => {
+    const { container } = render(<PenguinSlide onComplete={vi.fn()} />);
+    penguins(container).forEach((p) => {
+      swipe(p);
+      settle();
+    });
+    expect(container.querySelectorAll('[data-penguin-splash]').length).toBe(5);
+  });
+
+  it('survives the viewport changing mid-play, swimmers and all', () => {
+    // Rotating a phone rebuilds the floe and its landing slots. Swimmers are
+    // re-placed from their swipes; nothing indexes into the old scene.
+    const { container } = render(<PenguinSlide onComplete={vi.fn()} />);
+    swipe(penguins(container)[0]);
+    swipe(penguins(container)[1], 0, FAR);
+    settle();
+    const before = { w: window.innerWidth, h: window.innerHeight };
+    act(() => {
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: 390 });
+      Object.defineProperty(window, 'innerHeight', { configurable: true, value: 844 });
+      window.dispatchEvent(new Event('resize'));
+    });
+    expect(states(container).slice(0, 2)).toEqual(['in-water', 'in-water']);
+    for (const p of penguins(container).slice(0, 2)) expect(p.style.left).toMatch(/%$/);
+    act(() => {
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: before.w });
+      Object.defineProperty(window, 'innerHeight', { configurable: true, value: before.h });
+      window.dispatchEvent(new Event('resize'));
+    });
+  });
+
   it('exports a positive Outro duration for winDelayMs', () => {
     expect(OUTRO_MS).toBeGreaterThan(0);
   });

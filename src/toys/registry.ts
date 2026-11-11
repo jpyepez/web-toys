@@ -16,6 +16,9 @@ import { Nestlings } from './nestlings/Nestlings';
 import { palette as duskPalette } from './nestlings/palette';
 import { Preview as NestlingsPreview } from './nestlings/Preview';
 import { SETTLE_MS } from './nestlings/DuskBackdrop';
+import { PenguinSlide, OUTRO_MS as PENGUIN_OUTRO_MS } from './penguin-slide/PenguinSlide';
+import { palette as icePalette } from './penguin-slide/palette';
+import { Preview as PenguinSlidePreview } from './penguin-slide/Preview';
 
 /**
  * The registered Toys. Adding a Toy is adding an entry here — the Shell renders
@@ -119,5 +122,19 @@ export const registry: ToyEntry[] = [
     // dialogue would land on a mid-settle frame (the analog of Balloons'
     // `FLOAT_AWAY_MS`).
     winDelayMs: SETTLE_MS,
+  },
+  // Penguin Slide — the sixth Toy, and the first built on a speed gesture: the
+  // child Swipes each penguin off an ice floe into the sea. Its `tint` is the
+  // open water its scene sits in, from its own palette (ADR-0004), and its
+  // `preview` is the real floe and the real penguins, mid-play.
+  {
+    id: 'penguin-slide',
+    title: 'Penguin Slide',
+    component: PenguinSlide,
+    tint: icePalette.water,
+    preview: PenguinSlidePreview,
+    // Hold the Completion until the row has gathered and made its first
+    // splash — `onComplete` fires on the last landing, at the START of the Outro.
+    winDelayMs: PENGUIN_OUTRO_MS,
   },
 ];

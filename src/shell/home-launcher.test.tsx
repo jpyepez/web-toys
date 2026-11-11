@@ -152,7 +152,7 @@ describe('home launcher', () => {
 });
 
 describe('registered toys', () => {
-  it('registers Counting Sheep, Puffer Fish, Muddy Puddle, Up & Away and Tuck-In as the five launchable Cards', async () => {
+  it('registers Counting Sheep, Puffer Fish, Muddy Puddle, Up & Away, Tuck-In and Penguin Slide as the six launchable Cards', async () => {
     // Nestlings slice #08 (AC #1/#2): the registry now declares a fifth real Toy
     // — "Tuck-In" (slug `nestlings`) — so the Home reads as a small *collection*
     // of five Cards. This test supersedes the earlier "four launchable Cards"
@@ -168,7 +168,9 @@ describe('registered toys', () => {
     expect(screen.getByText('Muddy Puddle')).toBeInTheDocument();
     expect(screen.getByText('Up & Away')).toBeInTheDocument();
     expect(screen.getByText('Tuck-In')).toBeInTheDocument();
-    expect(screen.getAllByRole('link')).toHaveLength(5);
+    // Penguin Slide (issue 19) is the sixth Card.
+    expect(screen.getByText('Penguin Slide')).toBeInTheDocument();
+    expect(screen.getAllByRole('link')).toHaveLength(6);
 
     // The Counting Sheep Card backs its preview cover with the meadow's own sky,
     // sourced from the Toy-local palette (ADR-0004 — slice #04). It moved from

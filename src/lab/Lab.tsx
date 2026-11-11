@@ -17,6 +17,7 @@ import { MeadowFrameView } from './MeadowScene';
 import { ReefFrameView } from './ReefScene';
 import { BarnyardFrameView } from './BarnyardScene';
 import { SkyFrameView } from './SkyScene';
+import { FloeFrameView } from './FloeScene';
 import { check as checkCanopy } from '../toys/nestlings/canopy';
 import { ASPECTS, type AspectName } from './config';
 
@@ -362,7 +363,39 @@ const KNOB_GROUPS: Array<{ title: string; knobs: Knob[] }> = [
       { path: 'scenery.reef.bubbleCount', label: 'bubbles', min: 0, max: 10, step: 1, note: 'the only moving thing' },
     ],
   },
+  {
+    /*
+     * The floe — Penguin Slide's scene. Visible in the frame view with the
+     * `floe` background selected; the numbers harvest into
+     * `toys/penguin-slide/floe-config.ts`.
+     *
+     * Every SIZE is a multiple of a PENGUIN. The floe is the one mass allowed
+     * to stand clear of the frame edges (water on every side is the mechanic),
+     * and the bounds keep the shelves out of the rival band.
+     */
+    title: 'Floe · Penguin Slide',
+    knobs: [
+      { path: 'scenery.floe.spacing', label: 'penguin spacing', min: 0.8, max: 1.6, step: 0.01, note: 'in penguins' },
+      { path: 'scenery.floe.rowGap', label: 'row gap', min: 0.5, max: 1.2, step: 0.01, note: 'phone stacks two rows' },
+      { path: 'scenery.floe.zigzag', label: 'zig-zag', min: 0, max: 0.6, step: 0.01, note: 'one-row layouts only' },
+      { path: 'scenery.floe.padX', label: 'ice beyond the ends', min: 0.4, max: 1.2, step: 0.01 },
+      { path: 'scenery.floe.padBack', label: 'ice behind', min: 0.2, max: 1, step: 0.01 },
+      { path: 'scenery.floe.padFront', label: 'ice in front', min: 0.2, max: 1, step: 0.01 },
+      { path: 'scenery.floe.floeY', label: 'floe height', min: 0.4, max: 0.7, step: 0.005, note: 'fraction of the frame' },
+      { path: 'scenery.floe.thickness', label: 'slab thickness', min: 0.05, max: 0.5, step: 0.01, note: 'in penguins' },
+      { path: 'scenery.floe.shadowDrop', label: 'shadow drop', min: 0, max: 0.4, step: 0.01 },
+      { path: 'scenery.floe.squareness', label: 'squareness', min: 2, max: 6, step: 0.1, note: '2 is an ellipse — a sticker' },
+      { path: 'scenery.floe.jag', label: 'cut jag', min: 0, max: 0.08, step: 0.002 },
+      { path: 'scenery.floe.sideWater', label: 'min side water', min: 0.5, max: 1.2, step: 0.01, note: 'keeps swipes off the browser edge' },
+      { path: 'scenery.floe.shelfReach', label: 'shelf reach', min: 2.5, max: 6, step: 0.1, note: 'in penguins — under 2.5 is an iceberg rival' },
+      { path: 'scenery.floe.shelfDepth', label: 'shelf depth', min: 0.3, max: 1.4, step: 0.01 },
+      { path: 'scenery.floe.rippleDensity', label: 'ripples per penguin²', min: 0, max: 1, step: 0.01, note: 'counts follow the frame' },
+      { path: 'scenery.floe.rippleLength', label: 'ripple length', min: 0.2, max: 0.9, step: 0.01 },
+      { path: 'scenery.floe.slotSpacing', label: 'landing slot spacing', min: 0.9, max: 1.6, step: 0.01, note: 'denser = more places to land' },
+    ],
+  },
 ];
+
 
 /* ------------------------------------------------------------------ */
 
@@ -452,6 +485,8 @@ export function Lab() {
               <ReefFrameView config={config} />
             ) : M.background === 'barnyard' ? (
               <BarnyardFrameView config={config} />
+            ) : M.background === 'floe' ? (
+              <FloeFrameView config={config} />
             ) : M.background === 'sky' ? (
               <SkyFrameView config={config} />
             ) : (
@@ -514,7 +549,7 @@ export function Lab() {
           ))}
         </div>
         <div className="row modes">
-          {(['canopy', 'meadow', 'reef', 'barnyard', 'sky', 'glow', 'paper', 'motif', 'split'] as const).map((b) => (
+          {(['canopy', 'meadow', 'reef', 'barnyard', 'sky', 'floe', 'glow', 'paper', 'motif', 'split'] as const).map((b) => (
             <Tab key={b} label={b} on={M.background === b} onClick={() => { set('mode.background', b); set('scenery.motif.show', b === 'motif'); }} />
           ))}
         </div>
