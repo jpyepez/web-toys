@@ -10,9 +10,9 @@ describe('design tokens — ink', () => {
     // This peeled the Card off the meadow palette ahead of the palette move
     // (slice #04), which relocated the meadow palette into the Counting Sheep
     // folder entirely — so the shared module no longer carries a meadow
-    // palette to assert against here (AC #5). Shape rule: an HSL string; the
+    // palette to assert against here (AC #5). Shape rule: a hex string (authored in OKLCH); the
     // exact tuple is on-device-tuned per the slice DoD, so we pin the shape.
-    expect(ink).toMatch(/^hsl\(/);
+    expect(ink).toMatch(/^#[0-9a-f]{6}$/);
   });
 });
 

@@ -70,7 +70,9 @@ export function ChromeIconSvg({ children }: { children: ReactNode }) {
 // with any future palette / timing adjustments. Positioning (corner placement)
 // is the class's job, not the inline style's.
 const pillStyle: CSSProperties = {
-  background: chrome.pillBg,
+  // Home sets `--pill-bg` / `--pill-fg` on its frame for the dark theme; a Toy
+  // never does, so its pills keep this one look in every theme.
+  background: `var(--pill-bg, ${chrome.pillBg})`,
   borderRadius: chrome.pillRadius,
   border: 'none',
   padding: 0,
@@ -79,7 +81,7 @@ const pillStyle: CSSProperties = {
   display: 'inline-flex',
   alignItems: 'center',
   justifyContent: 'center',
-  color: 'currentColor',
+  color: 'var(--pill-fg, currentColor)',
   cursor: 'pointer',
   transition: `transform 120ms ${timing.tap}`,
 };
