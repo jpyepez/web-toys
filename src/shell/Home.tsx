@@ -2,7 +2,9 @@ import type { CSSProperties } from 'react';
 import { Card } from './Card';
 import type { ToyEntry } from './registry';
 import type { Sound } from './sound';
-import { font, ink } from './tokens';
+import { ThemeToggle } from './ThemeToggle';
+import { useResolvedTheme } from './theme';
+import { font, homeTheme } from './tokens';
 
 /**
  * The home launcher: one Card per registered Toy in a centred, responsive
@@ -19,11 +21,13 @@ import { font, ink } from './tokens';
  * Card owns the *tile*.
  */
 export function Home({ toys, sound }: { toys: ToyEntry[]; sound: Sound }) {
+  const { ink } = homeTheme[useResolvedTheme()];
   return (
     <main style={gridStyle}>
+      <ThemeToggle />
       <header style={headerStyle}>
-        <h1 style={titleStyle}>Web Toys</h1>
-        <p style={subtitleStyle}>Tiny toys for tiny humans</p>
+        <h1 style={{ ...titleStyle, color: ink }}>Web Toys</h1>
+        <p style={{ ...subtitleStyle, color: ink }}>Tiny toys for tiny humans</p>
       </header>
       {toys.map((toy) => (
         <Card key={toy.id} toy={toy} sound={sound} />
@@ -46,7 +50,6 @@ const headerStyle: CSSProperties = {
 
 const titleStyle: CSSProperties = {
   fontFamily: font.rounded,
-  color: ink,
   fontSize: 'clamp(2.25rem, 9vw, 3rem)',
   fontWeight: 800,
   letterSpacing: '-0.01em',
@@ -55,7 +58,6 @@ const titleStyle: CSSProperties = {
 
 const subtitleStyle: CSSProperties = {
   fontFamily: font.rounded,
-  color: ink,
   fontSize: 'clamp(0.95rem, 3.5vw, 1.1rem)',
   fontWeight: 500,
   opacity: 0.6,

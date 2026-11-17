@@ -3,7 +3,8 @@ import { Link } from '@tanstack/react-router';
 import { motion } from 'motion/react';
 import type { ToyEntry } from './registry';
 import type { Sound } from './sound';
-import { card, font, ink, timing } from './tokens';
+import { useResolvedTheme } from './theme';
+import { card, font, homeTheme, timing } from './tokens';
 
 /**
  * One per-Toy launch tile on the Home collection — a *media card*: a large
@@ -47,6 +48,7 @@ import { card, font, ink, timing } from './tokens';
  */
 export function Card({ toy, sound }: { toy: ToyEntry; sound: Sound }) {
   const Preview = toy.preview;
+  const theme = homeTheme[useResolvedTheme()];
   return (
     <motion.div
       // Motion wraps the `<Link>` so the tap-feedback scale targets the whole
@@ -61,7 +63,12 @@ export function Card({ toy, sound }: { toy: ToyEntry; sound: Sound }) {
         to="/toy/$toyId"
         params={{ toyId: toy.id }}
         onClick={() => sound.unlock()}
-        style={cardLinkStyle}
+        style={{
+          ...cardLinkStyle,
+          backgroundColor: theme.cardSurface,
+          boxShadow: theme.cardShadow,
+          border: `1px solid ${theme.cardBorder}`,
+        }}
       >
         {Preview ? (
           // The hero — the Toy's miniature scene as a rounded inset photo. The
@@ -76,7 +83,7 @@ export function Card({ toy, sound }: { toy: ToyEntry; sound: Sound }) {
           </div>
         ) : null}
         <div style={footerStyle}>
-          <span style={titleStyle}>{toy.title}</span>
+          <span style={{ ...titleStyle, color: theme.ink }}>{toy.title}</span>
         </div>
       </Link>
     </motion.div>
@@ -108,8 +115,6 @@ const cardLinkStyle: CSSProperties = {
   padding: `${COVER_INSET}px`,
   boxSizing: 'border-box',
   borderRadius: card.radius,
-  boxShadow: card.shadow,
-  backgroundColor: card.surface,
   textDecoration: 'none',
   color: 'inherit',
   overflow: 'hidden',
@@ -149,7 +154,6 @@ const footerStyle: CSSProperties = {
 // acceptance-criterion-pinned values sourced from tokens.
 const titleStyle: CSSProperties = {
   fontFamily: font.rounded,
-  color: ink,
   fontSize: '26px',
   fontWeight: 500,
   letterSpacing: '0.01em',

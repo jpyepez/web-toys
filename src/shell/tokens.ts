@@ -1,4 +1,4 @@
-import { hex, type Oklch } from './art/oklch';
+import { css, hex, type Oklch } from './art/oklch';
 
 /**
  * Type stack — rounded sans-serif. Replaces the editorial serif the polish
@@ -39,7 +39,8 @@ export const font = {
  * `sheepSilhouette`) so it reads as editorial ink rather than a scene tint;
  * the *name* is load-bearing, the tuple is on-device-tunable per the slice DoD.
  */
-export const ink = 'hsl(20 14% 20%)';
+const inkLight: Oklch = { l: 0.285, c: 0.02, h: 50 };
+export const ink = hex(inkLight);
 
 /**
  * Completion — the Shell-owned colours for the celebratory end moment (the
@@ -165,5 +166,56 @@ export const card = {
    * near-white so the ink title reads as editorial type and the colourful
    * preview covers pop against it; on-device-tunable per the slice DoD.
    */
-  surface: 'hsl(40 30% 97%)',
+  surface: hex({ l: 0.973, c: 0.012, h: 85 }),
 } as const;
+
+/**
+ * Home theme — the light and dark looks of Home's own elements: the page, the
+ * wordmark, the Card footer and the Home corner pills. Nothing else reads it:
+ * Toy scenes, the Completion card, Confetti and the pills inside a Toy keep
+ * their one look in every theme.
+ *
+ * Derived by rule in OKLCH, never `hsl()`. Each colour keeps its hue and the
+ * paper and ink swap lightness: warm near-black paper, cream ink. Dark is not
+ * light inverted — the Card footer sits a step LIGHTER than the dark page, and
+ * a quiet solid border stands in for the drop shadow (a shadow is invisible on
+ * near-black). Tuning by eye is a follow-up; the structure is what's fixed.
+ */
+const paperHue = 85;
+const warmHue = 60;
+const cream: Oklch = { l: 0.93, c: 0.02, h: paperHue };
+const darkPage: Oklch = { l: 0.2, c: 0.012, h: warmHue };
+const darkCard: Oklch = { l: 0.26, c: 0.014, h: warmHue };
+const darkBorder: Oklch = { l: 0.34, c: 0.014, h: warmHue };
+
+export type HomeTheme = {
+  page: string;
+  ink: string;
+  cardSurface: string;
+  cardBorder: string;
+  cardShadow: string;
+  pillBg: string;
+  pillFg: string;
+};
+
+export const homeTheme: { light: HomeTheme; dark: HomeTheme } = {
+  light: {
+    page: '#ffffff',
+    ink,
+    cardSurface: card.surface,
+    cardBorder: 'transparent',
+    cardShadow: card.shadow,
+    pillBg: chrome.pillBg,
+    pillFg: 'inherit',
+  },
+  dark: {
+    page: hex(darkPage),
+    ink: hex(cream),
+    cardSurface: hex(darkCard),
+    cardBorder: hex(darkBorder),
+    cardShadow: 'none',
+    // Light, see-through pill with a cream icon.
+    pillBg: css({ ...cream, l: 0.93 }).replace(')', ' / 0.16)'),
+    pillFg: hex(cream),
+  },
+};
