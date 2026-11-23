@@ -99,6 +99,12 @@ doesn't react to goal-met just renders its final frame underneath the overlay.
 See the ADR-0001 amendment for the layered-concurrent rule.
 _Avoid_: end animation, finale, outro animation (redundant)
 
+**Home theme**:
+The parent-chosen look of the home screen: Light, Dark, or System (follows the device),
+set from the theme pill on Home. It colours Home and the device status bar while Home
+shows, and nothing inside a **Toy**: every Toy, and the Completion, look the same in every theme.
+_Avoid_: dark mode, app theme (both suggest it reaches the Toys)
+
 **Code-generated assets**:
 Project-wide stance that all visuals are code-drawn SVG and all sound is synthesized at
 runtime (Web Audio / Tone.js) — there are no binary assets. See
