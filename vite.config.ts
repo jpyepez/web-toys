@@ -96,6 +96,13 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     globals: false,
+    // Node 25+ ships its own `localStorage` global, which is undefined without
+    // `--localstorage-file` and shadows jsdom's working one, so every test that
+    // touches storage throws. Turn Node's off where the flag exists; older Node
+    // (CI's) doesn't know the flag and doesn't need it.
+    execArgv: process.allowedNodeEnvironmentFlags.has('--no-experimental-webstorage')
+      ? ['--no-experimental-webstorage']
+      : [],
     // `e2e/` is the Playwright smoke suite, run by `bun run test:e2e`, not Vitest.
     exclude: [...configDefaults.exclude, 'e2e/**'],
   },
