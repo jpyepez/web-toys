@@ -7,6 +7,13 @@ import { homeTheme, sky } from './tokens';
 
 const metas = () => document.head.querySelectorAll('meta[name="theme-color"]');
 const content = () => metas()[0]?.getAttribute('content');
+/** jsdom normalises a hex background to rgb(); compare through the same parser. */
+const asCss = (hex: string) => {
+  const el = document.createElement('div');
+  el.style.background = hex;
+  return el.style.background;
+};
+const htmlBackground = () => document.documentElement.style.background;
 
 describe('theme-color meta', () => {
   beforeEach(() => {
@@ -24,6 +31,7 @@ describe('theme-color meta', () => {
     renderApp('/');
     await screen.findByRole('button', { name: /Theme:/ });
     expect(content()).toBe(homeTheme[mode].page);
+    expect(htmlBackground()).toBe(asCss(homeTheme[mode].page));
   });
 
   it('updates live when the theme pill cycles, without remounting', async () => {
@@ -43,9 +51,29 @@ describe('theme-color meta', () => {
     await act(() => router.navigate({ to: '/toy/$toyId', params: { toyId: 'counting-sheep' } }));
     await screen.findByRole('button', { name: 'Home' });
     expect(content()).toBe(sky);
+    expect(htmlBackground()).toBe(asCss(sky));
     await act(() => router.navigate({ to: '/' }));
     await screen.findByRole('button', { name: /Theme:/ });
     expect(content()).toBe(homeTheme[mode].page);
+    expect(htmlBackground()).toBe(asCss(homeTheme[mode].page));
+  });
+
+  it('sets every tag when index.html ships one per colour scheme', async () => {
+    metas().forEach((m) => m.remove());
+    for (const scheme of ['light', 'dark']) {
+      const m = document.createElement('meta');
+      m.name = 'theme-color';
+      m.media = `(prefers-color-scheme: ${scheme})`;
+      m.content = sky;
+      document.head.appendChild(m);
+    }
+    act(() => themeStore.setPreference('dark'));
+    renderApp('/');
+    await screen.findByRole('button', { name: /Theme:/ });
+    expect([...metas()].map((m) => m.getAttribute('content'))).toEqual([
+      homeTheme.dark.page,
+      homeTheme.dark.page,
+    ]);
   });
 
   it('creates exactly one tag when the document has none', async () => {

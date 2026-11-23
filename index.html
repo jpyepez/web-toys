@@ -14,7 +14,37 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Toys" />
-    <meta name="theme-color" content="#a7d4ff" />
+    <!-- The status bar shows the Home theme's page colour on Home and sky blue inside a
+         Toy (homeTheme / sky in src/shell/tokens.ts). These two tags only cover a launch
+         where the script below can't run; the script and then the Shell frame keep every
+         theme-color tag on one value. -->
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#1a1511" media="(prefers-color-scheme: dark)" />
+    <!-- Paints the launch in the saved Home theme before the app mounts, so a saved
+         theme that differs from the OS doesn't flash the wrong colour. It sets the
+         theme-color tags (Android reads them) and the html background (iOS takes the
+         bar colour from the page). It copies THEME_KEY and the colours from
+         src/shell/tokens.ts; launch-theme.test.ts fails if they drift apart. -->
+    <script id="launch-theme">
+      (function () {
+        var bar = '#a7d4ff';
+        if (location.pathname === '/') {
+          var pref = null;
+          try {
+            pref = localStorage.getItem('web-toys:theme');
+          } catch (e) {}
+          var dark =
+            pref === 'dark' ||
+            (pref !== 'light' &&
+              !!window.matchMedia &&
+              window.matchMedia('(prefers-color-scheme: dark)').matches);
+          bar = dark ? '#1a1511' : '#ffffff';
+        }
+        document.documentElement.style.background = bar;
+        var tags = document.querySelectorAll('meta[name="theme-color"]');
+        for (var i = 0; i < tags.length; i++) tags[i].setAttribute('content', bar);
+      })();
+    </script>
     <title>Web Toys</title>
   </head>
   <body>
