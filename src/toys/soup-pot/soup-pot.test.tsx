@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { SoupPot } from './SoupPot';
+import { fakeSound } from '../../test/fakes';
+import { blip, chime } from './sounds';
 import { DEAD_ZONE_PX, GOAL_ANGLE, MAX_SAMPLE_ANGLE } from './stir';
 
 /** jsdom's rect is all zeros, so the pot's centre is (0, 0). */
@@ -121,5 +123,62 @@ describe('SoupPot', () => {
     fireEvent.pointerMove(el, { pointerId: 1, ...pt(0.5) });
     const ladle = el.querySelector('[data-ladle]')!;
     expect(Number(ladle.getAttribute('data-ladle-angle'))).toBeCloseTo(0.5);
+  });
+});
+
+describe('SoupPot sound and haptics', () => {
+  const mount = () => {
+    const sound = fakeSound();
+    const haptics = { tick: vi.fn() };
+    const onComplete = vi.fn();
+    render(<SoupPot onComplete={onComplete} sound={sound} haptics={haptics} />);
+    const el = screen.getByRole('main');
+    const stir = (total: number) => {
+      fireEvent.pointerDown(el, { pointerId: 1, ...pt(0) });
+      const n = Math.ceil(total / STEP);
+      for (let i = 1; i <= n; i++) {
+        fireEvent.pointerMove(el, { pointerId: 1, ...pt(Math.min(i * STEP, total)) });
+      }
+      fireEvent.pointerUp(el, { pointerId: 1 });
+    };
+    const voices = (type: string) => sound.play.mock.calls.map(([v]) => v).filter((v) => v.type === type);
+    return { sound, haptics, onComplete, stir, blips: () => voices(blip(0).type), chimes: () => voices(chime.type) };
+  };
+
+  it('plays four blips for one full turn', () => {
+    const { stir, blips } = mount();
+    stir(2 * Math.PI + 0.01);
+    expect(blips()).toHaveLength(4);
+  });
+
+  it('never lowers blip pitch as progress rises, and ends higher than it began', () => {
+    const { stir, blips } = mount();
+    stir(GOAL_ANGLE * 0.7);
+    const freqs = blips().map((v) => v.freq);
+    expect(freqs.length).toBeGreaterThan(2);
+    for (let i = 1; i < freqs.length; i++) expect(freqs[i]).toBeGreaterThanOrEqual(freqs[i - 1]);
+    expect(freqs[freqs.length - 1]).toBeGreaterThan(freqs[0]);
+  });
+
+  it('plays the chime once and one haptic pulse at each stage beat', () => {
+    const { stir, chimes, haptics } = mount();
+    for (const beat of [1, 2, 3]) {
+      stir(GOAL_ANGLE / 4 + 0.01);
+      expect(chimes()).toHaveLength(beat);
+      expect(haptics.tick).toHaveBeenCalledTimes(beat);
+    }
+  });
+
+  it('fires no haptics for blips alone', () => {
+    const { stir, blips, haptics } = mount();
+    stir(GOAL_ANGLE / 4 - 0.5);
+    expect(blips().length).toBeGreaterThan(0);
+    expect(haptics.tick).not.toHaveBeenCalled();
+  });
+
+  it('runs to onComplete with no sound or haptics passed', () => {
+    const { onComplete, stir } = setup();
+    expect(() => stir(GOAL_ANGLE + 3)).not.toThrow();
+    expect(onComplete).toHaveBeenCalledTimes(1);
   });
 });

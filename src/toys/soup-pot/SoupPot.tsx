@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { PointerEvent } from 'react';
 import type { ToyProps } from '../../shell/registry';
 import { GOAL_ANGLE, sampleAngle, stageFor, type Pt } from './stir';
+import { blip, chime } from './sounds';
 import { PotDrawing } from './PotDrawing';
 import { MouseDrawing } from './MouseDrawing';
 import { LadleDrawing } from './LadleDrawing';
@@ -13,6 +14,8 @@ import { DEMO_DURATION_MS, IDLE_DEMO_DELAY_MS } from './demo';
  * for this Toy, added with the registry entry. Placeholder until the art ticket.
  */
 export const OUTRO_MS = 1500;
+
+const QUARTER_TURN = Math.PI / 2;
 
 type Phase = 'stirring' | 'outro';
 
@@ -27,7 +30,7 @@ const MICE = [
  * absolute angle it swept around the pot's fixed centre (the surface's centre).
  * Progress never goes down; lifting or cancelling keeps it.
  */
-export function SoupPot({ onComplete }: ToyProps) {
+export function SoupPot({ onComplete, sound, haptics }: ToyProps) {
   const [progress, setProgress] = useState(0);
   const [phase, setPhase] = useState<Phase>('stirring');
   const [ladleAngle, setLadleAngle] = useState(0);
@@ -56,7 +59,16 @@ export function SoupPot({ onComplete }: ToyProps) {
     s.last = next;
     setLadleAngle(Math.atan2(next.y - s.centre.y, next.x - s.centre.x));
     if (added === 0) return;
+    const before = total.current;
     total.current += added;
+    // One sample adds at most π/4, so it crosses at most one quarter turn.
+    if (Math.floor(total.current / QUARTER_TURN) > Math.floor(before / QUARTER_TURN)) {
+      sound?.play(blip(total.current / GOAL_ANGLE));
+    }
+    if (stageFor(total.current) > stageFor(before)) {
+      sound?.play(chime);
+      haptics?.tick();
+    }
     setProgress(total.current);
     if (total.current >= GOAL_ANGLE) {
       done.current = true;
