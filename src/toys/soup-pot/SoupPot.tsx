@@ -1,10 +1,12 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { PointerEvent } from 'react';
 import type { ToyProps } from '../../shell/registry';
 import { GOAL_ANGLE, sampleAngle, stageFor, type Pt } from './stir';
 import { PotDrawing } from './PotDrawing';
 import { MouseDrawing } from './MouseDrawing';
 import { LadleDrawing } from './LadleDrawing';
+import { GhostStirFinger } from './GhostStirFinger';
+import { DEMO_DURATION_MS, IDLE_DEMO_DELAY_MS } from './demo';
 
 /**
  * Time from reaching the Goal to the Outro finishing. The Shell's `winDelayMs`
@@ -29,6 +31,7 @@ export function SoupPot({ onComplete }: ToyProps) {
   const [progress, setProgress] = useState(0);
   const [phase, setPhase] = useState<Phase>('stirring');
   const [ladleAngle, setLadleAngle] = useState(0);
+  const [demoActive, setDemoActive] = useState(false);
   const total = useRef(0);
   const done = useRef(false);
   const stroke = useRef<{ id: number; last: Pt; centre: Pt } | null>(null);
@@ -63,6 +66,20 @@ export function SoupPot({ onComplete }: ToyProps) {
     }
   };
 
+  // Idle ghost-finger demo: runs once, only while the child has made no Stir
+  // progress. Any progress cancels it for good. It never touches Stir state.
+  const started = progress > 0;
+  useEffect(() => {
+    if (started) return;
+    const show = setTimeout(() => setDemoActive(true), IDLE_DEMO_DELAY_MS);
+    const hide = setTimeout(() => setDemoActive(false), IDLE_DEMO_DELAY_MS + DEMO_DURATION_MS);
+    return () => {
+      clearTimeout(show);
+      clearTimeout(hide);
+      setDemoActive(false);
+    };
+  }, [started]);
+
   const stage = stageFor(progress);
 
   return (
@@ -71,6 +88,7 @@ export function SoupPot({ onComplete }: ToyProps) {
       data-phase={phase}
       data-stage={stage}
       data-progress={progress}
+      data-demo-active={demoActive}
       onPointerDown={onDown}
       onPointerMove={onMove}
       onPointerUp={end}
@@ -86,6 +104,7 @@ export function SoupPot({ onComplete }: ToyProps) {
           <MouseDrawing />
         </div>
       ))}
+      {demoActive && <GhostStirFinger />}
       <svg
         data-ladle=""
         data-ladle-angle={ladleAngle}
