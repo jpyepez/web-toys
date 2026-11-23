@@ -55,19 +55,26 @@ export function createAppRouter(
         select: (s) => s.location.pathname === "/",
       });
       const theme = homeTheme[useResolvedTheme()];
-      // The browser bar follows the same decision: the page colour on Home,
-      // fixed sky blue inside a Toy.
+      // The status bar follows the same decision: the page colour on Home,
+      // fixed sky blue inside a Toy. Android reads the theme-color tags (all of
+      // them, since index.html ships one per colour scheme); iOS takes the bar
+      // colour from the page, so the html background carries it too. The
+      // launch script in index.html makes the same choice before first paint.
       const barColor = onHome ? theme.page : sky;
       useEffect(() => {
-        let meta = document.head.querySelector<HTMLMetaElement>(
+        const metas = document.head.querySelectorAll<HTMLMetaElement>(
           'meta[name="theme-color"]',
         );
-        if (!meta) {
-          meta = document.createElement("meta");
+        if (metas.length === 0) {
+          const meta = document.createElement("meta");
           meta.name = "theme-color";
+          meta.content = barColor;
           document.head.appendChild(meta);
         }
-        meta.content = barColor;
+        metas.forEach((meta) => {
+          meta.content = barColor;
+        });
+        document.documentElement.style.background = barColor;
       }, [barColor]);
       const homeStyle = onHome
         ? ({

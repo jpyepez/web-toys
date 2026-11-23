@@ -221,7 +221,8 @@ export const homeTheme: { light: HomeTheme; dark: HomeTheme } = {
 };
 
 /**
- * Sky blue — the Shell's fixed `theme-color` outside Home, matching the static
- * tag in `index.html`. While Home shows, the tag follows `homeTheme[...].page`.
+ * Sky blue: the Shell's fixed status-bar colour inside a Toy. While Home
+ * shows, the bar follows `homeTheme[...].page`. The launch script in
+ * `index.html` copies both; `launch-theme.test.ts` keeps them in step.
  */
 export const sky = '#a7d4ff';
