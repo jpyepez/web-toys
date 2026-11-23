@@ -15,8 +15,8 @@ import { createHaptics, type Haptics } from "./haptics";
 import { MuteToggle } from "./MuteToggle";
 import { PaperGrain } from "./PaperGrain";
 import { useResolvedTheme } from "./theme";
-import { homeTheme } from "./tokens";
-import type { CSSProperties } from "react";
+import { homeTheme, sky } from "./tokens";
+import { useEffect, type CSSProperties } from "react";
 
 type AppRouterOptions = {
   /** Injectable history — tests pass a memory history; the app uses the default. */
@@ -55,6 +55,20 @@ export function createAppRouter(
         select: (s) => s.location.pathname === "/",
       });
       const theme = homeTheme[useResolvedTheme()];
+      // The browser bar follows the same decision: the page colour on Home,
+      // fixed sky blue inside a Toy.
+      const barColor = onHome ? theme.page : sky;
+      useEffect(() => {
+        let meta = document.head.querySelector<HTMLMetaElement>(
+          'meta[name="theme-color"]',
+        );
+        if (!meta) {
+          meta = document.createElement("meta");
+          meta.name = "theme-color";
+          document.head.appendChild(meta);
+        }
+        meta.content = barColor;
+      }, [barColor]);
       const homeStyle = onHome
         ? ({
             background: theme.page,
