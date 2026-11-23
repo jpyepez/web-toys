@@ -219,3 +219,9 @@ export const homeTheme: { light: HomeTheme; dark: HomeTheme } = {
     pillFg: hex(cream),
   },
 };
+
+/**
+ * Sky blue — the Shell's fixed `theme-color` outside Home, matching the static
+ * tag in `index.html`. While Home shows, the tag follows `homeTheme[...].page`.
+ */
+export const sky = '#a7d4ff';
