@@ -44,7 +44,7 @@ A character in a Toy (fish, sheep, piglet, or a faced balloon, etc.) the child i
 animal or an anthropomorphised object — drawn from code
 SVG primitives — never an image. The interaction is interaction-agnostic: it may be a tap
 (Counting Sheep, Puffer Fish), a sustained **Wipe** (Muddy Puddle), a sustained **Hold**
-(Balloons), a **Drag** (Nestlings), a **Swipe**, or some future gesture. Engaging the Critter is the core interaction; the
+(Balloons), a **Drag** (Nestlings), a **Swipe** (Penguin Slide), a **Stir**, or some future gesture. Engaging the Critter is the core interaction; the
 specific gesture is per-Toy.
 
 **Wipe**:
@@ -90,6 +90,18 @@ there is no aiming. A tap is not a Swipe. The fourth non-tap core interaction in
 collection.
 _Avoid_: flick, fling, throw (as gesture names); reserve "launch" for what the Critter does
 in response, not the gesture.
+
+**Stir**:
+The core gesture of the Soup Pot Toy: a sustained finger moving in circles around the pot,
+building up *turns* that cook the soup. Distinct from a **Wipe** (continuous and moving, but
+accumulating coverage of a surface) and from a **Swipe** (one quick stroke, resolved on
+release) — a Stir accumulates *rotation*. It can't be done wrong: either direction counts,
+changing direction mid-circle still counts, a messy or wobbly circle still counts, and a
+back-and-forth wiggle around the pot is a Stir too. Progress only ever goes up: lifting the
+finger keeps every turn already made, and nothing cools or drains back. The fifth non-tap
+core interaction in the collection.
+_Avoid_: spin, whisk, swirl (as gesture names); reserve "turn" for the unit a Stir builds
+up, not the gesture.
 
 **Outro**:
 A Toy's choreographed end-beat after its Goal is met — the Toy keeps rendering its

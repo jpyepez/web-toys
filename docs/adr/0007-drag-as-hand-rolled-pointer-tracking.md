@@ -49,3 +49,32 @@ dragging it, so momentum-while-dragging isn't even the shape we need.
   stroke "not count" (ADR-0001: no failure path).
 - The same pointer-capture/cancel/loss handling applies: a lost or cancelled pointer ends
   the stroke without launching, and the Critter stays put to be Swiped again.
+
+## Amendment — Stir, the rotation gesture (issue 36, Soup Pot)
+
+**Stir** (see the glossary) is hand-rolled pointer tracking too, for the same reasons: it has
+to be assertable in jsdom with `fireEvent` pointer events, and no Motion gesture models
+"accumulate rotation". What's new is *how* a turn is counted, and two choices there will
+look odd without context:
+
+- **The centre is fixed, not estimated.** Angle is measured around the pot's centre, not
+  around a centre fitted to the child's stroke. A fitted centre would let circles anywhere
+  count, but it's fragile on short, wobbly toddler strokes and hard to assert. The pot is
+  the obvious thing to circle, and a finger circling half off it still sweeps angle around
+  its centre, so nothing is missed.
+- **Rotation is summed unsigned.** Every pointer sample adds the *absolute* angle it swept,
+  so reversing direction, or wiggling back and forth, still makes progress. Signed turns
+  would make going backwards undo work: a failure path in disguise
+  ([[0001-finite-success-only-toy-lifecycle]]).
+
+Two guards stop that generosity from producing fake turns:
+
+- A **dead zone** near the centre: samples close to it add nothing, so a jittering finger on
+  the centre can't sweep huge angles from tiny moves.
+- A **per-sample jump cap**: one sample adds at most a small angle, so a finger that skips
+  across the centre can't count as half a turn in one go.
+
+Progress never decreases. A lifted, cancelled or lost pointer ends the stroke and keeps
+every turn already made. The Goal's turn count, the dead-zone radius and the jump cap are
+tuned on a device and deliberately not asserted. Tests observe the boundary: enough circling
+reaches the Goal, a little doesn't, a reversal still adds, and a lift keeps progress.
