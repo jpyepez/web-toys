@@ -18,6 +18,7 @@ import { ReefFrameView } from './ReefScene';
 import { BarnyardFrameView } from './BarnyardScene';
 import { SkyFrameView } from './SkyScene';
 import { FloeFrameView } from './FloeScene';
+import { KitchenFrameView } from './KitchenScene';
 import { check as checkCanopy } from '../toys/nestlings/canopy';
 import { ASPECTS, type AspectName } from './config';
 
@@ -394,6 +395,33 @@ const KNOB_GROUPS: Array<{ title: string; knobs: Knob[] }> = [
       { path: 'scenery.floe.slotSpacing', label: 'landing slot spacing', min: 0.9, max: 1.6, step: 0.01, note: 'denser = more places to land' },
     ],
   },
+  {
+    /*
+     * The kitchen — Soup Pot's scene. Visible in the frame view with the
+     * `kitchen` background selected; the numbers harvest into
+     * `toys/soup-pot/kitchen-config.ts` (all but `soup cooked`, which is a
+     * viewing aid).
+     *
+     * Every SIZE is a multiple of a MOUSE. The pot is the one mass allowed to
+     * stand clear of the frame edges, and `check()` holds it at 2.5 mice or more.
+     */
+    title: 'Kitchen · Soup Pot',
+    knobs: [
+      { path: 'scenery.kitchenView.progress', label: 'soup cooked', min: 0, max: 1, step: 0.01, note: 'viewing aid, not harvested' },
+      { path: 'scenery.kitchen.potWidth', label: 'pot max width', min: 0.5, max: 0.95, step: 0.01, note: 'fraction of the frame' },
+      { path: 'scenery.kitchen.potHeight', label: 'pot max height', min: 0.4, max: 0.75, step: 0.01, note: 'fraction of the frame' },
+      { path: 'scenery.kitchen.rimWidth', label: 'rim width', min: 0.04, max: 0.2, step: 0.005 },
+      { path: 'scenery.kitchen.wallShow', label: 'inner wall showing', min: 0, max: 0.25, step: 0.005 },
+      { path: 'scenery.kitchen.mouseSpread', label: 'mouse spread', min: 30, max: 80, step: 1, note: 'degrees' },
+      { path: 'scenery.kitchen.shadowDrop', label: 'pot shadow drop', min: 0, max: 0.4, step: 0.01, note: 'in mice' },
+      { path: 'scenery.kitchen.grainDensity', label: 'grain per mouse²', min: 0, max: 1, step: 0.01 },
+      { path: 'scenery.kitchen.grainLength', label: 'grain length', min: 0.3, max: 1.6, step: 0.01, note: 'in mice' },
+      { path: 'scenery.kitchen.towelReach', label: 'towel reach', min: 2.5, max: 5, step: 0.05, note: 'in mice — under 2.5 is a rival' },
+      { path: 'scenery.kitchen.bubbleCount', label: 'bubbles', min: 0, max: 24, step: 1 },
+      { path: 'scenery.kitchen.steamCount', label: 'steam wisps', min: 0, max: 6, step: 1 },
+      { path: 'scenery.kitchen.blorpCount', label: 'blorp wisps', min: 4, max: 20, step: 1 },
+    ],
+  },
 ];
 
 
@@ -487,6 +515,8 @@ export function Lab() {
               <BarnyardFrameView config={config} />
             ) : M.background === 'floe' ? (
               <FloeFrameView config={config} />
+            ) : M.background === 'kitchen' ? (
+              <KitchenFrameView config={config} />
             ) : M.background === 'sky' ? (
               <SkyFrameView config={config} />
             ) : (
@@ -549,7 +579,7 @@ export function Lab() {
           ))}
         </div>
         <div className="row modes">
-          {(['canopy', 'meadow', 'reef', 'barnyard', 'sky', 'floe', 'glow', 'paper', 'motif', 'split'] as const).map((b) => (
+          {(['canopy', 'meadow', 'reef', 'barnyard', 'sky', 'floe', 'kitchen', 'glow', 'paper', 'motif', 'split'] as const).map((b) => (
             <Tab key={b} label={b} on={M.background === b} onClick={() => { set('mode.background', b); set('scenery.motif.show', b === 'motif'); }} />
           ))}
         </div>

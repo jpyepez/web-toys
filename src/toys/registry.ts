@@ -19,6 +19,9 @@ import { SETTLE_MS } from './nestlings/DuskBackdrop';
 import { PenguinSlide, OUTRO_MS as PENGUIN_OUTRO_MS } from './penguin-slide/PenguinSlide';
 import { palette as icePalette } from './penguin-slide/palette';
 import { Preview as PenguinSlidePreview } from './penguin-slide/Preview';
+import { SoupPot, OUTRO_MS as SOUP_OUTRO_MS } from './soup-pot/SoupPot';
+import { palette as kitchenPalette } from './soup-pot/palette';
+import { Preview as SoupPotPreview } from './soup-pot/Preview';
 
 /**
  * The registered Toys. Adding a Toy is adding an entry here — the Shell renders
@@ -136,5 +139,17 @@ export const registry: ToyEntry[] = [
     // Hold the Completion until the row has gathered and made its first
     // splash — `onComplete` fires on the last landing, at the START of the Outro.
     winDelayMs: PENGUIN_OUTRO_MS,
+  },
+  // Soup Pot — the Stir (issue 36). Its tint is the counter the pot sits on,
+  // the field its scene lives in, like every other Toy's.
+  {
+    id: 'soup-pot',
+    title: 'Soup Pot',
+    component: SoupPot,
+    tint: kitchenPalette.counter,
+    preview: SoupPotPreview,
+    // Hold the Completion until the blorp has burst — `onComplete` fires the
+    // moment the Goal is reached, at the START of the Outro.
+    winDelayMs: SOUP_OUTRO_MS,
   },
 ];
