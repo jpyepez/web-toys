@@ -3,7 +3,7 @@ import type { PointerEvent } from 'react';
 import { motion } from 'motion/react';
 import type { ToyProps } from '../../shell/registry';
 import { GOAL_ANGLE, sampleAngle, stageFor, type Pt } from './stir';
-import { blip, chime } from './sounds';
+import { blip, chime, squeak } from './sounds';
 import { BlorpLayer, KitchenPlates, LadleLayer, SoupLayer, SteamLayer } from './KitchenScene';
 import { MouseFigure, PAW_FRACTION, VB } from './MouseDrawing';
 import { useKitchenScene } from './useKitchenScene';
@@ -18,6 +18,11 @@ import { DEMO_DURATION_MS, IDLE_DEMO_DELAY_MS } from './demo';
 export const OUTRO_MS = 1600;
 
 const QUARTER_TURN = Math.PI / 2;
+
+/** A press that stays within this many px of where it began is a tap, not a Stir. */
+export const TAP_DISTANCE_PX = 10;
+/** How long a mouse's tap hop stays flagged as reacting. */
+const HOP_MS = 450;
 
 type Phase = 'stirring' | 'outro';
 
@@ -36,13 +41,35 @@ export function SoupPot({ onComplete, sound, haptics }: ToyProps) {
   const total = useRef(0);
   const done = useRef(false);
   const stroke = useRef<{ id: number; last: Pt; centre: Pt } | null>(null);
+  // A press that began on a mouse and hasn't strayed past the tap distance yet.
+  const tap = useRef<{ id: number; mouse: number; origin: Pt } | null>(null);
+  // Per mouse: how many taps it has had (re-keys the hop) and whether it is hopping.
+  const [taps, setTaps] = useState<number[]>([0, 0, 0]);
+  const [hopping, setHopping] = useState<boolean[]>([false, false, false]);
+  const hopTimers = useRef<(ReturnType<typeof setTimeout> | undefined)[]>([]);
+  useEffect(() => () => hopTimers.current.forEach(clearTimeout), []);
 
-  const end = () => {
+  const hop = (i: number) => {
+    sound?.play(squeak(i));
+    setTaps((t) => t.map((n, j) => (j === i ? n + 1 : n)));
+    setHopping((h) => h.map((v, j) => (j === i ? true : v)));
+    clearTimeout(hopTimers.current[i]);
+    hopTimers.current[i] = setTimeout(() => setHopping((h) => h.map((v, j) => (j === i ? false : v))), HOP_MS);
+  };
+
+  const end = (e: PointerEvent<HTMLElement>) => {
+    const t = tap.current;
+    tap.current = null;
     stroke.current = null;
+    if (t && e.type === 'pointerup' && t.id === e.pointerId && !done.current) hop(t.mouse);
   };
 
   const onDown = (e: PointerEvent<HTMLElement>) => {
     if (done.current) return;
+    const hit = (e.target as Element | null)?.closest?.('[data-mouse]');
+    tap.current = hit
+      ? { id: e.pointerId, mouse: Number(hit.getAttribute('data-mouse')), origin: { x: e.clientX, y: e.clientY } }
+      : null;
     const r = e.currentTarget.getBoundingClientRect();
     const centre = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
     stroke.current = { id: e.pointerId, last: { x: e.clientX, y: e.clientY }, centre };
@@ -52,6 +79,8 @@ export function SoupPot({ onComplete, sound, haptics }: ToyProps) {
   const onMove = (e: PointerEvent<HTMLElement>) => {
     const s = stroke.current;
     if (done.current || !s || s.id !== e.pointerId) return;
+    const t = tap.current;
+    if (t && Math.hypot(e.clientX - t.origin.x, e.clientY - t.origin.y) > TAP_DISTANCE_PX) tap.current = null;
     const next = { x: e.clientX, y: e.clientY };
     const added = sampleAngle(s.last, next, s.centre);
     s.last = next;
@@ -71,6 +100,7 @@ export function SoupPot({ onComplete, sound, haptics }: ToyProps) {
     if (total.current >= GOAL_ANGLE) {
       done.current = true;
       stroke.current = null;
+      tap.current = null;
       setPhase('outro');
       onComplete();
     }
@@ -143,17 +173,19 @@ export function SoupPot({ onComplete, sound, haptics }: ToyProps) {
             key={m.kind}
             data-mouse={i}
             data-mouse-kind={m.kind}
+            data-reacting={hopping[i] && !outro}
+            data-taps={taps[i]}
             transform={`translate(${m.at[0] - mw / 2} ${m.at[1] - mw * PAW_FRACTION}) scale(${mw / VB})`}
           >
             <motion.g
               // A hop at every stage beat; a looping cheer in the Outro. Keyed on
               // the stage so each beat re-runs the hop.
-              key={outro ? 'cheer' : `beat-${stage}`}
+              key={outro ? 'cheer' : `beat-${stage}-${taps[i]}`}
               style={{ transformBox: 'fill-box', transformOrigin: '50% 100%' }}
               animate={
                 outro
                   ? { y: [0, -22, 0], rotate: [0, i % 2 ? 6 : -6, 0] }
-                  : stage > 0
+                  : stage > 0 || taps[i] > 0
                     ? { y: [0, -14, 0], scaleY: [1, 1.06, 1] }
                     : { y: 0 }
               }
@@ -163,7 +195,7 @@ export function SoupPot({ onComplete, sound, haptics }: ToyProps) {
                   : { duration: 0.45, delay: i * 0.08, ease: 'easeOut' }
               }
             >
-              <MouseFigure kind={m.kind} pose={outro ? 'happy' : 'watching'} />
+              <MouseFigure kind={m.kind} pose={outro ? 'happy' : 'watching'} interactive={!outro} />
             </motion.g>
           </g>
         ))}
