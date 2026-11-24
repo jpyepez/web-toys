@@ -22,6 +22,8 @@ import { REEF } from '../toys/puffer-fish/reef-config';
 import { BARNYARD } from '../toys/muddy-puddle/barnyard-config';
 import { type FloeConfig } from '../toys/penguin-slide/floe';
 import { FLOE } from '../toys/penguin-slide/floe-config';
+import { type KitchenConfig } from '../toys/soup-pot/kitchen';
+import { KITCHEN } from '../toys/soup-pot/kitchen-config';
 
 export type LineMode = 'contour' | 'none';
 
@@ -47,7 +49,8 @@ export type BackgroundMode =
   | 'reef'
   | 'barnyard'
   | 'sky'
-  | 'floe';
+  | 'floe'
+  | 'kitchen';
 
 /**
  * THE FORK. A dark ground and a dark-ink cast cannot both work — the ink stops
@@ -217,6 +220,13 @@ export type Config = {
      * asserted, so the lab renders it verbatim and tunes only the composition.
      */
     floe: FloeConfig;
+    /**
+     * The kitchen — see `toys/soup-pot/kitchen.ts`. Colourless for the same
+     * reason as the floe: the Soup Pot palette is already derived and asserted.
+     */
+    kitchen: KitchenConfig;
+    /** Lab-only: how far the soup has cooked in the frame view (0–1). Not harvested. */
+    kitchenView: { progress: number };
     reef: ReefConfig;
     /**
      * The barnyard — see `toys/muddy-puddle/barnyard.ts`. Colourless for the
@@ -365,6 +375,8 @@ export const DEFAULT_CONFIG: Config = {
     meadow: MEADOW,
     reef: REEF,
     floe: FLOE,
+    kitchen: KITCHEN,
+    kitchenView: { progress: 0.8 },
     barnyard: BARNYARD,
     sky: SKY,
     foliage: { hue: 152, chroma: 0.06, depthDc: 0.028, depthDl: 0.035 },
