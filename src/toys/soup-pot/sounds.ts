@@ -19,3 +19,14 @@ export function blip(fraction: number): Voice {
 
 /** The brighter chime at each stage beat (¼, ½, ¾). The Toy's only triangle voice. */
 export const chime: Voice = { type: 'triangle', freq: 880, peak: 0.16, decay: 0.35 };
+
+/**
+ * A mouse's squeak. Each of the three mice has its own pitch (by index); the
+ * glide up makes it a squeak rather than a blip. Placeholders for on-device tuning.
+ */
+export const SQUEAK_BASE_HZ = [1100, 1400, 1750] as const;
+
+export function squeak(mouse: number): Voice {
+  const freq = SQUEAK_BASE_HZ[mouse % SQUEAK_BASE_HZ.length];
+  return { type: 'square', freq, bendTo: freq * 1.4, bendOver: 0.07, peak: 0.07, decay: 0.14 };
+}
