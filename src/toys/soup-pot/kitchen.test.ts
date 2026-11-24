@@ -114,6 +114,15 @@ describe('Soup Pot — the kitchen', () => {
     }
   });
 
+  it('gives every scenery line less ink than the cast — the contour belongs to the figure', () => {
+    for (const f of FRAMES) {
+      const { cast, ...rest } = build(f).lines;
+      for (const [name, w] of Object.entries(rest)) {
+        expect(w / cast, `${f.name} ${name}`).toBeLessThan(name === 'ladle' ? 1 : 0.75);
+      }
+    }
+  });
+
   it('is deterministic for a seed — the saved config reproduces its picture', () => {
     const f = FRAMES[0];
     expect(buildKitchen(KITCHEN, f.frame, f.mw, KITCHEN_SEED)).toEqual(build(f));

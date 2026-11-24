@@ -86,7 +86,6 @@ const soupFloorL = 0.72;
 
 /** The wooden ladle — honey wood, lighter than the cast, carried by its contour. */
 const ladleBase: Oklch = { l: 0.7, c: 0.08, h: 62 };
-const ladleShadeBase = shade(ladleBase, { dl: 0.08, hueRotate: shading.occlusionHueRotate, dc: 0 });
 
 /** Steam: paper showing through, slightly warm. Never `#fff`. */
 const steamBase = tint(housePaper, { dl: -0.005, hueRotate: 0 });
@@ -117,7 +116,7 @@ export const source = {
   /** Every region the cast is seen against. These must clear the CAST. */
   corridor: [counterBase, grainBase, towelBase, towelStripeBase, counterShadow] as const,
   /** Every object. These must clear the INK. */
-  objects: [potBase, potShadeBase, potInnerBase, potInnerShadeBase, ladleBase, ladleShadeBase, ...SOUP] as const,
+  objects: [potBase, potShadeBase, potInnerBase, potInnerShadeBase, ladleBase, ...SOUP] as const,
   soup: SOUP,
   soupFloorL,
   counterBase,
@@ -149,11 +148,10 @@ const roundEars = kindTokens('roundEars');
 const tuft = kindTokens('tuft');
 const floppy = kindTokens('floppy');
 
-/** A soup stage's colours: the surface, its swirl marks, and its bubbles. */
+/** A soup stage's colours: the surface and its swirl marks. */
 const soupTokens = (s: Oklch) => ({
   surface: hex(s),
   swirl: hex(tint(s, { dl: 0.05, hueRotate: 6 })),
-  deep: hex(shade(s, { dl: 0.05, hueRotate: shading.occlusionHueRotate * 0.5, dc: 0 })),
 });
 
 export const soupStage = SOUP.map(soupTokens);
@@ -171,7 +169,6 @@ export const palette = {
   potInner: hex(potInnerBase),
   potInnerShade: hex(potInnerShadeBase),
   ladle: hex(ladleBase),
-  ladleShade: hex(ladleShadeBase),
   steam: hex(steamBase),
 
   soup0: soupStage[0].surface,
@@ -182,10 +179,6 @@ export const palette = {
   swirl1: soupStage[1].swirl,
   swirl2: soupStage[2].swirl,
   swirl3: soupStage[3].swirl,
-  soupDeep0: soupStage[0].deep,
-  soupDeep1: soupStage[1].deep,
-  soupDeep2: soupStage[2].deep,
-  soupDeep3: soupStage[3].deep,
 
   /* --- house-style primitives, surfaced so every fill is a token ---- */
   paper: hex(housePaper),
@@ -207,6 +200,3 @@ export const palette = {
   floppyBody: floppy.body,
   floppyShade: floppy.shade,
 } as const;
-
-/** The soup tokens for a stage 0–3. */
-export const soupFor = (stage: number) => soupStage[Math.max(0, Math.min(3, stage))];

@@ -58,6 +58,12 @@ import { MOUSE_KINDS, type MouseKind } from './palette';
 const SCENERY_CONTOUR_RATIO = 0.5;
 /** The cast's contour, per mouse width (a mouse is drawn in a 100-wide box). */
 const CAST_CONTOUR_PER_MW = houseLine.contour / 100;
+/**
+ * The ladle's line as a fraction of the cast's. It is the prop under the
+ * child's finger, so it gets more line than the scenery — but never as much as
+ * a mouse: the contour belongs to the figure.
+ */
+const LADLE_CONTOUR_RATIO = 0.75;
 
 /**
  * How far above its paws a mouse reaches (to the tips of its ears), and where
@@ -162,6 +168,12 @@ export type KitchenArt = {
   /** Pot-local. The Outro's burst of steam, radiating from the centre. */
   blorp: string[];
   mice: Mouse[];
+  /**
+   * The VISIBLE ink each kind of line carries, per side, in frame units —
+   * reported so the tests can hold every one under the cast's. A ring drawn
+   * under its fill shows only its outer half; one drawn on top shows all of it.
+   */
+  lines: { cast: number; pot: number; inner: number; handle: number; towel: number; soupEdge: number; ladle: number };
 };
 
 const deg = (d: number) => (d * Math.PI) / 180;
@@ -189,7 +201,10 @@ export function buildKitchen(cfg: KitchenConfig, frame: Frame, mw: number, seed:
   const potR = potRadius(cfg, frame);
   const innerR = potR * (1 - cfg.rimWidth);
   const soupR = innerR * (1 - cfg.wallShow);
-  const sceneryContour = CAST_CONTOUR_PER_MW * mw * SCENERY_CONTOUR_RATIO;
+  // A mouse's contour ring is drawn under its fill, so half of it shows.
+  const castLine = (CAST_CONTOUR_PER_MW * mw) / 2;
+  const sceneryLine = castLine * SCENERY_CONTOUR_RATIO;
+  const ladleLine = castLine * LADLE_CONTOUR_RATIO;
 
   /* --- the counter's grain: short open marks, scattered by blue noise ---- */
   const rGrain = stream(seed, 'kitchen-grain');
@@ -235,7 +250,7 @@ export function buildKitchen(cfg: KitchenConfig, frame: Frame, mw: number, seed:
     polygonPath(ribbon([slab(-half * 1.1, t), slab(half * 1.1, t)], () => w / 2));
   const towel = {
     d: closedPath(towelPts),
-    ink: contourRing(towelPts, sceneryContour, houseLine.taper, houseLine.wobble, stream(seed, 'kitchen-towel-ink')),
+    ink: contourRing(towelPts, sceneryLine * 2, houseLine.taper, houseLine.wobble, stream(seed, 'kitchen-towel-ink')),
     stripes: [stripe(-half * 0.55, mw * 0.16), stripe(-half * 0.3, mw * 0.07)],
     pts: towelPts,
   };
@@ -265,14 +280,17 @@ export function buildKitchen(cfg: KitchenConfig, frame: Frame, mw: number, seed:
       ...quadPts(at(mid, rOut + mw * 0.04), at(mid + half * 1.05, rOut), at(mid + half, rIn), 8).slice(1),
     ];
     const w = mw * 0.12;
-    return { d: polygonPath(ribbon(pts, () => w / 2)), ink: polygonPath(ribbon(pts, () => w / 2 + sceneryContour)) };
+    return { d: polygonPath(ribbon(pts, () => w / 2)), ink: polygonPath(ribbon(pts, () => w / 2 + sceneryLine)) };
   };
   const pot = {
     shadow,
-    ink: contourRing(outer, sceneryContour * 1.4, houseLine.taper, houseLine.wobble, stream(seed, 'kitchen-pot-ink')),
+    // The pot's outline gets a little more than the rest of the scenery — it is
+    // the one mass that isn't cropped — and still well under the cast's.
+    ink: contourRing(outer, sceneryLine * 1.4 * 2, houseLine.taper, houseLine.wobble, stream(seed, 'kitchen-pot-ink')),
     rim: ringPath(outer, inner),
     rimShade,
-    innerInk: contourRing(inner, sceneryContour, houseLine.taper, houseLine.wobble, stream(seed, 'kitchen-inner-ink')),
+    // Drawn on top of the inner wall, so its whole width shows.
+    innerInk: contourRing(inner, sceneryLine, houseLine.taper, houseLine.wobble, stream(seed, 'kitchen-inner-ink')),
     inner: closedPath(inner),
     innerShade,
     handles: [handle(-1), handle(1)],
@@ -302,7 +320,7 @@ export function buildKitchen(cfg: KitchenConfig, frame: Frame, mw: number, seed:
   }
   const soup = {
     d: closedPath(soupPts),
-    edge: contourRing(soupPts, sceneryContour * 0.6, 0.2, houseLine.wobble, stream(seed, 'kitchen-soup-ink')),
+    edge: contourRing(soupPts, sceneryLine, 0.2, houseLine.wobble, stream(seed, 'kitchen-soup-ink')),
     swirls,
     bubbles,
   };
@@ -333,7 +351,7 @@ export function buildKitchen(cfg: KitchenConfig, frame: Frame, mw: number, seed:
   const handlePts = quadPts([bowlAt + mw * 0.12, 0], [(bowlAt + length) / 2, -mw * 0.05], [length, mw * 0.02], 14);
   const handleW = (t: number) => mw * (0.055 + 0.03 * t);
   const handleBand = ribbon(handlePts, handleW);
-  const handleInkBand = ribbon(handlePts, (t) => handleW(t) + CAST_CONTOUR_PER_MW * mw * 0.7);
+  const handleInkBand = ribbon(handlePts, (t) => handleW(t) + ladleLine);
   // The bowl: the open rim of a cup dipping into the soup, a U facing the handle.
   const bowlR = mw * 0.24;
   const bowlArc = arcPts(bowlR, deg(55), deg(305), 16).map(([x, y]) => [bowlAt + x, y] as Pt);
@@ -341,7 +359,7 @@ export function buildKitchen(cfg: KitchenConfig, frame: Frame, mw: number, seed:
     handle: polygonPath(handleBand),
     handleInk: polygonPath(handleInkBand),
     bowl: taperedOutline(bowlArc, mw * 0.11, 0.5),
-    bowlInk: taperedOutline(bowlArc, mw * 0.11 + CAST_CONTOUR_PER_MW * mw * 1.4, 0.5),
+    bowlInk: taperedOutline(bowlArc, mw * 0.11 + ladleLine * 2, 0.5),
     length,
   };
 
@@ -385,6 +403,15 @@ export function buildKitchen(cfg: KitchenConfig, frame: Frame, mw: number, seed:
     ladle,
     blorp,
     mice,
+    lines: {
+      cast: castLine,
+      pot: sceneryLine * 1.4,
+      inner: sceneryLine,
+      handle: sceneryLine,
+      towel: sceneryLine,
+      soupEdge: sceneryLine,
+      ladle: ladleLine,
+    },
   };
 }
 
