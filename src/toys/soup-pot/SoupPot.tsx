@@ -192,7 +192,8 @@ export function SoupPot({ onComplete, sound, haptics }: ToyProps) {
               transition={
                 outro
                   ? { duration: 0.55, repeat: Infinity, repeatDelay: 0.15, delay: i * 0.12, ease: 'easeOut' }
-                  : { duration: 0.45, delay: i * 0.08, ease: 'easeOut' }
+                  : // Stage beats ripple along the mice; a tap answers at once.
+                    { duration: 0.45, delay: hopping[i] ? 0 : i * 0.08, ease: 'easeOut' }
               }
             >
               <MouseFigure kind={m.kind} pose={outro ? 'happy' : 'watching'} interactive={!outro} />
