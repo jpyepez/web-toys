@@ -16,7 +16,7 @@ import { PenguinFigure, VB_H, VB_W, FOOT_FRACTION, penguinPx } from '../toys/pen
 import { FloePlates } from '../toys/penguin-slide/IceBackdrop';
 import { CAST, PENGUIN_COUNT } from '../toys/penguin-slide/PenguinSlide';
 import { palette } from '../toys/penguin-slide/palette';
-import { ASPECTS, type Config } from './config';
+import { ASPECTS, frameBox, type Config } from './config';
 
 export function FloeFrameView({ config }: { config: Config }) {
   const px = ASPECTS[config.mode.aspect];
@@ -51,7 +51,7 @@ export function FloeFrameView({ config }: { config: Config }) {
   }, [art]);
 
   return (
-    <div className="frameView" style={{ aspectRatio: `${px.w} / ${px.h}`, background: palette.water }}>
+    <div className="frameView" style={{ ...frameBox(px), background: palette.water }}>
       <svg
         viewBox={`0 0 ${frame.w} ${frame.h}`}
         preserveAspectRatio="none"

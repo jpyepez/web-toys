@@ -36,7 +36,7 @@ import { DucklingDrawing } from '../toys/muddy-puddle/DucklingDrawing';
 import { LambDrawing } from '../toys/muddy-puddle/LambDrawing';
 import { ChickDrawing } from '../toys/muddy-puddle/ChickDrawing';
 import { CalfDrawing } from '../toys/muddy-puddle/CalfDrawing';
-import { ASPECTS, type Config } from './config';
+import { ASPECTS, frameBox, type Config } from './config';
 
 const DRAWINGS = {
   piglet: PigletDrawing,
@@ -81,7 +81,7 @@ export function BarnyardFrameView({ config }: { config: Config }) {
   const footDrop = critterW * CRITTER_ASPECT * FOOT_FRACTION;
 
   return (
-    <div className="frameView" style={{ aspectRatio: `${px.w} / ${px.h}`, background: palette.sky }}>
+    <div className="frameView" style={{ ...frameBox(px), background: palette.sky }}>
       <svg
         viewBox={`0 0 ${frame.w} ${frame.h}`}
         preserveAspectRatio="none"

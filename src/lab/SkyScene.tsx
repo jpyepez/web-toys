@@ -32,7 +32,7 @@ import {
 } from '../toys/balloons/balloon-metrics';
 import { BalloonFigure } from '../toys/balloons/BalloonDrawing';
 import { BALLOONS, palette } from '../toys/balloons/palette';
-import { ASPECTS, type Config } from './config';
+import { ASPECTS, frameBox, type Config } from './config';
 
 /** The frame in sky units: 100 wide, height following the viewport aspect. */
 export function skyFrameFor(px: { w: number; h: number }) {
@@ -61,7 +61,7 @@ export function SkyFrameView({ config }: { config: Config }) {
   const violations = useMemo(() => check(cfg, balloonW), [cfg, balloonW]);
 
   return (
-    <div className="frameView" style={{ aspectRatio: `${px.w} / ${px.h}`, background: palette.sky }}>
+    <div className="frameView" style={{ ...frameBox(px), background: palette.sky }}>
       <svg
         viewBox={`0 0 ${frame.w} ${frame.h}`}
         preserveAspectRatio="none"

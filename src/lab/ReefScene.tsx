@@ -29,7 +29,7 @@ import {
   FISH_ASPECT,
 } from '../toys/puffer-fish/FishDrawing';
 import { palette } from '../toys/puffer-fish/palette';
-import { ASPECTS, type Config } from './config';
+import { ASPECTS, frameBox, type Config } from './config';
 
 /**
  * A Fish's width as a fraction of the viewport width, mirroring the shipped
@@ -65,7 +65,7 @@ export function ReefFrameView({ config }: { config: Config }) {
   const bodyDrop = fishW * FISH_ASPECT * BODY_FRACTION;
 
   return (
-    <div className="frameView" style={{ aspectRatio: `${px.w} / ${px.h}`, background: palette.water }}>
+    <div className="frameView" style={{ ...frameBox(px), background: palette.water }}>
       <svg
         viewBox={`0 0 ${frame.w} ${frame.h}`}
         preserveAspectRatio="none"

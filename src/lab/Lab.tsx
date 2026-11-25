@@ -769,9 +769,10 @@ const CSS = `
    direction runs out first. Composition is judged at true proportion or not at
    all — a scene that reads on a square canvas is exactly how the old one passed. */
 .canvasFrame { border:0; padding:0; background:none; cursor:pointer;
-  height:min(84vh, 900px); max-width:min(64vw, 1100px); display:flex; }
-.frameView { position:relative; overflow:hidden; border-radius:6px;
-  height:100%; max-width:100%; box-shadow:0 6px 30px rgba(0,0,0,.35); }
+  height:min(84vh, 900px); width:min(64vw, 1100px); display:flex;
+  align-items:center; justify-content:center; container-type:size; }
+.frameView { position:relative; overflow:hidden; border-radius:6px; flex:none;
+  width:min(100cqw, 100cqh * var(--ar)); box-shadow:0 6px 30px rgba(0,0,0,.35); }
 .frameTag { position:absolute; left:6px; bottom:5px; font:10px/1.4 ui-monospace,monospace;
   color:rgba(255,255,255,.9); background:rgba(0,0,0,.45); padding:2px 6px; border-radius:4px; }
 .lab { display:grid; grid-template-columns: 1fr 340px; min-height:100vh;

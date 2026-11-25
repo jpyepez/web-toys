@@ -1,3 +1,4 @@
+import type React from 'react';
 /**
  * The config IS the deliverable. The lab UI is scaffolding around it; what gets
  * promoted into the real Toys is a saved JSON of this shape plus the render
@@ -69,6 +70,15 @@ export const ASPECTS = {
   desktop: { label: 'desktop 16:10', w: 1440, h: 900 },
 } as const;
 export type AspectName = keyof typeof ASPECTS;
+
+/**
+ * The frame view's box at a true aspect. `--ar` lets the CSS fit it inside the
+ * stage in whichever direction runs out first; `aspect-ratio` alone gives way to
+ * a capped width and squashes the frame (the SVG inside is `preserveAspectRatio
+ * ="none"`, so a squashed box draws a squashed scene).
+ */
+export const frameBox = (px: { w: number; h: number }) =>
+  ({ aspectRatio: `${px.w} / ${px.h}`, '--ar': px.w / px.h }) as React.CSSProperties;
 
 export const SPECIES: readonly Species[] = ['robin', 'bluebird', 'sparrow', 'wren', 'goldfinch'];
 

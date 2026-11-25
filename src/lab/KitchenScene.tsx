@@ -16,7 +16,7 @@ import { KitchenPlates, LadleLayer, SoupLayer, SteamLayer } from '../toys/soup-p
 import { MouseFigure, VB, PAW_FRACTION, mousePx } from '../toys/soup-pot/MouseDrawing';
 import { palette } from '../toys/soup-pot/palette';
 import { GOAL_ANGLE, stageFor } from '../toys/soup-pot/stir';
-import { ASPECTS, type Config } from './config';
+import { ASPECTS, frameBox, type Config } from './config';
 
 export function KitchenFrameView({ config }: { config: Config }) {
   const px = ASPECTS[config.mode.aspect];
@@ -34,7 +34,7 @@ export function KitchenFrameView({ config }: { config: Config }) {
   const stage = stageFor(fraction * GOAL_ANGLE);
 
   return (
-    <div className="frameView" style={{ aspectRatio: `${px.w} / ${px.h}`, background: palette.counter }}>
+    <div className="frameView" style={{ ...frameBox(px), background: palette.counter }}>
       <svg
         viewBox={`0 0 ${frame.w} ${frame.h}`}
         preserveAspectRatio="none"
