@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { buildKitchen, check, BUBBLE_MAX_D, MOUSE_HEAD_R, MOUSE_REACH, type Frame } from './kitchen';
 import { KITCHEN, KITCHEN_SEED } from './kitchen-config';
 import { mousePx } from './MouseDrawing';
+import { lineViolations } from '../../shell/art/rules';
 
 /**
  * The kitchen's rules, as assertions rather than prose, evaluated at every frame
@@ -116,10 +117,11 @@ describe('Soup Pot — the kitchen', () => {
 
   it('gives every scenery line less ink than the cast — the contour belongs to the figure', () => {
     for (const f of FRAMES) {
-      const { cast, ...rest } = build(f).lines;
-      for (const [name, w] of Object.entries(rest)) {
-        expect(w / cast, `${f.name} ${name}`).toBeLessThan(name === 'ladle' ? 1 : 0.75);
-      }
+      const { cast, ladle, ...scenery } = build(f).lines;
+      // The ladle is an object held near the cast, so it may approach the cast's
+      // weight; plain scenery stays well under it.
+      expect(lineViolations(cast, { ladle }), f.name).toEqual([]);
+      expect(lineViolations(cast, scenery, 0.75), f.name).toEqual([]);
     }
   });
 
