@@ -21,8 +21,12 @@ halves are here so the seam has an owner.
    each with the reason it is that number. **Never re-derive these per Toy.**
 2. Read the target Toy's `palette.ts`. Each Toy owns its own scene and cast hues
    locally (ADR-0004); only the shared primitives come from `house.ts`.
-3. Open the lab: `bun run dev`, then `/lab.html`. **Frame view**, not critter
-   view, for anything scene-shaped.
+3. Open the lab: `bun run dev`, then `/lab.html` (`src/lab/`, its own Vite
+   entry, never in the production build). **Critter view** is one Critter in a
+   100×120 box: the instrument for proportion, line and colour. **Frame view** is
+   the whole scene at a real viewport aspect (phone / square / 16:10) with the
+   cast in place, and the only place composition is visible. Use it for anything
+   scene-shaped, and judge at **both** phone and 16:10 before saving.
 
 ## The one rule everything else serves
 
@@ -42,7 +46,7 @@ Before choosing any scene colour, answer one question:
 Is the Critter dragged ACROSS this as a region — sky, foliage, ground, glow?
 
 ├── YES → CORRIDOR class
-│   • L 0.80–0.92, and the whole corridor spans ≤ 0.15 of lightness.
+│   • L 0.80–0.93, and the whole corridor spans ≤ 0.15 of lightness.
 │   • Separate corridor members from each other with CHROMA and HUE.
 │     Never with lightness: the corridor is already spending the entire
 │     separation budget on clearing the cast, and there is none left.
@@ -200,8 +204,13 @@ Never animate a filter attribute.
 4. **Assert the rules in a test.** Not as prose. The house rules were written down
    carefully and then broken *in the same session* — a backdrop shipped with zero
    house primitives and ten uniform stroke widths, hours after the document
-   forbidding both. See `palette.test.ts` (colour classes) and `canopy.test.ts`
-   (shape classes, evaluated at every shipped frame) for the shape these take.
+   forbidding both. The colour classes, scene chroma and banned source
+   (`stroke`, `hsl()`, bare `Math.random()`) already run against every Toy in
+   `src/toys/house-rules.test.ts`, through the checks in `src/shell/art/rules.ts`:
+   export your palette's `source` with `corridor` and `objects` and you are
+   covered. What is left to you is the scene's SHAPE rules, evaluated at every
+   shipped frame (`canopy.test.ts`, `kitchen.test.ts`), with `lineViolations()`
+   for scenery line weights.
 
 ## Already ruled out — do not re-propose
 

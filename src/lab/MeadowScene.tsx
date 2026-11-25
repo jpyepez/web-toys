@@ -29,7 +29,7 @@ import {
   SHEEP_ASPECT,
 } from '../toys/counting-sheep/SheepDrawing';
 import { FLEECES, palette } from '../toys/counting-sheep/palette';
-import { ASPECTS, type Config } from './config';
+import { ASPECTS, frameBox, type Config } from './config';
 
 /**
  * A Sheep's width as a fraction of the viewport width, mirroring the shipped
@@ -65,7 +65,7 @@ export function MeadowFrameView({ config }: { config: Config }) {
   const footDrop = sheepW * SHEEP_ASPECT * FOOT_FRACTION;
 
   return (
-    <div className="frameView" style={{ aspectRatio: `${px.w} / ${px.h}`, background: palette.sky }}>
+    <div className="frameView" style={{ ...frameBox(px), background: palette.sky }}>
       <svg
         viewBox={`0 0 ${frame.w} ${frame.h}`}
         preserveAspectRatio="none"

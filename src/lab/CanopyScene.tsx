@@ -21,7 +21,7 @@ import { useId, useMemo } from 'react';
 import { hex, shade, tint, type Oklch } from '../shell/art/oklch';
 import { buildCanopy, type CanopyArt } from '../toys/nestlings/canopy';
 import { BIRD_MAX_PX, BIRD_MIN_PX, BIRD_VW } from '../toys/nestlings/BirdDrawing';
-import { ASPECTS, SPECIES, type Config } from './config';
+import { ASPECTS, frameBox, SPECIES, type Config } from './config';
 import { Critter, VIEW } from './Critter';
 
 /**
@@ -233,7 +233,7 @@ export function FrameView({ config }: { config: Config }) {
   return (
     <div
       className="frameView"
-      style={{ aspectRatio: `${px.w} / ${px.h}`, background: canopyColours(config).sky }}
+      style={{ ...frameBox(px), background: canopyColours(config).sky }}
     >
       <svg
         viewBox={`0 0 ${frame.w} ${frame.h}`}
