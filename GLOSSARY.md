@@ -44,7 +44,7 @@ A character in a Toy (fish, sheep, piglet, or a faced balloon, etc.) the child i
 animal or an anthropomorphised object — drawn from code
 SVG primitives — never an image. The interaction is interaction-agnostic: it may be a tap
 (Counting Sheep, Puffer Fish), a sustained **Wipe** (Muddy Puddle), a sustained **Hold**
-(Balloons), a **Drag** (Nestlings), a **Swipe** (Penguin Slide), a **Stir**, or some future gesture. Engaging the Critter is the core interaction; the
+(Balloons), a **Drag** (Nestlings), a **Swipe** (Penguin Slide), a **Stir**, a **Pull**, or some future gesture. Engaging the Critter is the core interaction; the
 specific gesture is per-Toy.
 
 **Wipe**:
@@ -102,6 +102,20 @@ finger keeps every turn already made, and nothing cools or drains back. The fift
 core interaction in the collection.
 _Avoid_: spin, whisk, swirl (as gesture names); reserve "turn" for the unit a Stir builds
 up, not the gesture.
+
+**Pull**:
+The core gesture of the Pond Leap Toy: press a **Critter**, pull it back like a slingshot, and
+let go, and it springs off to the next place it can land. The Critter stretches straight back
+from where it is going, whichever way the finger moves, so the pull loads the spring but never
+aims it. Distinct from a **Swipe** (the Critter goes the way the finger went, launched by speed;
+a Pull is released from tension) and from a **Drag** (nothing is carried to a target; the
+Critter leaps on release). It can't be done wrong: any real Pull, in any direction and of any
+length, sends the Critter exactly one step on, and a longer Pull only stretches it more. A tap
+or a tiny Pull doesn't leap, and the Critter waits to be pulled again. Progress only goes
+forward: a lifted, cancelled or lost pointer before release cancels the Pull and leaves the
+Critter where it is. The sixth non-tap core interaction in the collection.
+_Avoid_: sling, fling, flick (as gesture names); reserve "leap" for what the Critter does in
+response, not the gesture.
 
 **Outro**:
 A Toy's choreographed end-beat after its Goal is met — the Toy keeps rendering its
