@@ -80,6 +80,8 @@ Implement hands these back instead of making them:
 - **The Toy contract**: the `Toy` type and `onComplete()` in `src/shell/registry.ts`, and how `ToyHost.tsx` hosts a Toy.
 - **The house style**: `src/shell/art/` and `.claude/skills/critter-art/`. These are cross-Toy and judged by eye.
 - **Decisions and agent rules**: `docs/adr/`, `docs/out-of-scope/`, `GLOSSARY.md`, `CLAUDE.md`, and `docs/agents/`.
+  One exception: building a new-Toy pitch's spec adds the `GLOSSARY.md` entry for its new
+  gesture (`docs/agents/new-toy-flow.md`).
 
 ## Wayfinding operations
 
