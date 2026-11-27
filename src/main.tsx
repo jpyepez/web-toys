@@ -7,9 +7,11 @@ import { themeStore } from './shell/theme';
 import { registry } from './toys/registry';
 // Shell frame styles — safe-area insets for iOS standalone (slice #07).
 import './shell/shell.css';
+import { installZoomBlock } from './shell/zoomBlock';
 
 // Apply the saved theme before the first render.
 themeStore.start();
+installZoomBlock();
 
 const router = createAppRouter(registry);
 

@@ -20,6 +20,9 @@ body {
 html,
 body {
   overscroll-behavior: none;
+  /* Block pinch and double-tap zoom everywhere (iOS Safari ignores the
+   * viewport meta's user-scalable=no). pan-x pan-y keeps Home scrollable. */
+  touch-action: pan-x pan-y;
 }
 
 /* The Shell frame.
