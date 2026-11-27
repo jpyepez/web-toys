@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react';
 import type { Sound } from './sound';
 import type { Haptics } from './haptics';
+import type { DeployEnv } from './deploy-env';
 
 /**
  * The entire Shell↔Toy contract: a Toy renders its own world and calls
@@ -64,4 +65,21 @@ export type ToyEntry = {
    * prior layered-concurrent behaviour — ADR-0001 amendment).
    */
   winDelayMs?: number;
+  /**
+   * Marks a Draft Toy: it has a Card (with a "draft" mark) only in a Preview
+   * Deployment, so the owner can play it from the PR's Vercel link. In
+   * production it has no Card and its route goes to Home. A new Toy's first,
+   * playable ticket sets this; the ticket that ships the Toy removes it
+   * (issue 56, `docs/agents/new-toy-flow.md`).
+   */
+  draft?: boolean;
 };
+
+/**
+ * The Toys a deployment shows: all of them in a Preview Deployment, and all but
+ * the Draft Toys in production. Applied to the registry before the router is
+ * built, so Home and the Toy route never see a hidden draft.
+ */
+export function visibleToys(toys: ToyEntry[], env: DeployEnv): ToyEntry[] {
+  return env === 'preview' ? toys : toys.filter((toy) => !toy.draft);
+}

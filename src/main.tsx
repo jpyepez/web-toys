@@ -4,6 +4,7 @@ import { MotionConfig } from 'motion/react';
 import { RouterProvider } from '@tanstack/react-router';
 import { createAppRouter } from './shell/createAppRouter';
 import { themeStore } from './shell/theme';
+import { visibleToys } from './shell/registry';
 import { registry } from './toys/registry';
 // Shell frame styles — safe-area insets for iOS standalone (slice #07).
 import './shell/shell.css';
@@ -13,7 +14,8 @@ import { installZoomBlock } from './shell/zoomBlock';
 themeStore.start();
 installZoomBlock();
 
-const router = createAppRouter(registry);
+// Draft Toys show only in a Preview Deployment (issue 56).
+const router = createAppRouter(visibleToys(registry, __DEPLOY_ENV__));
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

@@ -38,11 +38,11 @@ decides whether to keep it.
    and its board Status is Ready.
 5. **Ticket the playable Toy first.** One `ready` sub-issue: the whole loop, from first touch
    to `onComplete()`, with code-drawn placeholder Critters and scene. The owner plays it from
-   the PR's Vercel Preview link before merging, so the ticket registers it as a draft Toy,
-   which shows in Previews only (issue 56; until that lands, the owner decides per Toy
-   whether to register it early). Add only the tickets that clearly follow
-   (art, sound, idle demo, on-device tuning) and leave the rest unwritten: the owner's
-   feedback on the playable Toy decides them.
+   the PR's Vercel Preview link before merging, so the ticket registers it as a Draft Toy
+   (`draft: true` in `src/toys/registry.ts`), which has a Card only in a Preview Deployment
+   and in `bun run dev`. The ticket that ships the Toy removes `draft`. Add only the tickets
+   that clearly follow (art, sound, idle demo, on-device tuning) and leave the rest
+   unwritten: the owner's feedback on the playable Toy decides them.
 
 ## Feedback
 

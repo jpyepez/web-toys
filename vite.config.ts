@@ -6,6 +6,7 @@ import { VitePWA } from 'vite-plugin-pwa';
 import { Resvg } from '@resvg/resvg-js';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { pwaManifest, pwaIconSvg } from './src/shell/pwa';
+import { deployEnv } from './src/shell/deploy-env';
 
 /**
  * Emits the PWA icons from the single code-drawn SVG source:
@@ -77,7 +78,14 @@ function labConfigSave(): Plugin {
 }
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ command }) => ({
+  // Vite only exposes VITE_* variables to the app, so Vercel's VERCEL_ENV is
+  // mapped here: Draft Toys show in Preview Deployments only (issue 56).
+  define: {
+    __DEPLOY_ENV__: JSON.stringify(
+      deployEnv({ command, vercelEnv: process.env.VERCEL_ENV }),
+    ),
+  },
   plugins: [
     react(),
     codegenPwaIcons(),
@@ -106,4 +114,4 @@ export default defineConfig({
     // `e2e/` is the Playwright smoke suite, run by `bun run test:e2e`, not Vitest.
     exclude: [...configDefaults.exclude, 'e2e/**'],
   },
-});
+}));
