@@ -144,7 +144,6 @@ export const registry: ToyEntry[] = [
   // the field its scene lives in, like every other Toy's.
   {
     id: 'soup-pot',
-    draft: true,
     title: 'Soup Pot',
     component: SoupPot,
     tint: kitchenPalette.counter,
