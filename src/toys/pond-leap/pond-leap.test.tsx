@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { LEAP_MS, PondLeap } from './PondLeap';
-import { LAST_PAD, LONG_PULL_PX, MAX_PULL_PX, MIN_PULL_PX } from './pond';
+import { LAST_PAD, MAX_PULL_PX, MIN_PULL_PX } from './pond';
 import type { Sound } from '../../shell/sound';
 import type { Haptics } from '../../shell/haptics';
 
@@ -25,7 +25,7 @@ function pull(el: HTMLElement, dist: number, dx = 0) {
 }
 
 const SHORT = MIN_PULL_PX + 20;
-const LONG = LONG_PULL_PX + 20;
+const LONG = MAX_PULL_PX + 20;
 
 beforeEach(() => vi.useFakeTimers());
 afterEach(() => vi.useRealTimers());
@@ -49,22 +49,40 @@ describe('PondLeap', () => {
     expect(padOf(container)).toBeGreaterThan(0);
   });
 
-  it('a longer Pull lands on a later pad than a shorter one, never behind or in the water', () => {
-    const a = render(<PondLeap onComplete={vi.fn()} />);
-    pull(frog(a.container), SHORT);
+  it('a long Pull leaps exactly one pad, like a short one', () => {
+    const { container } = render(<PondLeap onComplete={vi.fn()} />);
+    pull(frog(container), LONG);
+    expect(Number(frog(container).getAttribute('data-frog-target'))).toBe(1);
     settle();
-    const short = padOf(a.container);
-    a.unmount();
-    const b = render(<PondLeap onComplete={vi.fn()} />);
-    pull(frog(b.container), LONG);
-    settle();
-    const long = padOf(b.container);
-    expect(long).toBeGreaterThan(short);
-    for (const p of [short, long]) {
-      expect(Number.isInteger(p)).toBe(true);
-      expect(p).toBeGreaterThan(0);
-      expect(p).toBeLessThanOrEqual(LAST_PAD);
-    }
+    expect(padOf(container)).toBe(1);
+  });
+
+  it('the frog stretches along one rail, straight back from the next pad, whichever way the finger goes', () => {
+    const { container } = render(<PondLeap onComplete={vi.fn()} />);
+    const el = frog(container);
+    const angle = () => frog(container).getAttribute('data-pull-angle');
+    fireEvent.pointerDown(el, { clientX: 200, clientY: 300, pointerId: 1 });
+    fireEvent.pointerMove(el, { clientX: 200, clientY: 380, pointerId: 1 });
+    const down = angle();
+    fireEvent.pointerMove(el, { clientX: 290, clientY: 310, pointerId: 1 });
+    const sideways = angle();
+    fireEvent.pointerMove(el, { clientX: 140, clientY: 240, pointerId: 1 });
+    expect(down).not.toBeNull();
+    expect(sideways).toBe(down);
+    expect(angle()).toBe(down);
+  });
+
+  it('shows a dotted arc to the next pad once the Pull counts, and hides it on release', () => {
+    const { container } = render(<PondLeap onComplete={vi.fn()} />);
+    const el = frog(container);
+    const arc = () => container.querySelector('[data-leap-arc]');
+    fireEvent.pointerDown(el, { clientX: 200, clientY: 300, pointerId: 1 });
+    fireEvent.pointerMove(el, { clientX: 200, clientY: 300 + MIN_PULL_PX - 5, pointerId: 1 });
+    expect(arc()).toBeNull();
+    fireEvent.pointerMove(el, { clientX: 200, clientY: 300 + MIN_PULL_PX + 5, pointerId: 1 });
+    expect(arc()).toHaveAttribute('data-leap-arc', '1');
+    fireEvent.pointerUp(el, { clientX: 200, clientY: 300 + MIN_PULL_PX + 5, pointerId: 1 });
+    expect(arc()).toBeNull();
   });
 
   it('the Pull direction need not be exact: a sideways pull still leaps forward', () => {

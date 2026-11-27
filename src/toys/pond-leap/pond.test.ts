@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { LAST_PAD, LONG_PULL_PX, MAX_PULL_PX, MIN_PULL_PX, PADS, landingPad, padsForPull, stretchOf } from './pond';
+import { LAST_PAD, MAX_PULL_PX, MIN_PULL_PX, PADS, landingPad, padsForPull, railAngle, railReach, stretchOf } from './pond';
 
 describe('Pond Leap — the pond', () => {
   it('has six pads climbing from the bottom edge to the top', () => {
@@ -33,11 +33,15 @@ describe('Pond Leap — how far a Pull leaps', () => {
     expect(padsForPull(MIN_PULL_PX - 1)).toBe(0);
   });
 
-  it('a short pull leaps one pad, a long one two', () => {
+  it('every real pull leaps exactly one pad, however long', () => {
+    // A child can't pick the right pad by pull length, so length never picks it.
     expect(padsForPull(MIN_PULL_PX)).toBe(1);
-    expect(padsForPull(LONG_PULL_PX - 1)).toBe(1);
-    expect(padsForPull(LONG_PULL_PX)).toBe(2);
-    expect(padsForPull(10_000)).toBe(2);
+    expect(padsForPull(MAX_PULL_PX)).toBe(1);
+    expect(padsForPull(10_000)).toBe(1);
+  });
+
+  it('lands on the very next pad', () => {
+    for (let from = 0; from < LAST_PAD; from++) expect(landingPad(from, MAX_PULL_PX)).toBe(from + 1);
   });
 
   it('a longer pull never lands earlier than a shorter one', () => {
@@ -66,5 +70,37 @@ describe('Pond Leap — how far a Pull leaps', () => {
     expect(stretchOf(0)).toBe(0);
     expect(stretchOf(MAX_PULL_PX / 2)).toBeCloseTo(0.5);
     expect(stretchOf(MAX_PULL_PX * 10)).toBe(1);
+  });
+});
+
+describe('Pond Leap — the rail a Pull runs along', () => {
+  it('points straight back, away from the next pad, at a phone and at the widest stage', () => {
+    for (const [w, h] of [[390, 844], [540, 800]]) {
+      for (let from = 0; from < LAST_PAD; from++) {
+        const a = (railAngle(from, w, h) * Math.PI) / 180;
+        const toNext = [(PADS[from + 1][0] - PADS[from][0]) * w, (PADS[from + 1][1] - PADS[from][1]) * h];
+        const len = Math.hypot(toNext[0], toNext[1]);
+        // the rail's unit vector is exactly opposite the leap
+        expect(Math.cos(a) * toNext[0] + Math.sin(a) * toNext[1], `${w}x${h} pad ${from}`).toBeCloseTo(-len, 6);
+      }
+    }
+  });
+
+  it('never draws the frog off the stage, and follows short pulls exactly', () => {
+    const margin = 50;
+    for (const [w, h] of [[360, 640], [390, 844], [540, 800]]) {
+      for (let from = 0; from < LAST_PAD; from++) {
+        const r = railReach(from, w, h, MAX_PULL_PX * 3, margin);
+        expect(r).toBeLessThanOrEqual(MAX_PULL_PX);
+        const a = (railAngle(from, w, h) * Math.PI) / 180;
+        const x = PADS[from][0] * w + Math.cos(a) * r;
+        const y = PADS[from][1] * h + Math.sin(a) * r;
+        expect(x, `${w}x${h} pad ${from}`).toBeGreaterThanOrEqual(margin - 1e-6);
+        expect(x).toBeLessThanOrEqual(w - margin + 1e-6);
+        expect(y).toBeGreaterThanOrEqual(margin - 1e-6);
+        expect(y).toBeLessThanOrEqual(h - margin + 1e-6);
+        expect(railReach(from, w, h, 10, margin)).toBe(10);
+      }
+    }
   });
 });

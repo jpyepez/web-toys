@@ -30,23 +30,55 @@ export const STAGE_MAX_WIDTH_PX = 540;
 
 /** A Pull shorter than this (DOM px) is a tap, not a Pull: the frog stays put. */
 export const MIN_PULL_PX = 28;
-/** A Pull at least this long (DOM px) leaps two pads rather than one. */
-export const LONG_PULL_PX = 110;
 /** The frog stretches no further than this (DOM px), however far the finger goes. */
 export const MAX_PULL_PX = 150;
 
-/** How many pads a Pull of `distance` px leaps: 0 for a tap, 1, or 2. */
-export function padsForPull(distance: number): 0 | 1 | 2 {
-  if (distance < MIN_PULL_PX) return 0;
-  return distance >= LONG_PULL_PX ? 2 : 1;
+/**
+ * How many pads a Pull of `distance` px leaps: 0 for a tap, otherwise exactly 1.
+ * Length never picks the pad: a child can't judge "two pads' worth" of pull, so
+ * every real Pull goes to the next pad and length only loads the spring.
+ */
+export function padsForPull(distance: number): 0 | 1 {
+  return distance < MIN_PULL_PX ? 0 : 1;
 }
 
 /**
- * The pad a Pull lands on. Always a real pad, never behind `from`, and never
- * past the last one: progress only moves forward and the frog can't miss.
+ * The pad a Pull lands on: the next one, or the same pad for a tap. Never
+ * behind `from` and never past the last: progress only moves forward.
  */
 export function landingPad(from: number, distance: number): number {
   return Math.min(LAST_PAD, Math.max(0, from) + padsForPull(distance));
+}
+
+/**
+ * The rail a Pull runs along on pad `from`, in degrees (screen axes, 0 = right,
+ * 90 = down): straight back, directly away from the next pad, for a stage of
+ * `w` × `h` px. The frog stretches only along it, whichever way the finger
+ * goes, so the stretch always points where the frog will really fly.
+ */
+export function railAngle(from: number, w: number, h: number): number {
+  const i = Math.min(Math.max(0, from), LAST_PAD - 1);
+  const dx = (PADS[i][0] - PADS[i + 1][0]) * w;
+  const dy = (PADS[i][1] - PADS[i + 1][1]) * h;
+  return (Math.atan2(dy, dx) * 180) / Math.PI;
+}
+
+/**
+ * How far (px) the frog is drawn back along the rail for a Pull of `distance`:
+ * up to the cap, and never so far that it leaves the `w` × `h` stage. `margin`
+ * keeps the whole frog on screen (its rough half-size). The rail on the first
+ * pad points at the bottom edge, so this bites there.
+ */
+export function railReach(from: number, w: number, h: number, distance: number, margin: number): number {
+  const a = (railAngle(from, w, h) * Math.PI) / 180;
+  const [ux, uy] = [Math.cos(a), Math.sin(a)];
+  const [x, y] = [PADS[from][0] * w, PADS[from][1] * h];
+  let room = MAX_PULL_PX;
+  if (ux > 1e-6) room = Math.min(room, (w - margin - x) / ux);
+  if (ux < -1e-6) room = Math.min(room, (margin - x) / ux);
+  if (uy > 1e-6) room = Math.min(room, (h - margin - y) / uy);
+  if (uy < -1e-6) room = Math.min(room, (margin - y) / uy);
+  return Math.max(0, Math.min(distance, room));
 }
 
 /** How loaded the spring is, 0–1: the pull's length against the cap. */

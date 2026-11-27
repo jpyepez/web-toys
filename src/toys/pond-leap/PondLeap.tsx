@@ -1,19 +1,24 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import { motion } from 'motion/react';
 import type { ToyProps } from '../../shell/registry';
 import { FrogDrawing, FOOT_FRACTION } from './FrogDrawing';
 import { PadDrawing } from './PadDrawing';
 import { PondBackdrop } from './PondBackdrop';
+import { GhostPullFinger, LeapArc } from './GhostPullFinger';
+import { DEMO_DURATION_MS, DEMO_PULL_MS, DEMO_PULL_SHARE, DEMO_PULLS, DEMO_TIMES, IDLE_DEMO_DELAY_MS } from './demo';
 import { palette } from './palette';
 import {
   FROG_WIDTH,
   LAST_PAD,
   MAX_PULL_PX,
+  MIN_PULL_PX,
   PADS,
   PAD_WIDTH,
   STAGE_MAX_WIDTH_PX,
   landingPad,
   padsForPull,
+  railAngle,
+  railReach,
   stretchOf,
 } from './pond';
 import { boing, chime, pullTone, splash } from './sounds';
@@ -28,6 +33,8 @@ export const LEAP_MS = 650;
 export const OUTRO_MS = 900;
 /** The pull tone sounds each time the stretch climbs another step of this size. */
 const TONE_STEP = 0.2;
+/** How close (px) the frog's middle may be drawn to a stage edge: about half the frog. */
+const FROG_MARGIN_PX = 56;
 /** Brief wiggle on a tap. */
 const WIGGLE_MS = 400;
 
@@ -45,6 +52,11 @@ export function PondLeap({ onComplete, sound, haptics }: ToyProps) {
   const [pull, setPull] = useState({ dx: 0, dy: 0 });
   const [phase, setPhase] = useState<Phase>('playing');
   const [wiggle, setWiggle] = useState(0);
+  const [demoActive, setDemoActive] = useState(false);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const stage = useStageSize(stageRef);
+  /** The pad the idle demo last ran on: it shows once per pad. */
+  const demoShownOn = useRef(-1);
 
   const grip = useRef<{ pointerId: number; x: number; y: number; toneStep: number } | null>(null);
   const padRef = useRef(0);
@@ -56,6 +68,24 @@ export function PondLeap({ onComplete, sound, haptics }: ToyProps) {
     const pending = timers.current;
     return () => pending.forEach(clearTimeout);
   }, []);
+
+  // Idle ghost-finger demo: when the frog sits waiting on a pad, show the Pull
+  // once. A press, a Pull or the Outro cancels it; it never moves the frog.
+  useEffect(() => {
+    const waiting = phase === 'playing' && (frogState === 'idle' || frogState === 'landed');
+    if (!waiting || pad >= LAST_PAD || demoShownOn.current === pad) return;
+    let hide: ReturnType<typeof setTimeout> | undefined;
+    const show = setTimeout(() => {
+      demoShownOn.current = pad;
+      setDemoActive(true);
+      hide = setTimeout(() => setDemoActive(false), DEMO_DURATION_MS);
+    }, IDLE_DEMO_DELAY_MS);
+    return () => {
+      clearTimeout(show);
+      clearTimeout(hide);
+      setDemoActive(false);
+    };
+  }, [frogState, pad, phase]);
 
   const setState = (s: FrogState) => {
     stateRef.current = s;
@@ -81,6 +111,7 @@ export function PondLeap({ onComplete, sound, haptics }: ToyProps) {
 
   const down = (e: React.PointerEvent) => {
     if (!canPull()) return;
+    setDemoActive(false);
     e.currentTarget.setPointerCapture?.(e.pointerId);
     grip.current = { pointerId: e.pointerId, x: e.clientX, y: e.clientY, toneStep: 0 };
     setPull({ dx: 0, dy: 0 });
@@ -129,15 +160,21 @@ export function PondLeap({ onComplete, sound, haptics }: ToyProps) {
   const pulling = frogState === 'pulling';
   const len = Math.hypot(pull.dx, pull.dy);
   const stretch = pulling ? stretchOf(len) : 0;
-  // The frog follows the finger back, but never past the cap.
-  const k = len > MAX_PULL_PX ? MAX_PULL_PX / len : 1;
-  const shown = pulling ? { x: pull.dx * k, y: pull.dy * k } : { x: 0, y: 0 };
-  const angle = (Math.atan2(pull.dy, pull.dx) * 180) / Math.PI;
+  // The frog stretches along the rail only, straight back from the next pad,
+  // however the finger moves: the stretch always points where it will fly.
+  const angle = railAngle(pad, stage.w, stage.h);
+  const unit = { x: Math.cos((angle * Math.PI) / 180), y: Math.sin((angle * Math.PI) / 180) };
+  // keep the whole frog on screen: the first pad's rail points at the bottom edge
+  const reach = railReach(pad, stage.w, stage.h, len, FROG_MARGIN_PX);
+  const shown = pulling ? { x: unit.x * reach, y: unit.y * reach } : { x: 0, y: 0 };
   // One valid transform at all times: `translate(..) none` is invalid CSS, and a
   // browser that rejects it keeps the previous pulled pose after release.
   const pose = pulling
     ? `translate(${shown.x}px, ${shown.y}px) rotate(${angle}deg) scale(${1 + 0.35 * stretch}, ${1 - 0.25 * stretch}) rotate(${-angle}deg)`
     : 'none';
+  const demoReach = railReach(pad, stage.w, stage.h, MAX_PULL_PX * DEMO_PULL_SHARE, FROG_MARGIN_PX);
+  const demoBack = { x: unit.x * demoReach, y: unit.y * demoReach };
+  const showArc = pad < LAST_PAD && ((pulling && len >= MIN_PULL_PX) || demoActive);
 
   const at = (i: number) => ({ left: `${PADS[i][0] * 100}%`, top: `${PADS[i][1] * 100}%` });
   const frogAt = at(target ?? pad);
@@ -148,6 +185,7 @@ export function PondLeap({ onComplete, sound, haptics }: ToyProps) {
     <main
       data-toy-state={phase}
       data-phase={phase}
+      data-demo-active={demoActive}
       style={{
         position: 'fixed',
         inset: 0,
@@ -159,6 +197,7 @@ export function PondLeap({ onComplete, sound, haptics }: ToyProps) {
       <PondBackdrop />
       <div
         data-pond-stage=""
+        ref={stageRef}
         style={{
           position: 'absolute',
           top: 0,
@@ -192,6 +231,8 @@ export function PondLeap({ onComplete, sound, haptics }: ToyProps) {
           </div>
         ))}
 
+        {showArc && <LeapArc from={PADS[pad]} to={PADS[pad + 1]} toIndex={pad + 1} />}
+
         {pulling && len > 0 && (
           // The tension band: a thin bar from the pad to the frog, thickening as it loads.
           <div
@@ -199,7 +240,7 @@ export function PondLeap({ onComplete, sound, haptics }: ToyProps) {
             style={{
               position: 'absolute',
               ...anchor,
-              width: Math.min(len, MAX_PULL_PX),
+              width: reach,
               height: 4 + stretch * 6,
               marginTop: -(2 + stretch * 3),
               transformOrigin: '0 50%',
@@ -218,6 +259,7 @@ export function PondLeap({ onComplete, sound, haptics }: ToyProps) {
           data-frog-pad={pad}
           data-frog-target={target ?? ''}
           data-pull-stretch={stretch.toFixed(2)}
+          data-pull-angle={pulling ? angle.toFixed(1) : undefined}
           onPointerDown={down}
           onPointerMove={move}
           onPointerUp={up}
@@ -253,6 +295,23 @@ export function PondLeap({ onComplete, sound, haptics }: ToyProps) {
               boxSizing: 'content-box',
             }}
           >
+            {/* the idle demo draws the frog back along the rail, in step with the ghost */}
+            <motion.div
+              animate={
+                demoActive
+                  ? {
+                      x: [0, 0, demoBack.x, 0, 0],
+                      y: [0, 0, demoBack.y, 0, 0],
+                    }
+                  : { x: 0, y: 0 }
+              }
+              transition={
+                demoActive
+                  ? { duration: DEMO_PULL_MS / 1000, times: DEMO_TIMES, ease: 'easeInOut', repeat: DEMO_PULLS - 1 }
+                  : { duration: 0.15 }
+              }
+              style={{ width: '100%', height: '100%', pointerEvents: 'none' }}
+            >
             <motion.div
               key={wiggle}
               animate={
@@ -275,8 +334,11 @@ export function PondLeap({ onComplete, sound, haptics }: ToyProps) {
             >
               <FrogDrawing />
             </motion.div>
+            </motion.div>
           </div>
         </motion.div>
+
+        {demoActive && <GhostPullFinger at={anchor} back={demoBack} />}
       </div>
     </main>
   );
@@ -305,4 +367,28 @@ function Ripples({ at }: { at: { left: string; top: string } }) {
       ))}
     </div>
   );
+}
+
+/**
+ * The stage's size in px, for the rail's angle: a pad path drawn in stage
+ * fractions slants differently on a phone and on a wide screen. Before layout
+ * (and in jsdom, which has none) it falls back to the viewport, capped at the
+ * stage's widest.
+ */
+function useStageSize(ref: RefObject<HTMLDivElement | null>) {
+  const fallback = () => ({
+    w: Math.min(window.innerWidth, STAGE_MAX_WIDTH_PX),
+    h: window.innerHeight,
+  });
+  const [size, setSize] = useState(fallback);
+  useLayoutEffect(() => {
+    const measure = () => {
+      const r = ref.current?.getBoundingClientRect();
+      setSize(r && r.width > 0 && r.height > 0 ? { w: r.width, h: r.height } : fallback());
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [ref]);
+  return size;
 }
