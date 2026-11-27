@@ -105,7 +105,10 @@ export function createAppRouter(
           } as CSSProperties)
         : undefined;
       return (
-        <div className="shell-frame" style={homeStyle}>
+        <div
+          className={onHome ? "shell-frame" : "shell-frame shell-frame--toy"}
+          style={homeStyle}
+        >
           <MuteToggle sound={sound} />
           <Outlet />
           {/* The paper grain sits above every Toy and the chrome alike — it is the
