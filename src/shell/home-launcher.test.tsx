@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { ToyEntry } from './registry';
+import { visibleToys, type ToyEntry } from './registry';
+import { registry } from '../toys/registry';
 import { ink } from './tokens';
 import { palette } from '../toys/counting-sheep/palette';
 import { palette as oceanPalette } from '../toys/puffer-fish/palette';
@@ -161,7 +162,8 @@ describe('registered toys', () => {
     // way prior slices moved it 1 → 2 → 3 → 4 as the fish, the puddle and the
     // balloons landed). Each Card carries its title and routes to its own Toy; the
     // per-Card tint + preview wiring is asserted in the focused tests below.
-    renderApp();
+    // The production Cards: Draft Toys (Pond Leap, issue 62) have none here.
+    renderApp('/', { toys: visibleToys(registry, 'production') });
 
     expect(await screen.findByText('Counting Sheep')).toBeInTheDocument();
     expect(screen.getByText('Puffer Fish')).toBeInTheDocument();

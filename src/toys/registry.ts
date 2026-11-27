@@ -22,6 +22,9 @@ import { Preview as PenguinSlidePreview } from './penguin-slide/Preview';
 import { SoupPot, OUTRO_MS as SOUP_OUTRO_MS } from './soup-pot/SoupPot';
 import { palette as kitchenPalette } from './soup-pot/palette';
 import { Preview as SoupPotPreview } from './soup-pot/Preview';
+import { PondLeap, OUTRO_MS as POND_OUTRO_MS } from './pond-leap/PondLeap';
+import { palette as pondPalette } from './pond-leap/palette';
+import { Preview as PondLeapPreview } from './pond-leap/Preview';
 
 /**
  * The registered Toys. Adding a Toy is adding an entry here — the Shell renders
@@ -151,5 +154,19 @@ export const registry: ToyEntry[] = [
     // Hold the Completion until the blorp has burst — `onComplete` fires the
     // moment the Goal is reached, at the START of the Outro.
     winDelayMs: SOUP_OUTRO_MS,
+  },
+  // Pond Leap — the Pull (issue 62). A Draft Toy: its Card shows in a Preview
+  // Deployment only, until the ticket that ships it removes `draft`. Its tint is
+  // the pond water its scene sits in, like every other Toy's.
+  {
+    id: 'pond-leap',
+    title: 'Pond Leap',
+    component: PondLeap,
+    tint: pondPalette.water,
+    preview: PondLeapPreview,
+    draft: true,
+    // Hold the Completion until the frog has done its hop — `onComplete` fires
+    // on the final landing, at the START of the Outro.
+    winDelayMs: POND_OUTRO_MS,
   },
 ];
