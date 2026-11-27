@@ -153,7 +153,7 @@ describe('home launcher', () => {
 });
 
 describe('registered toys', () => {
-  it('registers Counting Sheep, Puffer Fish, Muddy Puddle, Up & Away, Tuck-In, Penguin Slide and Soup Pot as the seven launchable Cards', async () => {
+  it('registers Counting Sheep, Puffer Fish, Muddy Puddle, Up & Away, Tuck-In, Penguin Slide, Soup Pot and Pond Leap as the eight launchable Cards', async () => {
     // Nestlings slice #08 (AC #1/#2): the registry now declares a fifth real Toy
     // — "Tuck-In" (slug `nestlings`) — so the Home reads as a small *collection*
     // of five Cards. This test supersedes the earlier "four launchable Cards"
@@ -162,7 +162,6 @@ describe('registered toys', () => {
     // way prior slices moved it 1 → 2 → 3 → 4 as the fish, the puddle and the
     // balloons landed). Each Card carries its title and routes to its own Toy; the
     // per-Card tint + preview wiring is asserted in the focused tests below.
-    // The production Cards: Draft Toys (Pond Leap, issue 62) have none here.
     renderApp('/', { toys: visibleToys(registry, 'production') });
 
     expect(await screen.findByText('Counting Sheep')).toBeInTheDocument();
@@ -174,7 +173,9 @@ describe('registered toys', () => {
     expect(screen.getByText('Penguin Slide')).toBeInTheDocument();
     // Soup Pot (issue 44) is the seventh.
     expect(screen.getByText('Soup Pot')).toBeInTheDocument();
-    expect(screen.getAllByRole('link')).toHaveLength(7);
+    // Pond Leap (issue 62) is the eighth.
+    expect(screen.getByText('Pond Leap')).toBeInTheDocument();
+    expect(screen.getAllByRole('link')).toHaveLength(8);
 
     // The Counting Sheep Card backs its preview cover with the meadow's own sky,
     // sourced from the Toy-local palette (ADR-0004 — slice #04). It moved from

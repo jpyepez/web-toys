@@ -155,16 +155,14 @@ export const registry: ToyEntry[] = [
     // moment the Goal is reached, at the START of the Outro.
     winDelayMs: SOUP_OUTRO_MS,
   },
-  // Pond Leap — the Pull (issue 62). A Draft Toy: its Card shows in a Preview
-  // Deployment only, until the ticket that ships it removes `draft`. Its tint is
-  // the pond water its scene sits in, like every other Toy's.
+  // Pond Leap — the Pull (issue 62). Its tint is the pond water its scene sits
+  // in, like every other Toy's.
   {
     id: 'pond-leap',
     title: 'Pond Leap',
     component: PondLeap,
     tint: pondPalette.water,
     preview: PondLeapPreview,
-    draft: true,
     // Hold the Completion until the frog has done its hop — `onComplete` fires
     // on the final landing, at the START of the Outro.
     winDelayMs: POND_OUTRO_MS,
