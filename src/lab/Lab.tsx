@@ -19,6 +19,7 @@ import { BarnyardFrameView } from './BarnyardScene';
 import { SkyFrameView } from './SkyScene';
 import { FloeFrameView } from './FloeScene';
 import { KitchenFrameView } from './KitchenScene';
+import { PondFrameView } from './PondScene';
 import { check as checkCanopy } from '../toys/nestlings/canopy';
 import { ASPECTS, type AspectName } from './config';
 
@@ -422,6 +423,30 @@ const KNOB_GROUPS: Array<{ title: string; knobs: Knob[] }> = [
       { path: 'scenery.kitchen.blorpCount', label: 'blorp wisps', min: 4, max: 20, step: 1 },
     ],
   },
+  {
+    /*
+     * The pond — Pond Leap's scene. Visible in the frame view with the `pond`
+     * background selected; the numbers harvest into
+     * `toys/pond-leap/pond-config.ts`.
+     *
+     * Every SIZE is a multiple of a FROG. The pads sit where the Toy puts them
+     * (issue 67 tunes those); this tunes what is around them.
+     */
+    title: 'Pond · Pond Leap',
+    knobs: [
+      { path: 'scenery.pond.bankReach', label: 'bank width', min: 0.12, max: 1, step: 0.01, note: 'in frogs, at its narrowest' },
+      { path: 'scenery.pond.bankFlare', label: 'bank flare', min: 0, max: 1.5, step: 0.01, note: 'wider toward the bottom corners' },
+      { path: 'scenery.pond.bankSway', label: 'shore sway', min: 0, max: 0.4, step: 0.01 },
+      { path: 'scenery.pond.bankShare', label: 'bank share, wide screens', min: 0, max: 1, step: 0.01, note: 'of the free side margin; the rest is pond' },
+      { path: 'scenery.pond.bankInset', label: 'water beside the pads', min: 0, max: 2, step: 0.05, note: 'in frogs, wide screens' },
+      { path: 'scenery.pond.padClearance', label: 'pad clearance', min: 0.1, max: 0.8, step: 0.01, note: 'open water a bank keeps from a pad' },
+      { path: 'scenery.pond.mossLobe', label: 'moss lobe', min: 0.02, max: 0.0625, step: 0.0025, note: 'over 1/16 radius a lobe becomes countable' },
+      { path: 'scenery.pond.deepReach', label: 'deep water reach', min: 2, max: 6, step: 0.05, note: 'in frogs — under 2.5 wide is a rival' },
+      { path: 'scenery.pond.rippleDensity', label: 'ripples per frog²', min: 0, max: 0.3, step: 0.005 },
+      { path: 'scenery.pond.rippleLength', label: 'ripple length', min: 0.2, max: 1, step: 0.01, note: 'in frogs' },
+      { path: 'scenery.pond.duckweed', label: 'duckweed per bank', min: 0, max: 40, step: 1 },
+    ],
+  },
 ];
 
 
@@ -517,6 +542,8 @@ export function Lab() {
               <FloeFrameView config={config} />
             ) : M.background === 'kitchen' ? (
               <KitchenFrameView config={config} />
+            ) : M.background === 'pond' ? (
+              <PondFrameView config={config} />
             ) : M.background === 'sky' ? (
               <SkyFrameView config={config} />
             ) : (
@@ -579,7 +606,7 @@ export function Lab() {
           ))}
         </div>
         <div className="row modes">
-          {(['canopy', 'meadow', 'reef', 'barnyard', 'sky', 'floe', 'kitchen', 'glow', 'paper', 'motif', 'split'] as const).map((b) => (
+          {(['canopy', 'meadow', 'reef', 'barnyard', 'sky', 'floe', 'kitchen', 'pond', 'glow', 'paper', 'motif', 'split'] as const).map((b) => (
             <Tab key={b} label={b} on={M.background === b} onClick={() => { set('mode.background', b); set('scenery.motif.show', b === 'motif'); }} />
           ))}
         </div>

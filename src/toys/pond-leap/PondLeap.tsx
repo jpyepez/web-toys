@@ -228,7 +228,7 @@ export function PondLeap({ onComplete, sound, haptics }: ToyProps) {
               pointerEvents: 'none',
             }}
           >
-            <PadDrawing bloom={i === LAST_PAD} />
+            <PadDrawing index={i} bloom={i === LAST_PAD} />
           </div>
         ))}
 
@@ -246,7 +246,7 @@ export function PondLeap({ onComplete, sound, haptics }: ToyProps) {
               marginTop: -(2 + stretch * 3),
               transformOrigin: '0 50%',
               transform: `rotate(${angle}deg)`,
-              background: palette.bloom,
+              background: palette.blossom,
               borderRadius: 6,
               pointerEvents: 'none',
               zIndex: 1,
@@ -333,7 +333,7 @@ export function PondLeap({ onComplete, sound, haptics }: ToyProps) {
               }
               style={{ width: '100%', height: '100%', pointerEvents: 'none' }}
             >
-              <FrogDrawing />
+              <FrogDrawing pose={phase === 'outro' ? 'happy' : 'sitting'} />
             </motion.div>
             </motion.div>
           </div>

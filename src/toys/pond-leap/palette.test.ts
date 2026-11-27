@@ -34,4 +34,10 @@ describe('Pond Leap — pond palette', () => {
   it('draws lily pads as objects: light enough for the ink contour to clear them', () => {
     for (const o of source.objects) expect(deltaL(o, { l: 0.24, c: 0.03, h: 40 })).toBeGreaterThanOrEqual(0.3);
   });
+
+  it('keeps the frog clear of the pad it sits on: the pair it spends the whole Toy in', () => {
+    const frog = { l: source.cast.lightness, c: source.cast.chroma, h: source.frogHue };
+    expect(deltaL(frog, source.pad)).toBeGreaterThanOrEqual(source.cast.minBackdropDeltaL);
+    expect(Math.abs(source.pad.h - source.frogHue)).toBeGreaterThan(20);
+  });
 });

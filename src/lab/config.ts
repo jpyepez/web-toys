@@ -25,6 +25,8 @@ import { type FloeConfig } from '../toys/penguin-slide/floe';
 import { FLOE } from '../toys/penguin-slide/floe-config';
 import { type KitchenConfig } from '../toys/soup-pot/kitchen';
 import { KITCHEN } from '../toys/soup-pot/kitchen-config';
+import { type PondConfig } from '../toys/pond-leap/pond-scene';
+import { POND } from '../toys/pond-leap/pond-config';
 
 export type LineMode = 'contour' | 'none';
 
@@ -51,7 +53,8 @@ export type BackgroundMode =
   | 'barnyard'
   | 'sky'
   | 'floe'
-  | 'kitchen';
+  | 'kitchen'
+  | 'pond';
 
 /**
  * THE FORK. A dark ground and a dark-ink cast cannot both work — the ink stops
@@ -237,6 +240,11 @@ export type Config = {
     kitchen: KitchenConfig;
     /** Lab-only: how far the soup has cooked in the frame view (0–1). Not harvested. */
     kitchenView: { progress: number };
+    /**
+     * The pond — see `toys/pond-leap/pond-scene.ts`. Colourless for the same
+     * reason as the floe: the Pond Leap palette is already derived and asserted.
+     */
+    pond: PondConfig;
     reef: ReefConfig;
     /**
      * The barnyard — see `toys/muddy-puddle/barnyard.ts`. Colourless for the
@@ -387,6 +395,7 @@ export const DEFAULT_CONFIG: Config = {
     floe: FLOE,
     kitchen: KITCHEN,
     kitchenView: { progress: 0.8 },
+    pond: POND,
     barnyard: BARNYARD,
     sky: SKY,
     foliage: { hue: 152, chroma: 0.06, depthDc: 0.028, depthDl: 0.035 },
