@@ -170,7 +170,8 @@ export function PondLeap({ onComplete, sound, haptics }: ToyProps) {
   // One valid transform at all times: `translate(..) none` is invalid CSS, and a
   // browser that rejects it keeps the previous pulled pose after release.
   const pose = pulling
-    ? `translate(${shown.x}px, ${shown.y}px) rotate(${angle}deg) scale(${1 + 0.35 * stretch}, ${1 - 0.25 * stretch}) rotate(${-angle}deg)`
+    ? // An upright crouch, never a squash along the slanted rail: that reads as a skew.
+      `translate(${shown.x}px, ${shown.y}px) scale(${1 + 0.08 * stretch}, ${1 - 0.14 * stretch})`
     : 'none';
   const demoReach = railReach(pad, stage.w, stage.h, MAX_PULL_PX * DEMO_PULL_SHARE, FROG_MARGIN_PX);
   const demoBack = { x: unit.x * demoReach, y: unit.y * demoReach };
