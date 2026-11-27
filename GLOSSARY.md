@@ -105,14 +105,15 @@ up, not the gesture.
 
 **Pull**:
 The core gesture of the Pond Leap Toy: press a **Critter**, pull it back like a slingshot, and
-let go, and it springs off the *opposite* way to the finger. Distinct from a **Swipe** (the
-Critter goes the way the finger went, launched by speed; a Pull is released from tension, and
-its length decides how far) and from a **Drag** (nothing is carried to a target; the Critter
-leaps on release). It can't be done wrong: the Critter always lands somewhere good, the
-direction of the pull needn't be exact, and a longer Pull just goes further. A tap or a tiny
-Pull doesn't leap, and the Critter waits to be pulled again. Progress only goes forward: a
-lifted, cancelled or lost pointer before release cancels the Pull and leaves the Critter where
-it is. The sixth non-tap core interaction in the collection.
+let go, and it springs off to the next place it can land. The Critter stretches straight back
+from where it is going, whichever way the finger moves, so the pull loads the spring but never
+aims it. Distinct from a **Swipe** (the Critter goes the way the finger went, launched by speed;
+a Pull is released from tension) and from a **Drag** (nothing is carried to a target; the
+Critter leaps on release). It can't be done wrong: any real Pull, in any direction and of any
+length, sends the Critter exactly one step on, and a longer Pull only stretches it more. A tap
+or a tiny Pull doesn't leap, and the Critter waits to be pulled again. Progress only goes
+forward: a lifted, cancelled or lost pointer before release cancels the Pull and leaves the
+Critter where it is. The sixth non-tap core interaction in the collection.
 _Avoid_: sling, fling, flick (as gesture names); reserve "leap" for what the Critter does in
 response, not the gesture.
 
