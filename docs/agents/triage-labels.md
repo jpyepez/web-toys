@@ -45,3 +45,19 @@ An issue is `ready` only when every point holds:
 4. **It fits the rules.** No binary assets, success-only with no fail state, the single
    `onComplete()` contract, and Home as a pure launcher. Nothing in `docs/out-of-scope/`.
 5. **It fits one PR and touches nothing on the hand-back list** (in `issue-tracker.md`).
+
+### A new-Toy pitch
+
+A **pitch** is an issue proposing a new Toy in a few lines: its gesture, Critters or
+ending. Triage turns it into the spec for a playable Draft Toy by running steps 1–4 of
+`docs/agents/new-toy-flow.md`, deciding every open question itself. The pitch is `ready`
+when:
+
+- the spec has every section step 4 lists, with no question left open for the owner;
+- points 1, 2 and 4 above hold for it;
+- nothing in it is on the flow's stop list. A stop-list item makes it `needs-info`, with
+  the questions and a recommendation for each.
+
+Points 3 and 5 give way here. The owner judges look and feel by playing the PR's Vercel
+Preview link before merging, and the placeholder art is replaced by a later art ticket. A
+new gesture's `GLOSSARY.md` entry is part of the build.

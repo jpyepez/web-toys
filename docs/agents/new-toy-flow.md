@@ -13,6 +13,10 @@ already hold the rules a grill used to enforce.
 **Scope:** a new Toy only. Shell, Home, registry-shape and cross-Toy art work (`src/shell/`)
 keep the usual grill: rework there reaches every Toy.
 
+**Who runs it:** triage, for a pitch the owner files as an issue. It runs steps 1–4 and
+labels the issue `ready` (the pitch bar in `docs/agents/triage-labels.md`). A session handed
+a pitch in chat files it as a `needs-triage` issue and lets triage take it from there.
+
 This flow is an experiment in this repo. After the first Toy built this way, the owner
 decides whether to keep it.
 
@@ -31,18 +35,26 @@ decides whether to keep it.
    - contradict an ADR or reopen something in `docs/out-of-scope/`;
    - need a new ADR.
 
-   Ask these together in one message, with your recommendation for each. Nothing on the list
-   means no questions: go straight to step 4.
-4. **Publish the spec.** A parent issue in the shape of issue 36 (pitch paragraph,
-   **Decisions taken**, Tickets, Out of scope), labelled `ready`. Done when the issue exists
-   and its board Status is Ready.
-5. **Ticket the playable Toy first.** One `ready` sub-issue: the whole loop, from first touch
-   to `onComplete()`, with code-drawn placeholder Critters and scene. The owner plays it from
-   the PR's Vercel Preview link before merging, so the ticket registers it as a Draft Toy
-   (`draft: true` in `src/toys/registry.ts`), which has a Card only in a Preview Deployment
-   and in `bun run dev`. The ticket that ships the Toy removes `draft`. Add only the tickets
-   that clearly follow (art, sound, idle demo, on-device tuning) and leave the rest
-   unwritten: the owner's feedback on the playable Toy decides them.
+   Ask these together in one message (for triage, a `needs-info` comment), with your
+   recommendation for each. Nothing on the list means no questions: go straight to step 4.
+4. **Write the spec.** One issue, labelled `ready`, holding:
+   - the pitch, as a short paragraph;
+   - **Decisions taken**, from step 2;
+   - **Acceptance**: each point checkable by a Vitest test or a screenshot, ending with the
+     Toy played from first touch to `onComplete()`;
+   - **Out of scope**.
+
+   Its scope is the **playable Draft Toy**: the whole loop with code-drawn placeholder
+   Critters and scene, registered with `draft: true` in `src/toys/registry.ts`, plus a
+   `GLOSSARY.md` entry when the gesture is new. Done when the issue body is the spec and
+   its board Status is Ready.
+5. **Build the playable Draft Toy** in one PR. The implement bot picks up the `ready` issue.
+   The owner plays it from the PR's Vercel Preview link, where Draft Toys have a Card, and
+   merges when it plays well.
+6. **Ticket what clearly follows**, from the owner's feedback on the playable Toy: art,
+   sound, idle demo, on-device tuning, and the ticket that ships the Toy by removing
+   `draft`. Leave the rest unwritten. With more than one ticket, open a parent issue in the
+   shape of issue 36 and add them as its sub-issues.
 
 ## Feedback
 
