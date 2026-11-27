@@ -2,6 +2,7 @@ import {
   createRootRoute,
   createRoute,
   createRouter,
+  Navigate,
   Outlet,
   useParams,
   useRouterState,
@@ -108,7 +109,9 @@ export function createAppRouter(
     component: function ToyMount() {
       const { toyId } = useParams({ strict: false });
       const toy = toys.find((t) => t.id === toyId);
-      if (!toy) return null;
+      // An unknown id, or a Draft Toy hidden in production, goes to Home: an
+      // empty frame would be a dead end for a child holding an old link.
+      if (!toy) return <Navigate to="/" replace />;
       return <ToyHost toy={toy} sound={sound} haptics={haptics} />;
     },
   });

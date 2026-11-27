@@ -85,6 +85,19 @@ export function Card({ toy, sound }: { toy: ToyEntry; sound: Sound }) {
         <div style={footerStyle}>
           <span style={{ ...titleStyle, color: theme.ink }}>{toy.title}</span>
         </div>
+        {toy.draft ? (
+          // A Draft Toy's Card exists only in a Preview Deployment (issue 56);
+          // the mark reminds the owner it isn't live yet.
+          <span
+            style={{
+              ...draftMarkStyle,
+              backgroundColor: theme.cardSurface,
+              color: theme.ink,
+            }}
+          >
+            draft
+          </span>
+        ) : null}
       </Link>
     </motion.div>
   );
@@ -109,6 +122,7 @@ const COVER_INSET = 12;
 // is the paper margin the inset preview photo floats in. `overflow: hidden`
 // keeps everything inside the rounded mask.
 const cardLinkStyle: CSSProperties = {
+  position: 'relative',
   display: 'flex',
   flexDirection: 'column',
   width: '100%',
@@ -158,4 +172,20 @@ const titleStyle: CSSProperties = {
   fontWeight: 500,
   letterSpacing: '0.01em',
   textAlign: 'center',
+};
+
+// The small "draft" label on a Draft Toy's Card: a paper tag pinned to the
+// cover's top-left corner, in the Card's own surface and ink so it needs no
+// colour of its own. Only the owner sees it; production never shows a draft.
+const draftMarkStyle: CSSProperties = {
+  position: 'absolute',
+  top: COVER_INSET + 8,
+  left: COVER_INSET + 8,
+  padding: '2px 8px',
+  borderRadius: '999px',
+  fontFamily: font.rounded,
+  fontSize: '13px',
+  fontWeight: 500,
+  letterSpacing: '0.04em',
+  pointerEvents: 'none',
 };

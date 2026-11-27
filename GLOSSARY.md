@@ -117,6 +117,18 @@ set from the theme pill on Home. It colours Home and the device status bar while
 shows, and nothing inside a **Toy**: every Toy, and the Completion, look the same in every theme.
 _Avoid_: dark mode, app theme (both suggest it reaches the Toys)
 
+**Draft Toy**:
+A Toy that is in the collection but not yet live: it has a **Card** only in a **Preview
+Deployment**, marked as a draft, and in production it has no Card and can't be opened.
+A new Toy starts as a Draft Toy so the owner can play it before it ships; the ticket that
+makes it live removes the draft mark.
+_Avoid_: hidden Toy, beta, WIP
+
+**Preview Deployment**:
+The temporary build of the site made for one pull request, where Draft Toys are playable.
+Production is the live site the child uses.
+_Avoid_: bare "Preview" for this; "preview" alone stays the small scene drawn on a **Card**
+
 **Code-generated assets**:
 Project-wide stance that all visuals are code-drawn SVG and all sound is synthesized at
 runtime (Web Audio / Tone.js) — there are no binary assets. See
@@ -129,6 +141,8 @@ runtime (Web Audio / Tone.js) — there are no binary assets. See
 - Achieving a **Goal** triggers the Toy's **Outro** and the Shell's **Completion**
   overlay simultaneously; the Toy stays mounted through both
 - **Completion** is always a success state — there is no failure path
+- In production the home screen shows a **Card** for every **Toy** except a **Draft Toy**;
+  a **Preview Deployment** shows them all
 - The **Shell** wraps every **Toy**; a Toy signals the Shell only via **onComplete**
 - A **Toy** is always exitable mid-play via an always-visible Home control — no gate, no
   confirmation; abandoning is non-destructive (re-entry is free)
@@ -146,3 +160,5 @@ runtime (Web Audio / Tone.js) — there are no binary assets. See
 - **Critter** originally read "a *tappable* character… tapping is the core interaction" —
   broadened during the Muddy Puddle grill to be interaction-agnostic, since that Toy's core
   interaction is a **Wipe**, not a tap. The Critter is the character; the gesture is per-Toy.
+- "Preview" meant two things: the small scene on a **Card** and Vercel's per-PR build. The
+  build is a **Preview Deployment**; bare "preview" keeps the Card meaning.
