@@ -32,7 +32,9 @@ for (const { name, width, height } of widths) {
     await page.goto('/');
 
     await expect(page.getByRole('heading', { level: 1, name: 'Web Toys' })).toBeVisible();
-    expect((await toyPaths(page)).length).toBeGreaterThan(0);
+    const paths = await toyPaths(page);
+    expect(paths.length).toBeGreaterThan(0);
+    expect(paths).toContain('/toy/pond-leap');
     expect(errors).toEqual([]);
   });
 
