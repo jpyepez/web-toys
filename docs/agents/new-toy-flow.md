@@ -17,8 +17,8 @@ keep the usual grill: rework there reaches every Toy.
 labels the issue `ready` (the pitch bar in `docs/agents/triage-labels.md`). A session handed
 a pitch in chat files it as a `needs-triage` issue and lets triage take it from there.
 
-This flow is an experiment in this repo. After the first Toy built this way, the owner
-decides whether to keep it.
+Kept after its trial: Pond Leap (issue 62) went from a pitch to live with no grill, two
+rounds of play-test feedback and one triage fix.
 
 ## Steps
 
@@ -54,10 +54,16 @@ decides whether to keep it.
 6. **Ticket what clearly follows**, from the owner's feedback on the playable Toy: art,
    sound, idle demo, on-device tuning, and the ticket that ships the Toy by removing
    `draft`. Leave the rest unwritten. With more than one ticket, open a parent issue in the
-   shape of issue 36 and add them as its sub-issues.
+   shape of issue 69 and add them as its sub-issues.
+   - Open each ticket with its outcome label already on, and the parent with `spec`, so
+     triage leaves them alone.
+   - Open the ship ticket `ready-for-human`, blocked by the art ticket, and relabel it
+     `ready` once the art merges. A `ready` label starts a build at once, blocked or not,
+     and production must never get placeholder art.
 
 ## Feedback
 
 The owner's feedback arrives as PR review comments (fix in that PR) or as new issues
 (`needs-triage`, later tickets). When feedback overrules a decision, update that line of
-**Decisions taken** in the spec so the spec stays the record of what the Toy is.
+**Decisions taken** in the spec so the spec stays the record of what the Toy is, and mark
+the line "changed after play-testing".
