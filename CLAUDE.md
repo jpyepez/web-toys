@@ -63,6 +63,11 @@ Default five triage roles; `ready-for-agent` is written as `ready`. See `docs/ag
 Glossary `GLOSSARY.md`, ADRs `docs/adr/`, out-of-scope `docs/out-of-scope/`, all writable.
 See `docs/agents/domain.md`.
 
+### New Toys
+
+Speccing, grilling or planning a new Toy: read `docs/agents/new-toy-flow.md` first. A pitch
+goes in, you decide and build, and the owner plays the result and gives feedback.
+
 ### Notes
 
 Running notes and rough ideas are GitHub issues: label `notes` for running notes,
