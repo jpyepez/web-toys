@@ -63,6 +63,17 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Inside a Toy the frame drops its safe-area padding (issue 59 follow-up).
+ * Several Toys size their root to `min-height: 100dvh`; under the padding the
+ * page came out one screen PLUS the notch and home-indicator insets, so the
+ * installed app scrolled (a browser tab has ~0 insets, so it never showed).
+ * Nothing in a Toy needs the padding: the chrome pills add the inset to their
+ * own `top`/`left`/`right`, Completion is fixed, and the backdrops already
+ * bleed under the insets. Home keeps it, since its Cards are normal flow. */
+.shell-frame--toy {
+  padding: 0;
+}
+
 /* Chrome pill positioning.
  *
  * The pill *surface* (background, radius, transition) is set inline from the

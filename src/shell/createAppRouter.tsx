@@ -1,4 +1,5 @@
 import {
+  createBrowserHistory,
   createRootRoute,
   createRoute,
   createRouter,
@@ -16,6 +17,7 @@ import { createHaptics, type Haptics } from "./haptics";
 import { MuteToggle } from "./MuteToggle";
 import { PaperGrain } from "./PaperGrain";
 import { useResolvedTheme } from "./theme";
+import { isStandalone } from "./standalone";
 import { homeTheme, sky } from "./tokens";
 import { useEffect, type CSSProperties } from "react";
 
@@ -26,7 +28,26 @@ type AppRouterOptions = {
   sound?: Sound;
   /** Shared haptics utility — defaults to the real one; tests inject a fake. */
   haptics?: Haptics;
+  /**
+   * Turn every navigation into a replace so history stays one entry deep.
+   * Defaults to on when running installed (see `isStandalone`).
+   */
+  flatHistory?: boolean;
 };
+
+/**
+ * Issue #59: on iOS the edge swipe walks browser history, so a child swiping
+ * in a Toy could land on Home (or swipe forward back into a Toy). CSS can't
+ * turn that gesture off. When installed there is no back button, so we keep
+ * history one entry deep: with nothing behind or ahead, the swipe has nowhere
+ * to go. Browser tabs keep normal pushes so their back button still works.
+ * Patched on the history object itself so Card links and the Home controls
+ * all go through it.
+ */
+function flatten(history: RouterHistory): RouterHistory {
+  history.push = history.replace;
+  return history;
+}
 
 /**
  * Builds the app's router from the Toy registry: a root Shell frame, the home
@@ -85,7 +106,10 @@ export function createAppRouter(
           } as CSSProperties)
         : undefined;
       return (
-        <div className="shell-frame" style={homeStyle}>
+        <div
+          className={onHome ? "shell-frame" : "shell-frame shell-frame--toy"}
+          style={homeStyle}
+        >
           <MuteToggle sound={sound} />
           <Outlet />
           {/* The paper grain sits above every Toy and the chrome alike — it is the
@@ -118,8 +142,11 @@ export function createAppRouter(
 
   const routeTree = rootRoute.addChildren([homeRoute, toyRoute]);
 
+  const history = options.history ?? createBrowserHistory();
+  const flat = options.flatHistory ?? isStandalone();
+
   return createRouter({
     routeTree,
-    history: options.history,
+    history: flat ? flatten(history) : history,
   });
 }
